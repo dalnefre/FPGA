@@ -11,6 +11,25 @@ that fits in a [USB](https://en.wikipedia.org/wiki/USB) Type-A port.
 
 Download and install the latest [FOMU Toolchain](https://github.com/im-tomu/fomu-toolchain).
 
+Edit shell configuration (e.g.: `~/.bash_profile`):
+```
+export FOMU_PATH=$HOME/dev/fomu-toolchain-macos-v1.5.6
+export GHDL_PREFIX=$FOMU_PATH/lib/ghdl
+export PATH=$PATH:$FOMU_PATH/bin
+```
+
+Remove MacOS protection attribute from installed programs:
+```
+$ cd $FOMU_PATH/bin
+$ xattr -d com.apple.quarantine *
+```
+**WARNING:** _Make sure you trust the source of a program before removing this attribute!_
+
+To list registered USB devices:
+```
+$ ioreg -p IOUSB
+```
+
 #### Update the Bootloader
 
 To list DFU-capable USB devices:
