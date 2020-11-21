@@ -1,21 +1,9 @@
-# Experimental Setup
+# Experimental Setup (MacOS)
 
 ## FOMU
 
 The [FOMU](https://tomu.im/fomu.html) is a programmable/reconfigurable FPGA platform
 that fits in a [USB](https://en.wikipedia.org/wiki/USB) Type-A port.
-
-To list currently-installed USB devices:
-```
-$ lsusb
-Bus 001 Device 006: ID 1209:5bf0 Generic 
-Bus 001 Device 005: ID 0424:7800 Standard Microsystems Corp. 
-Bus 001 Device 003: ID 0424:2514 Standard Microsystems Corp. USB 2.0 Hub
-Bus 001 Device 002: ID 0424:2514 Standard Microsystems Corp. USB 2.0 Hub
-Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
-```
-
-The FOMU shows up as `ID 1209:5bf0 Generic` (the rest are standard RPi3-B+ devices).
 
 ### USB DFU
 
@@ -29,7 +17,7 @@ You can [read the manual](http://wiki.openmoko.org/wiki/Manuals/Dfu-util).
 There is a SourceForge site for [`dfu-util`](http://dfu-util.sourceforge.net/).
 Including a [manual page](http://dfu-util.sourceforge.net/dfu-util.1.html).
 
-#### Install on Debian (Raspberry Pi OS):
+#### Install on MacOS (Catalina 10.15.7)
 
 ```
 $ sudo apt install dfu-util
@@ -67,22 +55,3 @@ Please report bugs to http://sourceforge.net/p/dfu-util/tickets/
 Found DFU: [1209:5bf0] ver=0101, devnum=7, cfg=1, intf=0, path="1-1.1.3", alt=0, name="Fomu PVT running DFU Bootloader v2.0.3", serial="UNKNOWN"
 ```
 
-#### Mount the `usbfs` (optional?)
-
-According to the folks at Openmoko,
-to run `dfu-util`, you need to have `/proc/bus/usb` mounted and working.
-
-To mount for just the current session:
-```
-$ sudo mount -t usbfs usbfs /proc/bus/usb
-```
-
-To automatically mount on each reboot, edit `/etc/fstab` and add:
-```
-usbfs   /proc/bus/usb   usbfs   defaults
-```
-
-To list USB devices:
-```
-$ sudo ls /proc/bus/usb
-```
