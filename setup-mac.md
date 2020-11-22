@@ -78,6 +78,12 @@ Install workshop files and submodules:
 $ git clone --recurse-submodules https://github.com/im-tomu/fomu-workshop.git
 ```
 
+The `wishbone-tool` can read/write arbitrary memory on the FOMU.
+Since most things are controlled/accessed via memory-mapped registers,
+this gives access to almost everything.
+
+Useful addresses and register values can be found in the [FOMU Bootloader Documentation](https://rm.fomu.im/index.html).
+
 #### Quick Reference
 
 Reboot the FOMU (and reload default "breathing" program)
