@@ -23,6 +23,10 @@ Remove MacOS protection attribute from installed programs:
 ```
 $ cd $FOMU_PATH/bin
 $ xattr -d com.apple.quarantine *
+$ cd $FOMU_PATH/riscv64-unknown-elf/bin
+$ xattr -d com.apple.quarantine *
+$ cd $FOMU_PATH/libexec/gcc/riscv64-unknown-elf/8.3.0
+$ xattr -d com.apple.quarantine *
 ```
 **WARNING:** _Make sure you trust the source of a program before removing this attribute!_
 
@@ -72,4 +76,11 @@ Found DFU: [1209:5bf0] ver=0101, devnum=7, cfg=1, intf=0, path="20-2", alt=0, na
 Install workshop files and submodules:
 ```
 $ git clone --recurse-submodules https://github.com/im-tomu/fomu-workshop.git
+```
+
+#### Quick Reference
+
+Reboot the FOMU (and reload default "breathing" program)
+```
+$ wishbone-tool 0xe0006000 0xac
 ```
