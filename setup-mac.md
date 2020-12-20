@@ -90,3 +90,14 @@ Reboot the FOMU (and reload default "breathing" program)
 ```
 $ wishbone-tool 0xe0006000 0xac
 ```
+
+## Icarus Verilog and GTKWave
+
+ * [https://iverilog.fandom.com/wiki/User_Guide](https://iverilog.fandom.com/wiki/User_Guide)
+ * [http://gtkwave.sourceforge.net/](http://gtkwave.sourceforge.net/)
+
+```
+$ brew install icarus-verilog
+$ brew install gtkwave
+$ xattr -d com.apple.quarantine /usr/local/bin/gtkwave
+```
