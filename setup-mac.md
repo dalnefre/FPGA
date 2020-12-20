@@ -101,3 +101,32 @@ $ brew install icarus-verilog
 $ brew install gtkwave
 $ xattr -d com.apple.quarantine /usr/local/bin/gtkwave
 ```
+
+### Create and run simulation
+
+```
+$ iverilog -o test_bench.sim cnt_24MHz.v test_bench.v
+$ ./test_bench.sim
+```
+
+Open the dumpfile `test_bench.vcd` with GTKWave to visualize waveforms.
+
+## Synthesis, Place and Route
+
+```
+$ yosys -p 'synth_ice40 -json fomu_pvt.json' cnt_24MHz.v fomu_pvt.v
+$ nextpnr-ice40 --up5k --package uwg30 --pcf ../FOMU/pcf/fomu-pvt.pcf --json fomu_pvt.json --asc fomu_pvt.asc
+```
+
+## DFU Packaging
+
+```
+$ icepack fomu_pvt.asc fomu_pvt.bit
+$ cp fomu_pvt.bit fomu_pvt.dfu
+$ dfu-suffix -v 1209 -p 70b1 -a fomu_pvt.dfu
+```
+
+Upload program to FOMU PVT
+```
+$ dfu-util -D fomu_pvt.dfu
+```
