@@ -2,14 +2,14 @@
 
 Installation instructions for MacOS (Catalina 10.15.7)
 
-## FOMU
+## Fomu
 
-The [FOMU](https://tomu.im/fomu.html) is a programmable/reconfigurable FPGA platform
+The [Fomu](https://tomu.im/fomu.html) is a programmable/reconfigurable FPGA platform
 that fits in a [USB](https://en.wikipedia.org/wiki/USB) Type-A port.
 
-### FOMU Toolchain
+### Fomu Toolchain
 
-Download and install the latest [FOMU Toolchain](https://github.com/im-tomu/fomu-toolchain).
+Download and install the latest [Fomu Toolchain](https://github.com/im-tomu/fomu-toolchain).
 
 Edit shell configuration (e.g.: `~/.bash_profile`):
 ```
@@ -56,10 +56,10 @@ Found DFU: [1209:5bf0] ver=0101, devnum=6, cfg=1, intf=0, path="20-2", alt=0, na
 
 Get the latest [`foboot`](https://github.com/im-tomu/foboot/releases/latest) release.
 Update according to [these instructions](https://workshop.fomu.im/en/latest/bootloader.html).
-Note: `FOMU/firmware` contains some `.dfu` snapshots.
+Note: [`Fomu/firmware`](Fomu/firmware) contains some `.dfu` snapshots.
 
 ```
-$ dfu-util -D FOMU/firmware/pvt-updater-v2.0.3.dfu
+$ dfu-util -D Fomu/firmware/pvt-updater-v2.0.3.dfu
 $ dfu-util -l
 dfu-util 0.9
 
@@ -71,22 +71,22 @@ Please report bugs to http://sourceforge.net/p/dfu-util/tickets/
 Found DFU: [1209:5bf0] ver=0101, devnum=7, cfg=1, intf=0, path="20-2", alt=0, name="Fomu PVT running DFU Bootloader v2.0.3", serial="UNKNOWN"
 ```
 
-### FOMU Programming Workshop
+### Fomu Programming Workshop
 
 Install workshop files and submodules:
 ```
 $ git clone --recurse-submodules https://github.com/im-tomu/fomu-workshop.git
 ```
 
-The `wishbone-tool` can read/write arbitrary memory on the FOMU.
+The `wishbone-tool` can read/write arbitrary memory on the Fomu.
 Since most things are controlled/accessed via memory-mapped registers,
 this gives access to almost everything.
 
-Useful addresses and register values can be found in the [FOMU Bootloader Documentation](https://rm.fomu.im/index.html).
+Useful addresses and register values can be found in the [Fomu Bootloader Documentation](https://rm.fomu.im/index.html).
 
 #### Quick Reference
 
-Reboot the FOMU (and reload default "breathing" program)
+Reboot the Fomu (and reload default "breathing" program)
 ```
 $ wishbone-tool 0xe0006000 0xac
 ```
@@ -115,7 +115,7 @@ Open the dumpfile `test_bench.vcd` with GTKWave to visualize waveforms.
 
 ```
 $ yosys -p 'synth_ice40 -json fomu_pvt.json' cnt_24MHz.v fomu_pvt.v
-$ nextpnr-ice40 --up5k --package uwg30 --pcf ../FOMU/pcf/fomu-pvt.pcf --json fomu_pvt.json --asc fomu_pvt.asc
+$ nextpnr-ice40 --up5k --package uwg30 --pcf ../Fomu/pcf/fomu-pvt.pcf --json fomu_pvt.json --asc fomu_pvt.asc
 ```
 
 ## DFU Packaging
@@ -126,7 +126,7 @@ $ cp fomu_pvt.bit fomu_pvt.dfu
 $ dfu-suffix -v 1209 -p 70b1 -a fomu_pvt.dfu
 ```
 
-Upload program to FOMU PVT
+Upload program to Fomu PVT
 ```
 $ dfu-util -D fomu_pvt.dfu
 ```

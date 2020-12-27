@@ -1,8 +1,8 @@
 # Experimental Setup (Raspberry Pi 3/4)
 
-## FOMU
+## Fomu
 
-The [FOMU](https://tomu.im/fomu.html) is a programmable/reconfigurable FPGA platform
+The [Fomu](https://tomu.im/fomu.html) is a programmable/reconfigurable FPGA platform
 that fits in a [USB](https://en.wikipedia.org/wiki/USB) Type-A port.
 
 To list currently-installed USB devices:
@@ -15,7 +15,7 @@ Bus 001 Device 002: ID 0424:2514 Standard Microsystems Corp. USB 2.0 Hub
 Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
 ```
 
-The FOMU shows up as `ID 1209:5bf0 Generic` (the rest are standard RPi3-B+ devices).
+The Fomu shows up as `ID 1209:5bf0 Generic` (the rest are standard RPi3-B+ devices).
 
 ### USB DFU
 
