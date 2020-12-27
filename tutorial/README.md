@@ -7,8 +7,8 @@ for practical applications.
 
 ## Index
 
- 0. Introduction
- 1. Simulation
- 2. FOMU
- 3. TingFPGA-BX
- 4. Resources
+ 0. [Introduction](introduction.md)
+ 1. [Simulation](simulation.md)
+ 2. [FOMU](fomu.md)
+ 3. [TinyFPGA-BX](tinyfpga-bx.md)
+ 4. [Resources](resources.md)
