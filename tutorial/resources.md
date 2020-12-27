@@ -12,4 +12,4 @@ Here are some links to additional resources you may find useful.
  * https://www.allaboutcircuits.com/textbook/digital/
  * [2 hour crash course in FPGAs and Verilog using iCEBreaker dev board](https://github.com/esden/wtfpga)
 
-[_Back to Index_](README.md)
+([_Back to Index_](README.md))

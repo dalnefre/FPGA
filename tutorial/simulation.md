@@ -13,4 +13,4 @@ This tutorial will use simulation
 to demonstrate significant FPGA designs
 without requiring any FPGA hardware.
 
-[_Back to Index_](README.md)
+([_Back to Index_](README.md))

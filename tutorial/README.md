@@ -9,6 +9,6 @@ for practical applications.
 
  0. [Introduction](introduction.md)
  1. [Simulation](simulation.md)
- 2. [FOMU](fomu.md)
+ 2. [Fomu](fomu.md)
  3. [TinyFPGA-BX](tinyfpga-bx.md)
  4. [Resources](resources.md)

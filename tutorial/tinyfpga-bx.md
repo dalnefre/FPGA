@@ -18,4 +18,4 @@ implements a USB Serial device directly on the FPGA.
 This tutorial uses the [TinyFPGA-BX](https://www.crowdsupply.com/tinyfpga/tinyfpga-ax-bx) board,
 which has its own [User Guide](https://tinyfpga.com/bx/guide.html)
 
-[_Back to Index_](README.md)
+([_Back to Index_](README.md))
