@@ -169,3 +169,96 @@ GTKWave gives us a visual display of `test_bench.vcd`.
 
 _Note:_ You will have to select the `test_bench` module,
 then drag the `clock` and `count` signals into the display list to see the traces.
+
+### Module Instantiation
+
+### Parameterized Modules
+
+### Conditional Compilation
+
+[`count.v`](count.v):
+```verilog
+// count.v
+//
+// free-running counter
+//
+
+module count #(
+  parameter INIT = 0,                   // initial value
+  parameter WIDTH = 16                  // counter bit-width
+) (
+  input                  _reset,        // active-low reset
+  input                  clock,         // system clock
+  output                 msb,           // MSB of counter (pre-scaler)
+  output reg [WIDTH-1:0] count = INIT   // free-running counter
+);
+
+  // count positive-edge transitions of the clock
+  always @(posedge clock)
+    count <= _reset ? count + 1'b1 : INIT;
+
+  assign msb = count[WIDTH-1];
+
+endmodule
+```
+
+[`count_tb.v`](count_tb.v):
+```verilog
+// count_tb.v
+//
+// simulation test bench for count.v
+//
+
+`define BREAK_OUT_BITS 1
+`define TOGGLE_RESET 1
+
+module test_bench;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("test_bench.vcd");
+      $dumpvars(0, test_bench);
+`ifdef TOGGLE_RESET
+      #5 rst <= 1;  // come out of reset after 5 clock edges
+      #85 rst <= 0;  // re-assert reset after 85 clock edges
+      #10 $finish;  // stop simulation after 10 clock edges
+`else
+      #100 $finish;  // stop simulation after 100 clock edges
+`endif
+    end
+
+  // generate chip clock
+  reg clk = 0;
+  always
+    #1 clk = !clk;
+
+  // instantiate device-under-test
+  localparam N = 4;
+  wire [N-1:0] out;
+`ifdef BREAK_OUT_BITS
+  wire bit_0, bit_1, bit_2, bit_3;
+`endif
+`ifdef TOGGLE_RESET
+  reg rst = 0;
+`endif
+  count #(
+    .WIDTH(N)
+  ) DUT (
+`ifdef TOGGLE_RESET
+    ._reset(rst),
+`else
+    ._reset(1'b1),
+`endif
+    .clock(clk),
+    .count(out)
+  );
+`ifdef BREAK_OUT_BITS
+  assign bit_0 = out[0];
+  assign bit_1 = out[1];
+  assign bit_2 = out[2];
+  assign bit_3 = out[3];
+`endif
+
+endmodule
+```
