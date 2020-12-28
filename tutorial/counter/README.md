@@ -1,14 +1,14 @@
 ## Counter
 
-<blockquote>Information is change we can count. &emdash;Paul Borrill</blockquote>
+**_"Information is change we can count." — Paul Borrill_**
 
-The foundation for nearly all FPGA designs is the _counter_.
+At the heart of nearly all FPGA designs is the _counter_.
 A counter tracks the number of occurences of an event.
-A counter can record the passage of time by counting clock pulses.
+A counter can measure the passage of time by counting clock pulses.
 If we know the real-world frequency of the clock,
 we can translate that into a known span of time.
 
-### Our First Varilog Module
+### Our First Verilog Module
 
 Verilog code is organized into _modules_.
 We will start with a module named `test_bench`,
@@ -63,7 +63,7 @@ Our `count` is declared as `reg`,
 just like the `clock`,
 but this time we specify a 4-bit storage element.
 The `[3:0]` qualifier defines a group of 4 bits
-with the bit 3 (the MSB) on the left
+with bit 3 (the MSB) on the left
 and bit 0 (the LSB) on the right.
 Again, we initialize the `count` to `0`.
 
@@ -82,14 +82,14 @@ This is because the default size for integer constants is 32 bits.
 We don't want to generate a 32-bit adder circuit to add `1` to our 4-bit `count`.
 Second, we are using the `<=` construct, for "non-blocking" assignment.
 This is typical for assignments to `reg` variables in procedural blocks.
-What is means is that the right-hand side is evaluated immediately
+What it means is that the right-hand side is evaluated immediately
 (using the current values of each variable),
 but the assignement doesn't take effect until the next iteration of the block.
 An easy way to think about this is that
 `<=` uses the "current" values (particularly of storage elements)
 to determine the value for the "next" update.
 Usually, the clock signal is used to move data
-from one stage to the next each iteration.
+from one stage to the next each iteration (synchronous logic).
 
 Now that we have the basic logic in place,
 we need to add a few directives to control the simulation.
@@ -107,7 +107,7 @@ This code does not affect the FPGA configuration.
     end
 ```
 
-We place of simulation controls in an `initial` block,
+We place our simulation controls in an `initial` block,
 which is like `always`, except that it only executes once.
 We use `begin` and `end` to include multiple statements in the `initial` block.
 As with any procedural block, these statements execute sequentially.
@@ -167,5 +167,5 @@ GTKWave gives us a visual display of `test_bench.vcd`.
 
 ![test_bench.vcd](count_0_vcd.png)
 
-Note: You will have to select the `test_bench` module,
-then drag the `clock` and `count` signals into the display list to see them.
+_Note:_ You will have to select the `test_bench` module,
+then drag the `clock` and `count` signals into the display list to see the traces.
