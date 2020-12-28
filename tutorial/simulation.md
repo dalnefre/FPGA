@@ -13,4 +13,10 @@ This tutorial will use simulation
 to demonstrate significant FPGA designs
 without requiring any FPGA hardware.
 
+### Projects
+
+ 1. [Counter](counter/README.md)
+ 2. [Tone Generator](tone/README.md)
+ 3. [Serial UART](uart/README.md)
+
 ([_Back to Index_](README.md))

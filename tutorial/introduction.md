@@ -71,7 +71,7 @@ However, it's important to recognize that
 hardware functions are concurrent,
 not sequential like a traditional software program.
 
-The following is an example of a Verilog module definition:
+The following is an example of a complete Verilog module definition:
 ```verilog
 // count.v
 //
