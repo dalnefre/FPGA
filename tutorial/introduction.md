@@ -63,7 +63,7 @@ Instead, we use a _Hardware Description Language_ to describe the configuration 
 
 ### What is Verilog?
 
-Verilog is a Hardware Description Language (HDL).
+[Verilog](https://en.wikipedia.org/wiki/Verilog) is a Hardware Description Language (HDL).
 Verilog programs describe the functions and connections in an FPGA device
 using higher-level semantic constructs,
 similar to those used in a traditional programming language.

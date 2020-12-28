@@ -7,10 +7,9 @@ module test_bench;
     begin
       $dumpfile("test_bench.vcd");
       $dumpvars(0, test_bench);
-      #50 begin
-        $display("final count = %d", count);
-        $finish;  // stop simulation after 50 clock edges
-      end
+      #50;  // after 50 clock edges...
+      $display("final count = %d", count);
+      $finish;  // stop simulation
     end
 
   // generate simulated chip clock
