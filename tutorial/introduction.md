@@ -19,25 +19,26 @@ Additional [Resources](resources.md) are also available for further exploration.
 A Field-Programmable Gate Array (FPGA) is a hardware device
 that can be configured to implement an arbitrary digital circuit.
 A bit-stream (often read from persistent storage)
-defines the functions and connections which define the digital logic.
+specifies the functions and connections which define the digital logic.
 
-The basic building block of a typical FPGA is the _Programmable Logic Block_.
+The basic building block of a typical FPGA is the _Logic Cell_.
 
 ![Functional Block Diagram](../Fomu/pics/ice40-plb.png)
 
-A Programmable Logic Block (PLB) consists of
+A Logic Cell (LC) consists of
  * A Functional Look-Up Table (LUT)
  * A Storage Flip-Flop (DFF)
  * Control Logic (clock, etc.)
  * An optional Carry-Chain
 
-The LUT can define any binary functions from 4 inputs to 1 output.
-THe DFF stores a binary value, moving it between PLBs based on control signals.
-The Carry-Chain provides a fast-path interconnect between adjacent PLBs.
+The LUT can define any binary function from 4 inputs to 1 output.
+The DFF can store a binary value, moving it between LCs based on Control Logic signals.
+The Carry-Chain provides a fast-path interconnect between adjacent LCs.
 
+The LCs are grouped together into _Programmable Logic Blocks_ (PLBs).
 The PLBs are further configured by defining their _routing_ and _interconnect_.
 The FPGA program bit-stream specifies how PLB signals are routed and connected
-through the rest of the chip.
+throughout the rest of the chip.
 
 Ultimately, this routing and interconnect reaches the _hard blocks_ of the FPGA.
 These define fixed functions of the chip,
@@ -69,5 +70,34 @@ similar to those used in a traditional programming language.
 However, it's important to recognize that
 hardware functions are concurrent,
 not sequential like a traditional software program.
+
+The following is an example of a Verilog module definition:
+```verilog
+// count.v
+//
+// free-running counter
+//
+
+module count #(
+  parameter INIT = 0,                   // initial value
+  parameter WIDTH = 16                  // counter bit-width
+) (
+  input                  _reset,        // active-low reset
+  input                  clock,         // system clock
+  output                 msb,           // MSB of counter (pre-scaler)
+  output reg [WIDTH-1:0] count = INIT   // free-running counter
+);
+
+  // count positive-edge transitions of the clock
+  always @(posedge clock)
+    count <= _reset ? count + 1'b1 : INIT;
+
+  assign msb = count[WIDTH-1];
+
+endmodule
+```
+
+Continue on to the [Simulation](simulation.md) section
+to explore this example in detail.
 
 ([_Back to Index_](README.md))
