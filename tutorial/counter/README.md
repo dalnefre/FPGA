@@ -84,7 +84,7 @@ Second, we are using the `<=` construct, for "non-blocking" assignment.
 This is typical for assignments to `reg` variables in procedural blocks.
 What it means is that the right-hand side is evaluated immediately
 (using the current values of each variable),
-but the assignement doesn't take effect until the next iteration of the block.
+but the assignment doesn't take effect until the next iteration of the block.
 An easy way to think about this is that
 `<=` uses the "current" values (particularly of storage elements)
 to determine the value for the "next" update.
@@ -518,7 +518,7 @@ The following block diagram illustrates our final design.
 |          |              |  4               |
 | _rst --->|_reset   count|--/--+--[0]--> b0 |
 |          |              |     +--[1]--> b1 |
-|  clk --->|clock      msb|     +--[2]--> b2 |
+|  clk --->|clock      msb|-x   +--[2]--> b2 |
 |          |              |     +--[3]--> b3 |
 |          +--------------+                  |
 |                                            |

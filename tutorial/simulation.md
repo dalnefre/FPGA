@@ -21,7 +21,7 @@ of Verilog syntax and semantics.
 ### Projects
 
  1. [Counter](counter/README.md)
- 2. [Tone Generator](tone/README.md)
- 3. [Serial UART](uart/README.md)
+ 2. [Serial UART](uart/README.md)
+ 3. [Tone Generator](tone/README.md)
 
 ([_Back to Index_](README.md))

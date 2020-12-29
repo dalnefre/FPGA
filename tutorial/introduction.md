@@ -52,7 +52,7 @@ The diagram above describes the _iCE40UP5K_ FPGA,
 a member of the [_iCE40 UltraPlus_ family](https://www.latticesemi.com/en/Products/FPGAandCPLD/iCE40UltraPlus)
 from Lattice Semiconductor.
 It includes
-occilators (for clock signals),
+oscillators (for clock signals),
 digital signal processors (DSPs),
 communication protocol engines (SPI, I<sup>2</sup>C),
 and non-volatile configuration memory (NVCM)
