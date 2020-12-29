@@ -1,5 +1,7 @@
 ## TinyFPGA-BX platform
 
+![TinyFPGA-BX front and back](../TinyFPGA-BX/pics/tinyfpga-front-back-1-1.jpg)
+
 The [TinyFPGA boards](https://tinyfpga.com/) are a new series
 of low-cost, [open-source](https://github.com/tinyfpga) FPGA boards in a tiny form factor.
 Solder on pins for use in a breadboard or PCB socket;
@@ -16,6 +18,6 @@ The open-source [TinyFPGA Bootloader](https://github.com/tinyfpga/TinyFPGA-Bootl
 implements a USB Serial device directly on the FPGA.
 
 This tutorial uses the [TinyFPGA-BX](https://www.crowdsupply.com/tinyfpga/tinyfpga-ax-bx) board,
-which has its own [User Guide](https://tinyfpga.com/bx/guide.html)
+described in this online [User Guide](https://tinyfpga.com/bx/guide.html)
 
 ([_Back to Index_](README.md))
