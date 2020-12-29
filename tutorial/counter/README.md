@@ -286,7 +286,7 @@ You can use GTKWave to visualize the combined traces, if you wish.
 
 ### Parameterized Modules
 
-Module parameters makes modules easier re-usable.
+Module parameters makes modules easier to re-use.
 They allow a module to be parameterized differently
 each time it is instantiated.
 In our case,
@@ -321,14 +321,15 @@ The `INIT` and `WIDTH` parameters are given default values,
 so you don't have to specify them unless you want to override the defaults.
 Notice how the `WIDTH` parameter is used in the declaration of `count`.
 
-We've also added a new feature to this modules.
+We've also added a new feature to this module.
 The `_reset` input can be used to hold the counter at the `INIT` value
 until we're ready for it to start counting.
 The conditional expression `_reset ? count + 1'b1 : INIT`
-evaluates the increment expression if `_reset` is `1`,
+evaluates to the increment expression if `_reset` is `1`,
 and the `INIT` value if `_reset` is `0` (active low logic).
 This is equivalent to the following conditional:
-```
+
+```verilog
   always @(posedge clock)
     if (_reset)
       count <= count + 1'b1;
@@ -378,6 +379,24 @@ module test_bench;
 endmodule
 ```
 
+We define `localparam N` to be the number of bits we want from the counter.
+That way we can use `N` as both the value of the `WIDTH` parameter,
+and in the declaration of `out`.
+We also declare `reg _rst` with an initial value of `0` for our reset signal.
+Since the reset is active-low,
+this means the counter will be held in reset
+until we raise this signal.
+
+The simulation control script has been modified
+to set and clear the reset signal.
+Recall that the statements in a procedural block
+are executed sequentially.
+The optional delay prefix
+defines the number of time-units to wait
+before executing the statement.
+This makes the delays cumulative,
+so our script will take 60 time-units to complete.
+
 Compile the new module definitions, and run the simulation to create the trace file.
 
 ```
@@ -386,7 +405,7 @@ $ ./test_bench.sim
 VCD info: dumpfile test_bench.vcd opened for output.
 ```
 
-Use GTKWave will visualize the traces, including the next `_rst` signal.
+Use GTKWave to visualize the traces, including the new `_rst` signal.
 
 ![test_bench.vcd](count_2_vcd.png)
 
