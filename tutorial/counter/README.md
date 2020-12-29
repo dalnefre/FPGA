@@ -286,6 +286,110 @@ You can use GTKWave to visualize the combined traces, if you wish.
 
 ### Parameterized Modules
 
+Module parameters makes modules easier re-usable.
+They allow a module to be parameterized differently
+each time it is instantiated.
+In our case,
+it would be useful to make
+the bit-width of the counter
+and the starting value
+into instance parameters.
+
+```verilog
+// count_2.v
+//
+// free-running counter
+//
+
+module count #(
+  parameter INIT = 0,                   // initial value
+  parameter WIDTH = 16                  // counter bit-width
+) (
+  input                  _reset,        // active-low reset
+  input                  clock,         // system clock
+  output reg [WIDTH-1:0] count = INIT   // free-running counter
+);
+
+  // count positive-edge transitions of the clock
+  always @(posedge clock)
+    count <= _reset ? count + 1'b1 : INIT;
+
+endmodule
+```
+
+The `INIT` and `WIDTH` parameters are given default values,
+so you don't have to specify them unless you want to override the defaults.
+Notice how the `WIDTH` parameter is used in the declaration of `count`.
+
+We've also added a new feature to this modules.
+The `_reset` input can be used to hold the counter at the `INIT` value
+until we're ready for it to start counting.
+The conditional expression `_reset ? count + 1'b1 : INIT`
+evaluates the increment expression if `_reset` is `1`,
+and the `INIT` value if `_reset` is `0` (active low logic).
+This is equivalent to the following conditional:
+```
+  always @(posedge clock)
+    if (_reset)
+      count <= count + 1'b1;
+    else
+      count <= INIT;
+```
+
+Once we've parameterized our `count` module,
+we need to provide parameter values
+for the instantiation in our test bench.
+
+```verilog
+// count_2_tb.v
+//
+// simulation test bench for count_2.v
+//
+
+module test_bench;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("test_bench.vcd");
+      $dumpvars(0, test_bench);
+      #5 _rst = 1;  // come out of reset after 5 clock edges
+      #45 _rst = 0;  // re-assert reset after 45 clock edges
+      #10 $finish;  // stop simulation after 10 clock edges
+    end
+
+  // generate chip clock
+  reg clk = 0;
+  always
+    #1 clk = !clk;
+
+  // instantiate device-under-test
+  localparam N = 4;
+  wire [N-1:0] out;
+  reg _rst = 0;
+  count #(
+    .WIDTH(N)
+  ) DUT (
+    ._reset(_rst),
+    .clock(clk),
+    .count(out)
+  );
+
+endmodule
+```
+
+Compile the new module definitions, and run the simulation to create the trace file.
+
+```
+$ iverilog -o test_bench.sim count_2.v count_2_tb.v
+$ ./test_bench.sim
+VCD info: dumpfile test_bench.vcd opened for output.
+```
+
+Use GTKWave will visualize the traces, including the next `_rst` signal.
+
+![test_bench.vcd](count_2_vcd.png)
+
 ### Conditional Compilation
 
 [`count.v`](count.v):
@@ -332,8 +436,8 @@ module test_bench;
       $dumpfile("test_bench.vcd");
       $dumpvars(0, test_bench);
 `ifdef TOGGLE_RESET
-      #5 rst <= 1;  // come out of reset after 5 clock edges
-      #85 rst <= 0;  // re-assert reset after 85 clock edges
+      #5 _rst <= 1;  // come out of reset after 5 clock edges
+      #85 _rst <= 0;  // re-assert reset after 85 clock edges
       #10 $finish;  // stop simulation after 10 clock edges
 `else
       #100 $finish;  // stop simulation after 100 clock edges
@@ -352,13 +456,13 @@ module test_bench;
   wire bit_0, bit_1, bit_2, bit_3;
 `endif
 `ifdef TOGGLE_RESET
-  reg rst = 0;
+  reg _rst = 0;
 `endif
   count #(
     .WIDTH(N)
   ) DUT (
 `ifdef TOGGLE_RESET
-    ._reset(rst),
+    ._reset(_rst),
 `else
     ._reset(1'b1),
 `endif
