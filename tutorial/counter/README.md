@@ -409,11 +409,22 @@ Use GTKWave to visualize the traces, including the new `_rst` signal.
 
 ![test_bench.vcd](count_2_vcd.png)
 
-### Conditional Compilation
+### Using Individual Bits
 
-[`count.v`](count.v):
+One common use of a counter
+is to "pre-scale" the clock signal
+to a lower frequency.
+Each bit of the counter
+divides the frequency in half.
+For example,
+if our system clock was 16MHz
+(as it is on the [TinyFPGA-BX](../tinyfpga-bx.md))
+and we set the counter `WIDTH` to `4`,
+the most-significant-bit (MSB) of the `count`
+would toggle at a frequency of 1Mhz.
+
 ```verilog
-// count.v
+// count_3.v
 //
 // free-running counter
 //
@@ -437,15 +448,28 @@ module count #(
 endmodule
 ```
 
-[`count_tb.v`](count_tb.v):
-```verilog
-// count_tb.v
-//
-// simulation test bench for count.v
-//
+```
++--------------------------------------------+
+| test_bench                                 |
+|                                            |
+|          DUT                               |
+|          +--------------+                  |
+|          | count        |                  |
+|          |              |  4               |
+| _rst --->|_reset   count|--/--+--[0]--> b0 |
+|          |              |     +--[1]--> b1 |
+|  clk --->|clock         |     +--[2]--> b2 |
+|          |              |     +--[3]--> b3 |
+|          +--------------+                  |
+|                                            |
++--------------------------------------------+
+```
 
-`define BREAK_OUT_BITS 1
-`define TOGGLE_RESET 1
+```verilog
+// count_3_tb.v
+//
+// simulation test bench for count_3.v
+//
 
 module test_bench;
 
@@ -454,13 +478,9 @@ module test_bench;
     begin
       $dumpfile("test_bench.vcd");
       $dumpvars(0, test_bench);
-`ifdef TOGGLE_RESET
       #5 _rst <= 1;  // come out of reset after 5 clock edges
       #85 _rst <= 0;  // re-assert reset after 85 clock edges
       #10 $finish;  // stop simulation after 10 clock edges
-`else
-      #100 $finish;  // stop simulation after 100 clock edges
-`endif
     end
 
   // generate chip clock
@@ -471,29 +491,31 @@ module test_bench;
   // instantiate device-under-test
   localparam N = 4;
   wire [N-1:0] out;
-`ifdef BREAK_OUT_BITS
-  wire bit_0, bit_1, bit_2, bit_3;
-`endif
-`ifdef TOGGLE_RESET
+  wire b0, b1, b2, b3;
   reg _rst = 0;
-`endif
   count #(
     .WIDTH(N)
   ) DUT (
-`ifdef TOGGLE_RESET
     ._reset(_rst),
-`else
-    ._reset(1'b1),
-`endif
     .clock(clk),
     .count(out)
   );
-`ifdef BREAK_OUT_BITS
-  assign bit_0 = out[0];
-  assign bit_1 = out[1];
-  assign bit_2 = out[2];
-  assign bit_3 = out[3];
-`endif
+  assign b0 = out[0];
+  assign b1 = out[1];
+  assign b2 = out[2];
+  assign b3 = out[3];
 
 endmodule
 ```
+
+Compile the module definitions, and run the simulation to create the trace file.
+
+```
+$ iverilog -o test_bench.sim count_2.v count_2_tb.v
+$ ./test_bench.sim
+VCD info: dumpfile test_bench.vcd opened for output.
+```
+
+Use GTKWave to visualize the traces of interest.
+
+![test_bench.vcd](count_3_vcd.png)
