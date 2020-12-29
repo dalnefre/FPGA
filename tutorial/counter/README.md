@@ -420,8 +420,8 @@ For example,
 if our system clock was 16MHz
 (as it is on the [TinyFPGA-BX](../tinyfpga-bx.md))
 and we set the counter `WIDTH` to `4`,
-the most-significant-bit (MSB) of the `count`
-would toggle at a frequency of 1Mhz.
+the most-significant bit (MSB) of the `count`
+would toggle at a frequency of 1MHz.
 
 ```verilog
 // count_3.v
@@ -448,22 +448,18 @@ module count #(
 endmodule
 ```
 
+We declare a new `output msb` for use as a clock pre-scaler.
+This, and all the `input` signals, are `wire` type signals
+because `wire` is the default signal type when none is specified.
+The `msb` output is driven from the most-significant bit of the `count`
+by a "continuous assignment" statement, outside of the `always` block.
+
+```verilog
+  assign msb = count[WIDTH-1];
 ```
-+--------------------------------------------+
-| test_bench                                 |
-|                                            |
-|          DUT                               |
-|          +--------------+                  |
-|          | count        |                  |
-|          |              |  4               |
-| _rst --->|_reset   count|--/--+--[0]--> b0 |
-|          |              |     +--[1]--> b1 |
-|  clk --->|clock         |     +--[2]--> b2 |
-|          |              |     +--[3]--> b3 |
-|          +--------------+                  |
-|                                            |
-+--------------------------------------------+
-```
+
+Rather than use the new `msb` signal directly,
+our test bench breaks out each of the `out` bits individually.
 
 ```verilog
 // count_3_tb.v
@@ -508,10 +504,31 @@ module test_bench;
 endmodule
 ```
 
+Signals for each of the four bits are declared `wire b0, b1, b2, b3;`
+and `assign`ed from selected bits of `out`.
+The following block diagram illustrates our final design.
+
+```
++--------------------------------------------+
+| test_bench                                 |
+|                                            |
+|          DUT                               |
+|          +--------------+                  |
+|          | count        |                  |
+|          |              |  4               |
+| _rst --->|_reset   count|--/--+--[0]--> b0 |
+|          |              |     +--[1]--> b1 |
+|  clk --->|clock      msb|     +--[2]--> b2 |
+|          |              |     +--[3]--> b3 |
+|          +--------------+                  |
+|                                            |
++--------------------------------------------+
+```
+
 Compile the module definitions, and run the simulation to create the trace file.
 
 ```
-$ iverilog -o test_bench.sim count_2.v count_2_tb.v
+$ iverilog -o test_bench.sim count_3.v count_3_tb.v
 $ ./test_bench.sim
 VCD info: dumpfile test_bench.vcd opened for output.
 ```
