@@ -2,11 +2,11 @@
 
 ![Annotated Hardware](../Fomu/pics/hw-pvt-annotated.png)
 
-[Fomu](https://tomu.im/fomu.html) is a programmable FPGA device that fits inside a USB port.
-It has I/O pins, an RGB LED, and an FPGA
-that is compatible with a fully open source chain
+The [Fomu](https://tomu.im/fomu.html) is a programmable FPGA device that fits inside a USB port.
+It has I/O contacts, an RGB LED, and an FPGA
+that is compatible with a fully open source toolchain
 and capable of running a RISC-V core.
-Fomu comes in a custom plastic enclosure that slots perfectly into a USB Type-A port.
+Fomu comes with a custom plastic enclosure that slots perfectly into a USB Type-A port.
 
 ![Functional Block Diagram](../Fomu/pics/fomu-block-diagram.png)
 
