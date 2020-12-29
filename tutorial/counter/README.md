@@ -175,7 +175,7 @@ then drag the `clock` and `count` signals into the display list to see the trace
 As our designs get more complex,
 we will want to break them into
 more managable (and potentially re-usable) pieces.
-Although our design is still quite simple,
+Although this design is still quite simple,
 we can clearly separate the _counter_ logic
 from the _test bench_ that drives it.
 This will be a common pattern,
@@ -201,7 +201,7 @@ we are trying to achieve.
 +------------------------------------+
 ```
 
-We begin by extracting the counting logic into a new module called `count`.
+We begin by extracting the counting logic into a [new module](count_1.v) called `count`.
 
 ```verilog
 // count_1.v
@@ -230,7 +230,7 @@ The input port type is `wire`,
 meaning that it is simply a connection
 to an externally-driven signal.
 
-Now let's modify our test bench
+Now let's modify our [test bench](count_1_tb.v)
 to create an instance of our new module.
 
 ```verilog
