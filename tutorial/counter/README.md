@@ -1,6 +1,6 @@
 ## Counter
 
-**_"Information is change we can count." — Paul Borrill_**
+**_"Time is change you can count." — Aristotle_**
 
 At the heart of nearly all FPGA designs is the _counter_.
 A counter tracks the number of occurences of an event.
@@ -171,6 +171,118 @@ _Note:_ You will have to select the `test_bench` module,
 then drag the `clock` and `count` signals into the display list to see the traces.
 
 ### Module Instantiation
+
+As our designs get more complex,
+we will want to break them into
+more managable (and potentially re-usable) pieces.
+Although our design is still quite simple,
+we can clearly separate the _counter_ logic
+from the _test bench_ that drives it.
+This will be a common pattern,
+where a device-under-test (DUT)
+is embedded in a fixture
+to exercise its functionality.
+The following block diagram
+illustrates the organizational-structure
+we are trying to achieve.
+
+```
++------------------------------------+
+| test_bench                         |
+|                                    |
+|         DUT                        |
+|         +--------------+           |
+|         | count        |           |
+|         |              |  4        |
+| clk --->|clock    count|--/--> out |
+|         |              |           |
+|         +--------------+           |
+|                                    |
++------------------------------------+
+```
+
+We begin by extracting the counting logic into a new module called `count`.
+
+```verilog
+// count_1.v
+//
+// free-running counter
+//
+
+module count (
+  input  wire      clock,       // system clock
+  output reg [3:0] count = 0    // free-running counter
+);
+
+  // count positive-edge transitions of the clock
+  always @(posedge clock)
+    count <= count + 1'b1;
+
+endmodule
+```
+
+The code is unchanged.
+We've just wrapped it in a module
+and specified its _input_ and _output_ ports.
+The output port type is `reg`,
+meaning that it provides storage for the `count`.
+The input port type is `wire`,
+meaning that it is simply a connection
+to an externally-driven signal.
+
+Now let's modify our test bench
+to create an instance of our new module.
+
+```verilog
+// count_1_tb.v
+//
+// simulation test bench for count_1.v
+//
+
+module test_bench;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("test_bench.vcd");
+      $dumpvars(0, test_bench);
+      #50;  // after 50 clock edges...
+      $display("final count = %d", out);
+      $finish;  // stop simulation
+    end
+
+  // generate simulated chip clock
+  reg clk = 0;
+  always
+    #1 clk = !clk;
+
+  // instantiate device-under-test (DUT)
+  wire [3:0] out;
+  count DUT (
+    .clock(clk),
+    .count(out)
+  );
+
+endmodule
+```
+
+The simulation control and clock code are essentially unchanged.
+The `count` module is instantiated with the name `DUT`.
+The `clock` and `count` ports of the `count` module
+are connected to the `clk` and `out` signals of the `test_bench`.
+Notice which variables are `reg` (meaning they provide storage)
+versus `wire` (meaning they are just connections).
+
+We must compile both modules together to create a simulation.
+
+```
+$ iverilog -o test_bench.sim count_1.v count_1_tb.v
+$ ./test_bench.sim
+VCD info: dumpfile test_bench.vcd opened for output.
+final count =  9
+```
+
+You can use GTKWave to visualize the combined traces, if you wish.
 
 ### Parameterized Modules
 
