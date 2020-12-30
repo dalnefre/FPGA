@@ -389,6 +389,41 @@ to be a stable delayed-proxy for `rx`.
 
 #### Receiver State-Machine
 
+When we have to model a complex process,
+it is often useful to create an explicit state-machine.
+This organizes the logic
+for handling each state,
+and can help us think through
+all the possibilities.
+The usual way to model a state-machine in Verilog
+is with a clock-driven case statement.
+
+```verilog
+  // state-machine
+  reg [3:0] state = 4'h0;  // initial state
+  always @(posedge clk)
+    case (state)
+      4'h0 :
+        begin
+          ...
+        end
+      4'h1 :
+        begin
+          ...
+        end
+      .
+      .
+      .
+      default :  // unexpected state
+        begin
+          ...
+        end
+    endcase
+```
+
+The `state` register holds the current state
+and can be updated with `<=` to indicate the next state.
+
 ```verilog
 ```
 
