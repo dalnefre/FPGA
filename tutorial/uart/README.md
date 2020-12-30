@@ -383,8 +383,8 @@ relative to the rate-of-change in `rx`.
 In any case,
 the average period of `s2`
 remains consistent with the input `rx`.
-The bottom-line is that we relay on `s2`
-(and to a lesser-extent `r1`)
+The bottom-line is that we can rely on `s2`
+(and to a lesser-extent `s1`)
 to be a stable delayed-proxy for `rx`.
 
 #### Receiver State-Machine
