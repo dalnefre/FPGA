@@ -112,15 +112,36 @@ _Note:_ Right-click on the `cnt[2:0]` signal and select **Data Format -> Decimal
 
 ### Serial Transmitter
 
+Now that we can count precise durations,
+we can move on to generating the sequence of signals
+needed to represent serial data.
+
+We define text-substitution macros for line-levels
+representing IDLE, START, and STOP bits
+in a common header file,
+so we can include it wherever we need those definitions.
+
+```verilog
+// uart.vh
+
+`define IDLE_BIT  1'b1
+`define START_BIT 1'b0
+`define STOP_BIT  1'b1
+```
+We use a 10-bit shift register
+to hold the data we want to send serially.
+This includes a START bit, 8 data bits, and a STOP bit (8-N-1 format).
+Each time the baud-rate generator gives us a pulse,
+we know it's time to begin transmitting the next bit
+on the serial transmission line.
+
 ```verilog
 // serial_tx.v
 //
 // serial transmitter
 //
 
-`define IDLE_BIT  1'b1
-`define START_BIT 1'b0
-`define STOP_BIT  1'b1
+`include "uart.vh"
 
 module serial_tx (
   input       sys_clk,                  // system clock
@@ -151,6 +172,27 @@ module serial_tx (
 
 endmodule
 ```
+
+Initially, the shift register is filled with IDLE bits.
+We accomplish this with a _replication_ expression `{ 10 { ... } }`,
+which repeats the enclosed bit pattern 10 times.
+If the `index` is `0`,
+we load data into the shift register.
+We use a _concatenation_ expression `{ x, ..., y }`
+to compose a 10-bit value.
+Serial bits are sent LSB-first,
+so we put the START bit on the LSB end of the data,
+and the STOP bit on the MSB end.
+If the `index` is not `0`,
+we shift the data toward the LSB,
+adding an IDLE bit on the MSB end,
+and decrement the `index`.
+The shift is accomplished using a combination of
+_concatenation_ and a _range_ expression (`shift[9:1]`)
+that selects bits 9 through 1 (excluding 0) of `shift`.
+The bit to by transmitted
+is continuously assigned to `tx`
+from the LSB of `shift`.
 
 ```verilog
 // serial_tx_tb.v
@@ -195,6 +237,10 @@ module test_bench;
 
 endmodule
 ```
+
+The test bench simply instantiates the `baud_gen` and `serial_tx` modules
+and connects the signals,
+as illustrated by this block-diagram:
 
 ```
 +---------------------------------------------------+
