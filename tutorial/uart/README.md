@@ -134,6 +134,14 @@ This includes a START bit, 8 data bits, and a STOP bit (8-N-1 format).
 Each time the baud-rate generator gives us a pulse,
 we know it's time to begin transmitting the next bit
 on the serial transmission line.
+Synchronous design rules state that
+all clocked logic should be driven
+by the same clock (and same edge),
+which is why we don't use `bit_clk` as our `always` trigger.
+On the FPGA,
+the _clock_ signal gets special treatment,
+including dedicated routing
+and stronger signal drive.
 
 ```verilog
 // serial_tx.v
@@ -184,13 +192,13 @@ Serial bits are sent LSB-first,
 so we put the START bit on the LSB end of the data,
 and the STOP bit on the MSB end.
 If the `index` is not `0`,
-we shift the data toward the LSB,
-adding an IDLE bit on the MSB end,
+we shift the data toward the LSB
+(adding an IDLE bit on the MSB end)
 and decrement the `index`.
 The shift is accomplished using a combination of
 _concatenation_ and a _range_ expression (`shift[9:1]`)
 that selects bits 9 through 1 (excluding 0) of `shift`.
-The bit to by transmitted
+The bit to be transmitted
 is continuously assigned to `tx`
 from the LSB of `shift`.
 
