@@ -281,6 +281,97 @@ Examine the waveform traces with GTKWave.
 
 ![test_bench.vcd](serial_tx_vcd.png)
 
+### Serial Receiver
+
+The Serial Transmitter gets to set its own pace,
+as long as the bit-time matches the expected baud-rate.
+However, the Serial Receiver must watch the line
+and synchronize with the incoming data.
+The "Asynchronous" in UART
+means that there is no clock signal
+to indicate when data is valid.
+This makes the receiver's job more challenging than the transmitter.
+
+#### Metastability
+
+We can't count on the incoming data
+being synchronized with our local clock.
+Sampling the input while it is changing
+can lead to [Metastability](https://en.wikipedia.org/wiki/Metastability_(electronics)),
+which we must account for in our design.
+Fortunately, a synchronizer circuit
+is simple to build from a few DFFs.
+
+```
+        sync[0]     sync[1]     sync[2]
+        +-----+     +-----+     +-----+
+rx ---->|D   Q|---->|D   Q|---->|D   Q|--->
+        |     |     |     |     |     |
+     +->|CLK  |  +->|CLK  |  +->|CLK  |
+     |  +-----+  |  +-----+  |  +-----+
+     |           |           |
+clk -+-----------+-----------+
+```
+
+We express this in Verilog using a shift-register,
+with the `rx` signal entering at the LSB.
+
+```verilog
+  // register async rx
+  reg [2:0] sync;  // receive sync-register
+  always @(posedge clk)
+    sync <= { sync[1:0], rx };
+```
+
+Let's create a stand-alone test bench
+to illustrate the operation of the synchronizer.
+
+```verilog
+// sync_tb.v -- stand-alone synchronizer test
+
+module test_bench;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("test_bench.vcd");
+      $dumpvars(0, test_bench);
+      #120;
+      $finish;
+    end
+
+  // generate (slow) chip clock
+  reg clk = 0;
+  always
+    #3 clk = !clk;
+
+  // generate received-data signal
+  reg rx = 0;
+  always
+    #20 rx = !rx;
+
+  // register async rx
+  reg [2:0] sync;  // receive sync-register
+  always @(posedge clk)
+    sync <= { sync[1:0], rx };
+
+  // break out individual sync bits for visualization
+  wire s0 = sync[0];
+  wire s1 = sync[1];
+  wire s2 = sync[2];
+
+endmodule
+```
+
+Compile, simulate, and visualize.
+
+![test_bench.vcd](sync_vcd.png)
+
+#### Receiver State-Machine
+
+```verilog
+```
+
 ### Links
 
  * [UART (Wikipedia)](https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter)
