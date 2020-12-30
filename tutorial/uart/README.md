@@ -7,13 +7,15 @@ we learned how to count clock pulses
 and divide the clock frequency by powers-of-2.
 However, in order to communicate via a _Serial UART_,
 we must be able to generate arbitrary timing signals.
-
-Rather than using a free-running counter,
+Rather than use a free-running counter,
 we will create a count-down timer
 and trigger our actions when the counter reaches zero.
+
+### Baud-Rate Generator
+
 Communication _baud rates_ are expressed in bits/second (BPS)
 and clock frequencies are expressed in cycles/second (Hz).
-So, the number of _clocks-per-bit_ is _clock-frequency_ divided by _bits-per-second_.
+So, the number of _clocks-per-bit_ is the _clock-frequency_ divided by _bits-per-second_.
 This tells us where to start our count-down timer
 in order to generate a _bit-frequency_ signal each time the timer reaches zero.
 
@@ -43,18 +45,19 @@ endmodule
 ```
 
 The `CLK_FREQ` and `BIT_FREQ` parameters make it easy to configure the baud-rate generator.
-The default `CLK_FREQ` is 48Mhz, which is the frequency of the system clock on the [Fomu](../fomu.md).
+The default `CLK_FREQ` is 48MHz, which is the frequency of the system clock on the [Fomu](../fomu.md).
+The default `BIT_FREQ` is 115200, which is a very common serial communication rate.
 The `localparam CNT` calculates the number of clock-cycles (positive edges) for 1 bit-time.
 The `localparam N` uses the built-in `$clog2` function
 to determine the number of bits needed
 to hold the maximum count value.
-The count-down value `cnt` runs from `(CNT - 1)` to `0`.
+The count-down value `cnt` runs from `(CNT - 1)` down to `0`.
 The `zero` signal is `1` if `cnt` is _not_ `0`.
 We use the `zero` signal in a conditional expression
 to decide if we should reset the counter to its maximum value
 or just decrement the counter.
 
-A simple _test bench_ exercises the `baud_gen` module
+A simple `test_bench` exercises the `baud_gen` module
 with very small values for `CLK_FREQ` and `BIT_FREQ`
 so we don't generate a huge trace.
 
@@ -106,6 +109,104 @@ Examine the waveform traces with GTKWave.
 ![test_bench.vcd](baud_gen_vcd.png)
 
 _Note:_ Right-click on the `cnt[2:0]` signal and select **Data Format -> Decimal**.
+
+### Serial Transmitter
+
+```verilog
+// serial_tx.v
+//
+// serial transmitter
+//
+
+`define IDLE_BIT  1'b1
+`define START_BIT 1'b0
+`define STOP_BIT  1'b1
+
+module serial_tx (
+  input       sys_clk,                  // system clock
+  input       bit_clk,                  // bit clock (at baud-rate frequency)
+  input [7:0] data,                     // character to transmit
+  output      tx                        // transmit data
+);
+
+  reg [9:0] shift = { 10 { `IDLE_BIT } };  // transmit shift-register
+  reg [3:0] index = 0;  // bit count-down index
+
+  always @(posedge sys_clk)
+    if (bit_clk)
+      begin
+        if (index)
+          begin
+            shift <= { `IDLE_BIT, shift[9:1] };  // shift to next bit
+            index <= index - 1'b1;  // decrement bit counter
+          end
+        else
+          begin
+            shift <= { `STOP_BIT, data, `START_BIT };  // load data into shift-register
+            index <= 9;  // set full bit count
+          end
+      end
+
+  assign tx = shift[0];
+
+endmodule
+```
+
+```verilog
+// serial_tx_tb.v
+//
+// simulation test bench for baud_gen.v + serial_tx.v
+//
+
+module test_bench;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("test_bench.vcd");
+      $dumpvars(0, test_bench);
+      #120;
+      $finish;
+    end
+
+  // generate chip clock
+  reg clk = 0;
+  always
+    #1 clk = !clk;
+
+  // instantiate baud-rate generator
+  wire bit;
+  baud_gen #(
+    .CLK_FREQ(16),
+    .BIT_FREQ(3)
+  ) BD_GEN (
+    .clk(clk),
+    .zero(bit)
+  );
+
+  // instantiate serial transmitter
+  wire TX;
+  serial_tx SER_TX (
+    .sys_clk(clk),
+    .bit_clk(bit),
+    .data("K"),
+    .tx(TX)
+  );
+
+endmodule
+```
+
+Compile all the modules and run the simulation.
+
+```
+$ iverilog -o test_bench.sim baud_gen.v serial_tx.v serial_tx_tb.v
+$ ./test_bench.sim 
+VCD info: dumpfile test_bench.vcd opened for output.
+```
+
+Examine the waveform traces with GTKWave.
+
+![test_bench.vcd](serial_tx_vcd.png)
 
 ### Links
 
