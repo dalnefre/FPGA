@@ -297,7 +297,7 @@ This makes the receiver's job more challenging than the transmitter.
 We can't count on the incoming data
 being synchronized with our local clock.
 Sampling the input while it is changing
-can lead to [Metastability](https://en.wikipedia.org/wiki/Metastability_(electronics)),
+can lead to [_metastability_](https://en.wikipedia.org/wiki/Metastability_(electronics)),
 which we must account for in our design.
 Fortunately, a synchronizer circuit
 is simple to build from a few DFFs.
@@ -366,6 +366,26 @@ endmodule
 Compile, simulate, and visualize.
 
 ![test_bench.vcd](sync_vcd.png)
+
+Notice how the `rx` transitions are not aligned with the `clk`.
+Also, each DFF stage introduces a delay of one clock-cycle.
+What we don't see here
+(because this is a logic simulator, not a circuit simulator)
+is the metastable unreliability of `s0`.
+What we can see is
+that the `s2` signal
+has been synchronized to the local clock,
+but that means it doesn't exactly match
+the duration of the `rx` signal.
+This variance is reduced
+as `clk` becomes faster
+relative to the rate-of-change in `rx`.
+In any case,
+the average period of `s2`
+remains consistent with the input `rx`.
+The bottom-line is that we relay on `s2`
+(and to a lesser-extent `r1`)
+to be a stable delayed-proxy for `rx`.
 
 #### Receiver State-Machine
 
