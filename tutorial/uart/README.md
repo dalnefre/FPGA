@@ -116,6 +116,15 @@ Now that we can count precise durations,
 we can move on to generating the sequence of signals
 needed to represent serial data.
 
+The following waveform represents transmission of a single letter 'K' in isolation.
+
+```
+_____     _______     ___         ___     _________
+     \___/       \___/   \_______/   \___/          
+IDLE | + | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | - | IDLE
+     START                                STOP
+```
+
 We define text-substitution macros for line-levels
 representing IDLE, START, and STOP bits
 in a common header file,
@@ -424,15 +433,6 @@ is with a clock-driven case statement.
 The `state` register holds the current state
 and can be updated with `<=` to indicate the next state.
 
-The following waveform represents transmission of a single letter 'K' in isolation.
-
-```
-_____     _______     ___         ___     _________
-     \___/       \___/   \_______/   \___/          
-IDLE | + | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | - | IDLE
-     START                                STOP
-```
-
 In the IDLE state, the transmitter will be holding `rx` high (1).
 We watch for `in` to go low (0),
 indicating the beginning of a (possible) START bit.
@@ -440,11 +440,11 @@ When `in` becomes `0`,
 we start a timer and transition to START state.
 
 ```verilog
-        // IDLE state
+      `IDLE :
         if (in == 0)
           begin
             timer <= 0;
-            state <= START;
+            state <= `START;
           end
 ```
 
@@ -452,16 +452,16 @@ In START state, we have a possible START bit.
 We watch for `HALF_BIT_TIME` to make sure it's not just a glitch.
 
 ```verilog
-        // START state
+      `START :
         if (in != 0)  // glitch
-          state <= IDLE;
+          state <= `IDLE;
         else if (timer < HALF_BIT_TIME)
           timer <= timer + 1'b1;
         else
           begin
             cnt <= 0;
             timer <= 0;
-            state <= ZERO;
+            state <= `ZERO;
           end
 ```
 
@@ -470,11 +470,11 @@ watching for a possible edge-transition,
 or expiration of a full bit-timer.
 
 ```verilog
-        // ZERO state
+      `ZERO :
         if (in != 0)  // positive edge
           begin
             timer <= 0;  // re-sync on edge
-            state <= POS;
+            state <= `POS;
           end
         else if (timer < FULL_BIT_TIME)
           timer <= timer + 1'b1;
@@ -483,6 +483,7 @@ or expiration of a full bit-timer.
             shift <= { 1'b0, shift[9:1] };  // shift in MSB
             cnt <= cnt + 1'b1;
             timer <= 0;
+            state <= (cnt < 8) ? `ZERO : `BREAK;
           end
 ```
 
@@ -490,9 +491,12 @@ In POS state, we have observed a `0`->`1` transition
 while reading a `0` bit.
 
 ```verilog
-        // POS state
+      `POS :
         if (in == 0)  // glitch
-          state <= ZERO;
+          begin
+            timer <= timer + HALF_BIT_TIME;  // restore timer
+            state <= `ZERO;
+          end
         else if (timer < HALF_BIT_TIME)
           timer <= timer + 1'b1;
         else  // next bit
@@ -500,7 +504,7 @@ while reading a `0` bit.
             shift <= { 1'b0, shift[9:1] };  // shift in MSB
             cnt <= cnt + 1'b1;
             timer <= 0;
-            state <= ONE;
+            state <= (cnt < 8) ? `ONE : `STOP;
           end
 ```
 
@@ -509,11 +513,11 @@ watching for a possible edge-transition,
 or expiration of a full bit-timer.
 
 ```verilog
-        // ONE state
+      `ONE :
         if (in == 0)  // negative edge
           begin
             timer <= 0;  // re-sync on edge
-            state <= NEG;
+            state <= `NEG;
           end
         else if (timer < FULL_BIT_TIME)
           timer <= timer + 1'b1;
@@ -522,6 +526,7 @@ or expiration of a full bit-timer.
             shift <= { 1'b1, shift[9:1] };  // shift in MSB
             cnt <= cnt + 1'b1;
             timer <= 0;
+            state <= (cnt < 8) ? `ONE : `STOP;
           end
 ```
 
@@ -529,9 +534,12 @@ In NEG state, we have observed a `1`->`0` transition
 while reading a `1` bit.
 
 ```verilog
-        // NEG state
+      `NEG :
         if (in != 0)  // glitch
-          state <= ONE;
+          begin
+            timer <= timer + HALF_BIT_TIME;  // restore timer
+            state <= `ONE;
+          end
         else if (timer < HALF_BIT_TIME)
           timer <= timer + 1'b1;
         else  // next bit
@@ -539,11 +547,28 @@ while reading a `1` bit.
             shift <= { 1'b1, shift[9:1] };  // shift in MSB
             cnt <= cnt + 1'b1;
             timer <= 0;
-            state <= ZERO;
+            state <= (cnt < 8) ? `ZERO : `BREAK;
           end
 ```
 
 ```verilog
+      `STOP :
+        state <= `IDLE;  // only one clock-cycle in `STOP
+```
+
+```verilog
+      `BREAK :
+        if (in == 0)
+          timer <= 0;  // reset counter
+        else if (timer < HALF_BIT_TIME)
+          timer <= timer + 1'b1;
+        else  // come out of break/reset
+          state <= `IDLE;
+```
+
+```verilog
+      default :  // unexpected state
+        state <= `HALT;
 ```
 
 ```verilog

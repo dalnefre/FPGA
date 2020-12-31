@@ -26,7 +26,7 @@ module test_bench;
       $dumpvars(0, test_bench);
       $display("`PACE = %d", `PACE);
       RX = `IDLE_BIT;
-      #(`PACE*1.5);
+      #(`PACE);
       RX = `START_BIT;
       #(`PACE);
       RX = 1'b1;  // bit 0

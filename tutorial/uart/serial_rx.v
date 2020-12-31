@@ -12,7 +12,6 @@
 `define ONE   4'b0111  // 4'h7
 `define NEG   4'b0110  // 4'h6
 `define STOP  4'b0001  // 4'h1
-`define READY 4'b1001  // 4'h9
 `define IDLE  4'b1111  // 4'hF
 `define BREAK 4'b1110  // 4'hE
 `define HALT  4'b1010  // 4'hA
@@ -132,7 +131,7 @@ module serial_rx #(
             state <= (cnt < 8) ? `ZERO : `BREAK;
           end
       `STOP :
-        state <= `IDLE;  // only one clock-cycle in STOP
+        state <= `IDLE;  // only one clock-cycle in `STOP
       `BREAK :
         if (in == 0)
           timer <= 0;  // reset counter
@@ -148,50 +147,5 @@ module serial_rx #(
   assign ready = (state == `STOP);
 
   wire monitor = state[0];  // FIXME -- for debugging only.
-
-/*
-  // receiver state-machine
-  reg [3:0] state = RX_IDLE;
-  always @(posedge clk)
-    case (state)
-      RX_IDLE :  // receiver idle
-        if (shift == 2'b00)  // start edge
-          begin
-            timer <= (BIT_TIME >> 1) - 1;  // count to midpoint
-            state = 0;
-          end
-      0 :  // start bit
-        if (timer)
-          timer <= timer - 1'b1;
-        else
-          begin
-            d_in <= 8'h00;  // clear receive data
-            timer <= BIT_TIME - 1;  // reset counter
-            state <= (shift == 2'b00) ? 1 : 9;
-          end
-      default :  // receive data
-        if (timer)
-          timer <= timer - 1'b1;
-        else
-          begin
-            d_in <= { shift[1], d_in[7:1] };
-            timer <= BIT_TIME - 1;  // reset counter
-            state <= state + 1'b1;
-          end
-      9 :  // stop bit
-        if (timer)
-          timer <= timer - 1'b1;
-        else
-          begin
-            timer <= (BIT_TIME >> 1) - 1;  // count to midpoint
-            state <= (shift == 2'b11) ? 10 : 9;
-          end
-      10 :  // ready (for one cycle)
-        state <= RX_IDLE;
-    endcase
-
-  // data-ready signal
-  assign ready = (state == 10);
-*/
 
 endmodule
