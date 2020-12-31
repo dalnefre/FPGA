@@ -6,16 +6,16 @@
 `include "uart.vh"
 
 // state-machine states
-`define START 4'b0000
-`define ZERO  4'b0100
-`define POS   4'b0101
-`define ONE   4'b0111
-`define NEG   4'b0110
-`define STOP  4'h0001
-`define READY 4'h1001
-`define IDLE  4'b1111
-`define BREAK 4'h1110
-`define HALT  4'b1010
+`define START 4'b0000  // 4'h0
+`define ZERO  4'b0100  // 4'h4
+`define POS   4'b0101  // 4'h5
+`define ONE   4'b0111  // 4'h7
+`define NEG   4'b0110  // 4'h6
+`define STOP  4'b0001  // 4'h1
+`define READY 4'b1001  // 4'h9
+`define IDLE  4'b1111  // 4'hF
+`define BREAK 4'b1110  // 4'hE
+`define HALT  4'b1010  // 4'hA
 
 module serial_rx #(
   parameter CLK_FREQ = 48_000_000,      // clock frequency (Hz)
@@ -23,6 +23,7 @@ module serial_rx #(
 ) (
   input            clk,                 // system clock
   input            rx,                  // received data (async)
+  output           break,               // line break condition
   output           ready,               // character data ready
   output     [7:0] data                 // character received
 );
@@ -83,6 +84,7 @@ module serial_rx #(
             shift <= { 1'b0, shift[9:1] };  // shift in MSB
             cnt <= cnt + 1'b1;
             timer <= 0;
+            state <= (cnt < 8) ? `ZERO : `BREAK;
           end
       `POS :
         if (in == 0)  // glitch
@@ -97,7 +99,7 @@ module serial_rx #(
             shift <= { 1'b0, shift[9:1] };  // shift in MSB
             cnt <= cnt + 1'b1;
             timer <= 0;
-            state <= `ONE;
+            state <= (cnt < 8) ? `ONE : `STOP;
           end
       `ONE :
         if (in == 0)  // negative edge
@@ -112,6 +114,7 @@ module serial_rx #(
             shift <= { 1'b1, shift[9:1] };  // shift in MSB
             cnt <= cnt + 1'b1;
             timer <= 0;
+            state <= (cnt < 8) ? `ONE : `STOP;
           end
       `NEG :
         if (in != 0)  // glitch
@@ -126,13 +129,25 @@ module serial_rx #(
             shift <= { 1'b1, shift[9:1] };  // shift in MSB
             cnt <= cnt + 1'b1;
             timer <= 0;
-            state <= `ZERO;
+            state <= (cnt < 8) ? `ZERO : `BREAK;
           end
+      `STOP :
+        state <= `IDLE;  // only one clock-cycle in STOP
+      `BREAK :
+        if (in == 0)
+          timer <= 0;  // reset counter
+        else if (timer < HALF_BIT_TIME)
+          timer <= timer + 1'b1;
+        else  // come out of break/reset
+          state <= `IDLE;
       default :  // unexpected state
         state <= `HALT;
     endcase
 
   assign data = shift[8:1];
+  assign ready = (state == `STOP);
+
+  wire monitor = state[0];  // FIXME -- for debugging only.
 
 /*
   // receiver state-machine

@@ -48,7 +48,7 @@ module test_bench;
       RX = `STOP_BIT;
       #(`PACE);
       RX = `START_BIT; //`IDLE_BIT;
-      #(`PACE*1.5);
+      #(`PACE);
       $finish;
     end
 
