@@ -453,7 +453,7 @@ We watch for `HALF_BIT_TIME` to make sure it's not just a glitch.
 
 ```verilog
         // START state
-        if (in != 0)
+        if (in != 0)  // glitch
           state <= IDLE;
         else if (timer < HALF_BIT_TIME)
           timer <= timer + 1'b1;
@@ -471,16 +471,18 @@ or expiration of a full bit-timer.
 
 ```verilog
         // ZERO state
-        if (in != 0)
-          state <= POS;
+        if (in != 0)  // positive edge
+          begin
+            timer <= 0;  // re-sync on edge
+            state <= POS;
+          end
         else if (timer < FULL_BIT_TIME)
           timer <= timer + 1'b1;
-        else
+        else  // next bit
           begin
-            shift <= { in, shift[9:1] };  // shift in MSB
+            shift <= { 1'b0, shift[9:1] };  // shift in MSB
             cnt <= cnt + 1'b1;
             timer <= 0;
-            state <= ZERO;
           end
 ```
 
@@ -488,9 +490,57 @@ In POS state, we have observed a `0`->`1` transition
 while reading a `0` bit.
 
 ```verilog
+        // POS state
+        if (in == 0)  // glitch
+          state <= ZERO;
+        else if (timer < HALF_BIT_TIME)
+          timer <= timer + 1'b1;
+        else  // next bit
+          begin
+            shift <= { 1'b0, shift[9:1] };  // shift in MSB
+            cnt <= cnt + 1'b1;
+            timer <= 0;
+            state <= ONE;
+          end
 ```
 
+In ONE state, we are reading a `1` bit,
+watching for a possible edge-transition,
+or expiration of a full bit-timer.
+
 ```verilog
+        // ONE state
+        if (in == 0)  // negative edge
+          begin
+            timer <= 0;  // re-sync on edge
+            state <= NEG;
+          end
+        else if (timer < FULL_BIT_TIME)
+          timer <= timer + 1'b1;
+        else  // next bit
+          begin
+            shift <= { 1'b1, shift[9:1] };  // shift in MSB
+            cnt <= cnt + 1'b1;
+            timer <= 0;
+          end
+```
+
+In NEG state, we have observed a `1`->`0` transition
+while reading a `1` bit.
+
+```verilog
+        // NEG state
+        if (in != 0)  // glitch
+          state <= ONE;
+        else if (timer < HALF_BIT_TIME)
+          timer <= timer + 1'b1;
+        else  // next bit
+          begin
+            shift <= { 1'b1, shift[9:1] };  // shift in MSB
+            cnt <= cnt + 1'b1;
+            timer <= 0;
+            state <= ZERO;
+          end
 ```
 
 ```verilog
