@@ -434,7 +434,7 @@ IDLE | + | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | - | IDLE
 ```
 
 In the IDLE state, the transmitter will be holding `rx` high (1).
-We will be watching for `in` to go low (0),
+We watch for `in` to go low (0),
 indicating the beginning of a (possible) START bit.
 When `in` becomes `0`,
 we start a timer and transition to START state.
