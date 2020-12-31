@@ -395,7 +395,7 @@ This organizes the logic
 for handling each state,
 and can help us think through
 all the possibilities.
-The usual way to model a state-machine in Verilog
+The usual way to implement a state-machine in Verilog
 is with a clock-driven case statement.
 
 ```verilog
@@ -423,6 +423,78 @@ is with a clock-driven case statement.
 
 The `state` register holds the current state
 and can be updated with `<=` to indicate the next state.
+
+The following waveform represents transmission of a single letter 'K' in isolation.
+
+```
+_____     _______     ___         ___     _________
+     \___/       \___/   \_______/   \___/          
+IDLE | + | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | - | IDLE
+     START                                STOP
+```
+
+In the IDLE state, the transmitter will be holding `rx` high (1).
+We will be watching for `in` to go low (0),
+indicating the beginning of a (possible) START bit.
+When `in` becomes `0`,
+we start a timer and transition to START state.
+
+```verilog
+        // IDLE state
+        if (in == 0)
+          begin
+            timer <= 0;
+            state <= START;
+          end
+```
+
+In START state, we have a possible START bit.
+We watch for `HALF_BIT_TIME` to make sure it's not just a glitch.
+
+```verilog
+        // START state
+        if (in != 0)
+          state <= IDLE;
+        else if (timer < HALF_BIT_TIME)
+          timer <= timer + 1'b1;
+        else
+          begin
+            cnt <= 0;
+            timer <= 0;
+            state <= ZERO;
+          end
+```
+
+In ZERO state, we are reading a `0` bit,
+watching for a possible edge-transition,
+or expiration of a full bit-timer.
+
+```verilog
+        // ZERO state
+        if (in != 0)
+          state <= POS;
+        else if (timer < FULL_BIT_TIME)
+          timer <= timer + 1'b1;
+        else
+          begin
+            shift <= { in, shift[9:1] };  // shift in MSB
+            cnt <= cnt + 1'b1;
+            timer <= 0;
+            state <= ZERO;
+          end
+```
+
+In POS state, we have observed a `0`->`1` transition
+while reading a `0` bit.
+
+```verilog
+```
+
+```verilog
+```
+
+```verilog
+```
 
 ```verilog
 ```
