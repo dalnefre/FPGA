@@ -25,10 +25,12 @@ module serial_tx #(
   reg [9:0] shift = { 10 { `IDLE_BIT } };  // transmit shift-register
   reg [3:0] cnt = 0;  // bit counter
 
-  always @(posedge sys_clk)
+  // transmitter state-machine
+  always @(posedge clk)
     if (cnt == 0)  // transmitter idle
       if (wr)
         begin
+          timer <= FULL_BIT_TIME;
           shift <= { `STOP_BIT, data, `START_BIT };  // load data into shift-register
           cnt <= 1;  // start counting bits
         end
@@ -40,10 +42,10 @@ module serial_tx #(
       begin
         timer <= FULL_BIT_TIME;
         shift <= { `IDLE_BIT, shift[9:1] };  // shift to next output bit
-        cnt <= (cnt > 10) ? 0 : cnt + 1'b1;  // increment (or reset) bit counter
+        cnt <= (cnt < 10) ? cnt + 1'b1 : 0;  // increment (or reset) bit counter
       end
 
-  assign busy = !cnt;  // transmitter is busy when counting
+  assign busy = (cnt != 0);  // transmitter is busy when counting
   assign tx = shift[0];  // transmit LSB of shift register
 
 endmodule

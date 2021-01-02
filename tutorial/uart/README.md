@@ -681,6 +681,126 @@ Examine the waveform traces with GTKWave.
 
 ![test_bench.vcd](serial_rx_vcd.png)
 
+### Serial Transmitter (revisited)
+
+```verilog
+// serial_tx.v
+//
+// serial transmitter
+//
+
+`include "uart.vh"
+
+module serial_tx #(
+  parameter CLK_FREQ = 48_000_000,      // clock frequency (Hz)
+  parameter BIT_FREQ = 115_200          // baud rate (bits per second)
+) (
+  input            clk,                 // system clock
+  input            wr,                  // write data
+  input      [7:0] data,                // octet to transmit
+  output           busy,                // transmit busy
+  output           tx                   // transmit data
+);
+
+  // transmit baud-rate timer
+  localparam BIT_PERIOD = CLK_FREQ / BIT_FREQ;
+  localparam FULL_BIT_TIME = BIT_PERIOD - 1;
+  localparam N_TIMER = $clog2(BIT_PERIOD);
+  reg [N_TIMER-1:0] timer = FULL_BIT_TIME;
+
+  reg [9:0] shift = { 10 { `IDLE_BIT } };  // transmit shift-register
+  reg [3:0] cnt = 0;  // bit counter
+
+  // transmitter state-machine
+  always @(posedge clk)
+    if (cnt == 0)  // transmitter idle
+      if (wr)
+        begin
+          timer <= FULL_BIT_TIME;
+          shift <= { `STOP_BIT, data, `START_BIT };  // load data into shift-register
+          cnt <= 1;  // start counting bits
+        end
+      else
+        shift = { 10 { `IDLE_BIT } };  // reset shift-register
+    else if (timer)
+      timer <= timer - 1'b1;
+    else
+      begin
+        timer <= FULL_BIT_TIME;
+        shift <= { `IDLE_BIT, shift[9:1] };  // shift to next output bit
+        cnt <= (cnt < 10) ? cnt + 1'b1 : 0;  // increment (or reset) bit counter
+      end
+
+  assign busy = (cnt != 0);  // transmitter is busy when counting
+  assign tx = shift[0];  // transmit LSB of shift register
+
+endmodule
+```
+
+```verilog
+// serial_tx_tb.v
+//
+// simulation test bench for baud_gen.v + serial_tx.v
+//
+
+module test_bench;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("test_bench.vcd");
+      $dumpvars(0, test_bench);
+      #240;
+      $finish;
+    end
+
+  // generate chip clock
+  reg clk = 0;
+  always
+    #1 clk = !clk;
+
+  // instantiate serial transmitter
+  reg [7:0] DATA;
+  reg WR = 1'b0;
+  wire BSY;
+  wire TX;
+  serial_tx #(
+    .CLK_FREQ(16),
+    .BIT_FREQ(3)
+  ) SER_TX (
+    .clk(clk),
+    .wr(WR),
+    .data(DATA),
+    .busy(BSY),
+    .tx(TX)
+  );
+
+  // character sequencer
+  reg N = 0;
+  always @(posedge clk)
+    if (!BSY)
+      if (!WR)
+        begin
+          DATA <= (N == 0) ? "O" : "K";
+          WR <= 1'b1;
+          N <= N + 1'b1;
+        end
+      else
+        WR <= 1'b0;
+
+endmodule
+```
+
+```
+$ iverilog -o test_bench.sim serial_tx.v serial_tx_tb.v
+$ ./test_bench.sim 
+VCD info: dumpfile test_bench.vcd opened for output.
+```
+
+Examine the waveform traces with GTKWave.
+
+![test_bench.vcd](serial_tx_vcd.png)
+
 ### Links
 
  * [UART (Wikipedia)](https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter)

@@ -10,11 +10,7 @@ module test_bench;
     begin
       $dumpfile("test_bench.vcd");
       $dumpvars(0, test_bench);
-      #13;
-      WR = 1'b1;
-      #2;
-      WR = 1'b0;
-      #150;
+      #240;
       $finish;
     end
 
@@ -24,13 +20,32 @@ module test_bench;
     #1 clk = !clk;
 
   // instantiate serial transmitter
-  wire TX;
+  reg [7:0] DATA;
   reg WR = 1'b0;
-  serial_tx SER_TX (
+  wire BSY;
+  wire TX;
+  serial_tx #(
+    .CLK_FREQ(16),
+    .BIT_FREQ(3)
+  ) SER_TX (
     .clk(clk),
     .wr(WR),
-    .data("K"),
+    .data(DATA),
+    .busy(BSY),
     .tx(TX)
   );
+
+  // character sequencer
+  reg N = 0;
+  always @(posedge clk)
+    if (!BSY)
+      if (!WR)
+        begin
+          DATA <= (N == 0) ? "O" : "K";
+          WR <= 1'b1;
+          N <= N + 1'b1;
+        end
+      else
+        WR <= 1'b0;
 
 endmodule
