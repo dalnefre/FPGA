@@ -6,15 +6,14 @@
 `include "uart.vh"
 
 // state-machine states
-`define START 4'b0000  // 4'h0
-`define ZERO  4'b0100  // 4'h4
-`define POS   4'b0101  // 4'h5
-`define ONE   4'b0111  // 4'h7
-`define NEG   4'b0110  // 4'h6
-`define STOP  4'b0001  // 4'h1
-`define IDLE  4'b1111  // 4'hF
-`define BREAK 4'b1110  // 4'hE
-`define HALT  4'b1010  // 4'hA
+`define START 3'b100  // 4'h4
+`define ZERO  3'b000  // 4'h0
+`define POS   4'b001  // 4'h1
+`define ONE   4'b011  // 4'h3
+`define NEG   4'b010  // 4'h2
+`define STOP  4'b101  // 4'h5
+`define IDLE  4'b111  // 4'h7
+`define BREAK 4'b110  // 4'h6
 
 module serial_rx #(
   parameter CLK_FREQ = 48_000_000,      // clock frequency (Hz)
@@ -24,19 +23,19 @@ module serial_rx #(
   input            rx,                  // received data (async)
   output           break,               // line break condition
   output           ready,               // character data ready
-  output     [7:0] data                 // character received
+  output reg [7:0] data                 // character received
 );
 
   // receive baud-rate timer
-  localparam BIT_TIME = CLK_FREQ / BIT_FREQ;
-  localparam FULL_BIT_TIME = BIT_TIME - 1;
-  localparam HALF_BIT_TIME = (BIT_TIME >> 1) - 1;
-  localparam N_TIMER = $clog2(BIT_TIME);
+  localparam BIT_PERIOD = CLK_FREQ / BIT_FREQ;
+  localparam FULL_BIT_TIME = BIT_PERIOD - 1;
+  localparam HALF_BIT_TIME = (BIT_PERIOD >> 1) - 1;
+  localparam N_TIMER = $clog2(BIT_PERIOD);
   reg [N_TIMER-1:0] timer = FULL_BIT_TIME;
 
   initial
     begin
-      $display("BIT_TIME = %d", BIT_TIME);
+      $display("BIT_PERIOD = %d", BIT_PERIOD);
       $display("FULL_BIT_TIME = %d", FULL_BIT_TIME);
       $display("HALF_BIT_TIME = %d", HALF_BIT_TIME);
     end
@@ -48,9 +47,9 @@ module serial_rx #(
   wire in = sync[2];  // synchronized input
 
   // receiver state-machine
-  reg [9:0] shift = { 10 { `IDLE } };
+//  reg [9:0] shift = { 10 { `IDLE_BIT } };
   reg [3:0] cnt = 0;
-  reg [3:0] state = `IDLE;
+  reg [2:0] state = `IDLE;
   always @(posedge clk)
     case (state)
       `IDLE :
@@ -66,6 +65,7 @@ module serial_rx #(
           timer <= timer + 1'b1;
         else
           begin
+            data <= 0;
             cnt <= 0;
             timer <= 0;
             state <= `ZERO;
@@ -80,7 +80,7 @@ module serial_rx #(
           timer <= timer + 1'b1;
         else  // next bit
           begin
-            shift <= { 1'b0, shift[9:1] };  // shift in MSB
+            data <= { 1'b0, data[7:1] };  // shift in MSB 0
             cnt <= cnt + 1'b1;
             timer <= 0;
             state <= (cnt < 8) ? `ZERO : `BREAK;
@@ -95,7 +95,7 @@ module serial_rx #(
           timer <= timer + 1'b1;
         else  // next bit
           begin
-            shift <= { 1'b0, shift[9:1] };  // shift in MSB
+            data <= { 1'b0, data[7:1] };  // shift in MSB 0
             cnt <= cnt + 1'b1;
             timer <= 0;
             state <= (cnt < 8) ? `ONE : `STOP;
@@ -110,7 +110,7 @@ module serial_rx #(
           timer <= timer + 1'b1;
         else  // next bit
           begin
-            shift <= { 1'b1, shift[9:1] };  // shift in MSB
+            data <= { 1'b1, data[7:1] };  // shift in MSB 1
             cnt <= cnt + 1'b1;
             timer <= 0;
             state <= (cnt < 8) ? `ONE : `STOP;
@@ -125,7 +125,7 @@ module serial_rx #(
           timer <= timer + 1'b1;
         else  // next bit
           begin
-            shift <= { 1'b1, shift[9:1] };  // shift in MSB
+            data <= { 1'b1, data[7:1] };  // shift in MSB 1
             cnt <= cnt + 1'b1;
             timer <= 0;
             state <= (cnt < 8) ? `ZERO : `BREAK;
@@ -140,10 +140,9 @@ module serial_rx #(
         else  // come out of break/reset
           state <= `IDLE;
       default :  // unexpected state
-        state <= `HALT;
+        state <= `BREAK;
     endcase
 
-  assign data = shift[8:1];
   assign ready = (state == `STOP);
 
   wire monitor = state[0];  // FIXME -- for debugging only.

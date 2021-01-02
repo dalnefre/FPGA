@@ -117,6 +117,7 @@ we can move on to generating the sequence of signals
 needed to represent serial data.
 
 The following waveform represents transmission of a single letter 'K' in isolation.
+This includes a START bit, 8 data bits, and a STOP bit (8-N-1 format).
 
 ```
 _____     _______     ___         ___     _________
@@ -139,7 +140,6 @@ so we can include it wherever we need those definitions.
 ```
 We use a 10-bit shift register
 to hold the data we want to send serially.
-This includes a START bit, 8 data bits, and a STOP bit (8-N-1 format).
 Each time the baud-rate generator gives us a pulse,
 we know it's time to begin transmitting the next bit
 on the serial transmission line.
@@ -431,7 +431,46 @@ is with a clock-driven case statement.
 ```
 
 The `state` register holds the current state
-and can be updated with `<=` to indicate the next state.
+(4 bits = up to 16 states)
+and can be updated with `<=` to specify the next state.
+
+The waveform for a single character has the following structure:
+
+```
+_____       _____ _____ _____ _____ _____ _____ _____ _____ _____
+     \_____/_____X_____X_____X_____X_____X_____X_____X_____/     
+IDLE  START   0     1     2     3     4     5     6     7    STOP
+```
+
+Our general strategy is
+to sample `rx` (via the synchronized `in` signal)
+on every tick (positive edge) of the system clock,
+and use a reset-able `timer`
+to measure data-bit durations.
+We pre-calcuate the number of clock ticks
+representing `HALF_BIT_TIME` and `FULL_BIT_TIME`.
+This tells us how long we should see the signal for a data bit
+and where we expect to find edge transitions, if any, between bits.
+
+```verilog
+  // receive baud-rate timer
+  localparam BIT_PERIOD = CLK_FREQ / BIT_FREQ;
+  localparam FULL_BIT_TIME = BIT_PERIOD - 1;
+  localparam HALF_BIT_TIME = (BIT_PERIOD >> 1) - 1;
+  localparam N_TIMER = $clog2(BIT_PERIOD);
+  reg [N_TIMER-1:0] timer = FULL_BIT_TIME;
+
+  // register async rx
+  reg [2:0] sync;  // receive sync-register
+  always @(posedge clk)
+    sync <= { sync[1:0], rx };
+  wire in = sync[2];  // synchronized input
+
+  // receiver state-machine
+  reg [9:0] shift = { 10 { `IDLE_BIT } };
+  reg [3:0] cnt = 0;
+  reg [2:0] state = `IDLE;
+```
 
 In the IDLE state, the transmitter will be holding `rx` high (1).
 We watch for `in` to go low (0),
@@ -450,6 +489,11 @@ we start a timer and transition to START state.
 
 In START state, we have a possible START bit.
 We watch for `HALF_BIT_TIME` to make sure it's not just a glitch.
+Then we know we we're half-way into a `0` bit,
+so we clear the data register,
+start counting data bits,
+reset the timer,
+and transition to ZERO state.
 
 ```verilog
       `START :
@@ -459,6 +503,7 @@ We watch for `HALF_BIT_TIME` to make sure it's not just a glitch.
           timer <= timer + 1'b1;
         else
           begin
+            data <= 0;
             cnt <= 0;
             timer <= 0;
             state <= `ZERO;
@@ -468,6 +513,19 @@ We watch for `HALF_BIT_TIME` to make sure it's not just a glitch.
 In ZERO state, we are reading a `0` bit,
 watching for a possible edge-transition,
 or expiration of a full bit-timer.
+If we encounter a positive edge,
+we reset the timer to align with the incoming signal.
+If we don't see a transition for `FULL_BIT_TIME`,
+we know that the next bit is also `0`
+and we're half-way through it,
+so capture the current `0` bit
+and we reset the timer for the next.
+If `cnt == 8`,
+we are expecting the STOP bit (which shoud be `1`).
+But since we're seeing `0` instead,
+then we have a "framing error"
+that indicates a BREAK condition.
+
 
 ```verilog
       `ZERO :
@@ -480,15 +538,19 @@ or expiration of a full bit-timer.
           timer <= timer + 1'b1;
         else  // next bit
           begin
-            shift <= { 1'b0, shift[9:1] };  // shift in MSB
+            data <= { 1'b0, data[7:1] };  // shift in MSB 0
             cnt <= cnt + 1'b1;
             timer <= 0;
             state <= (cnt < 8) ? `ZERO : `BREAK;
           end
 ```
 
-In POS state, we have observed a `0`->`1` transition
-while reading a `0` bit.
+In POS state, we have observed a `0`->`1` transition,
+indicating the end of a `0` bit.
+We watch for `HALF_BIT_TIME` to make sure it's not just a glitch.
+Then we know we we're half-way into the next `1` bit,
+so capture the current `0` bit
+and we reset the timer for the following `1`.
 
 ```verilog
       `POS :
@@ -501,7 +563,7 @@ while reading a `0` bit.
           timer <= timer + 1'b1;
         else  // next bit
           begin
-            shift <= { 1'b0, shift[9:1] };  // shift in MSB
+            data <= { 1'b0, data[7:1] };  // shift in MSB 0
             cnt <= cnt + 1'b1;
             timer <= 0;
             state <= (cnt < 8) ? `ONE : `STOP;
@@ -523,15 +585,15 @@ or expiration of a full bit-timer.
           timer <= timer + 1'b1;
         else  // next bit
           begin
-            shift <= { 1'b1, shift[9:1] };  // shift in MSB
+            data <= { 1'b1, data[7:1] };  // shift in MSB 1
             cnt <= cnt + 1'b1;
             timer <= 0;
             state <= (cnt < 8) ? `ONE : `STOP;
           end
 ```
 
-In NEG state, we have observed a `1`->`0` transition
-while reading a `1` bit.
+In NEG state, we have observed a `1`->`0` transition,
+indicating the end of a `1` bit.
 
 ```verilog
       `NEG :
@@ -544,7 +606,7 @@ while reading a `1` bit.
           timer <= timer + 1'b1;
         else  // next bit
           begin
-            shift <= { 1'b1, shift[9:1] };  // shift in MSB
+            data <= { 1'b1, data[7:1] };  // shift in MSB 1
             cnt <= cnt + 1'b1;
             timer <= 0;
             state <= (cnt < 8) ? `ZERO : `BREAK;
@@ -568,7 +630,7 @@ while reading a `1` bit.
 
 ```verilog
       default :  // unexpected state
-        state <= `HALT;
+        state <= `BREAK;
 ```
 
 ```verilog
