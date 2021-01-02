@@ -812,6 +812,58 @@ we will wire up the _transmitter_ and _receiver_
 as if they were connected by a [Null Modem](https://en.wikipedia.org/wiki/Null_modem).
 This loop-back connection will echo transmitted data back to the receiver.
 
+```
++-----------------------------------------------------------------+
+| test_bench                                                      |
+|                                                                 |
+|          DUT                                                    |
+|          +--------------------------------------+               |
+|          | uart                                 |               |
+|          |            SER_TX                    |               |
+|          |            +--------------+          |               |
+|          |            | serial_tx    |          |               |
+|          |            |              |          |               |
+| CLK ---->|clk --+---->|clk       busy|----- busy|---------> BSY |
+|          |      |     |              |          |               |
+| !BSY --->|wr ---|---->|wr          tx|------- tx|-----+         |
+|          |      |     |              |          |     |         |
+|       8  |      |  8  |              |          |     |         |
+| DIN --/->|din --|--/->|data          |          |     |         |
+|          |      |     |              |          |     |         |
+|          |      |     +--------------+          |     |         |
+|          |      |                               |     |         |
+|          |      |     SER_RX                    |     |         |
+|          |      |     +--------------+          |     |         |
+|          |      |     | serial_rx    |          |     |         |
+|          |      |     |              |          |     |         |
+|          |      +---->|clk      break|---- break|---------> BRK |
+|          |            |              |          |     |         |
+|      +-->|rx -------->|rx       ready|---- ready|---------> RDY |
+|      |   |            |              |          |     |         |
+|      |   |            |              |  8       |  8  |         |
+|      |   |            |          data|--/-- dout|--/--|--> DOUT |
+|      |   |            |              |          |     |         |
+|      |   |            +--------------+          |     |         |
+|      |   |                                      |     |         |
+|      |   +--------------------------------------+     |         |
+|      |                                                |         |
+|      +----------------------LINE----------------------+         |
+|                                                                 |
++-----------------------------------------------------------------+
+```
+
+Compile and run the simulation.
+
+```
+$ iverilog -o test_bench.sim serial_tx.v serial_rx.v uart.v uart_tb.v
+$ ./test_bench.sim 
+VCD info: dumpfile test_bench.vcd opened for output.
+```
+
+Examine the waveform traces.
+
+![test_bench.vcd](uart_vcd.png)
+
 ### Links
 
  * [UART (Wikipedia)](https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter)
