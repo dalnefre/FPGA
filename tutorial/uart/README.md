@@ -740,7 +740,7 @@ endmodule
 ```verilog
 // serial_tx_tb.v
 //
-// simulation test bench for baud_gen.v + serial_tx.v
+// simulation test bench for serial_tx.v
 //
 
 module test_bench;
@@ -791,15 +791,26 @@ module test_bench;
 endmodule
 ```
 
+Compile and run the simulation.
+
 ```
 $ iverilog -o test_bench.sim serial_tx.v serial_tx_tb.v
 $ ./test_bench.sim 
 VCD info: dumpfile test_bench.vcd opened for output.
 ```
 
-Examine the waveform traces with GTKWave.
+Examine the waveform traces.
 
 ![test_bench.vcd](serial_tx_vcd.png)
+
+### Serial UART
+
+A Universal Asynchronous Receiver-Transmitter (UART)
+naturally contains both `serial_rx` and `serial_tx` modules.
+For testing,
+we will wire up the _transmitter_ and _receiver_
+as if they were connected by a [Null Modem](https://en.wikipedia.org/wiki/Null_modem).
+This loop-back connection will echo transmitted data back to the receiver.
 
 ### Links
 

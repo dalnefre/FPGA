@@ -1,6 +1,6 @@
 // serial_tx_tb.v
 //
-// simulation test bench for baud_gen.v + serial_tx.v
+// simulation test bench for serial_tx.v
 //
 
 module test_bench;
