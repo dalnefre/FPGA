@@ -153,7 +153,7 @@ including dedicated routing
 and stronger signal drive.
 
 ```verilog
-// serial_tx.v
+// serial_tx0.v
 //
 // serial transmitter
 //
@@ -212,9 +212,9 @@ is continuously assigned to `tx`
 from the LSB of `shift`.
 
 ```verilog
-// serial_tx_tb.v
+// serial_tx0_tb.v
 //
-// simulation test bench for baud_gen.v + serial_tx.v
+// simulation test bench for baud_gen.v + serial_tx0.v
 //
 
 module test_bench;
@@ -281,14 +281,14 @@ as illustrated by this block-diagram:
 Compile all the modules and run the simulation.
 
 ```
-$ iverilog -o test_bench.sim baud_gen.v serial_tx.v serial_tx_tb.v
+$ iverilog -o test_bench.sim baud_gen.v serial_tx0.v serial_tx0_tb.v
 $ ./test_bench.sim 
 VCD info: dumpfile test_bench.vcd opened for output.
 ```
 
 Examine the waveform traces with GTKWave.
 
-![test_bench.vcd](serial_tx_vcd.png)
+![test_bench.vcd](serial_tx0_vcd.png)
 
 ### Serial Receiver
 
@@ -447,7 +447,7 @@ to sample `rx` (via the synchronized `in` signal)
 on every tick (positive edge) of the system clock,
 and use a reset-able `timer`
 to measure data-bit durations.
-We pre-calcuate the number of clock ticks
+We pre-calculate the number of clock ticks
 representing `HALF_BIT_TIME` and `FULL_BIT_TIME`.
 This tells us how long we should see the signal for a data bit
 and where we expect to find edge transitions, if any, between bits.
@@ -572,7 +572,6 @@ and we reset the timer for the following `1`.
 In ONE state, we are reading a `1` bit,
 watching for a possible edge-transition,
 or expiration of a full bit-timer.
-
 If we encounter a negative edge,
 we reset the timer to align with the incoming signal.
 If we don't see a transition for `FULL_BIT_TIME`,

@@ -1,6 +1,6 @@
-// serial_tx_tb.v
+// serial_tx0_tb.v
 //
-// simulation test bench for baud_gen.v + serial_tx.v
+// simulation test bench for baud_gen.v + serial_tx0.v
 //
 
 module test_bench;
@@ -10,11 +10,7 @@ module test_bench;
     begin
       $dumpfile("test_bench.vcd");
       $dumpvars(0, test_bench);
-      #13;
-      WR = 1'b1;
-      #2;
-      WR = 1'b0;
-      #150;
+      #120;
       $finish;
     end
 
@@ -23,12 +19,21 @@ module test_bench;
   always
     #1 clk = !clk;
 
+  // instantiate baud-rate generator
+  wire bit;
+  baud_gen #(
+    .CLK_FREQ(16),
+    .BIT_FREQ(3)
+  ) BD_GEN (
+    .clk(clk),
+    .zero(bit)
+  );
+
   // instantiate serial transmitter
   wire TX;
-  reg WR = 1'b0;
   serial_tx SER_TX (
-    .clk(clk),
-    .wr(WR),
+    .sys_clk(clk),
+    .bit_clk(bit),
     .data("K"),
     .tx(TX)
   );
