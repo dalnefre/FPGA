@@ -144,7 +144,8 @@ module serial_rx #(
     endcase
 
   assign ready = (state == `STOP);
+  assign break = (state == `BREAK);
 
-  wire monitor = state[0];  // FIXME -- for debugging only.
+  wire monitor = state[0];  // LSB of state should track `in`
 
 endmodule

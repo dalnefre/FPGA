@@ -526,7 +526,6 @@ But since we're seeing `0` instead,
 then we have a "framing error"
 that indicates a BREAK condition.
 
-
 ```verilog
       `ZERO :
         if (in != 0)  // positive edge
@@ -574,6 +573,17 @@ In ONE state, we are reading a `1` bit,
 watching for a possible edge-transition,
 or expiration of a full bit-timer.
 
+If we encounter a negative edge,
+we reset the timer to align with the incoming signal.
+If we don't see a transition for `FULL_BIT_TIME`,
+we know that the next bit is also `1`
+and we're half-way through it,
+so capture the current `1` bit
+and we reset the timer for the next.
+If `cnt == 8`,
+we are expecting the STOP bit (which shoud be `1`),
+so we transition to STOP state.
+
 ```verilog
       `ONE :
         if (in == 0)  // negative edge
@@ -594,6 +604,10 @@ or expiration of a full bit-timer.
 
 In NEG state, we have observed a `1`->`0` transition,
 indicating the end of a `1` bit.
+We watch for `HALF_BIT_TIME` to make sure it's not just a glitch.
+Then we know we we're half-way into the next `0` bit,
+so capture the current `1` bit
+and we reset the timer for the following `0`.
 
 ```verilog
       `NEG :
@@ -613,10 +627,23 @@ indicating the end of a `1` bit.
           end
 ```
 
+In STOP state, we signal that a complete octet of `data` now is available.
+This state only lasts one clock cycle,
+after which we transition to IDLE state.
+
 ```verilog
       `STOP :
         state <= `IDLE;  // only one clock-cycle in `STOP
 ```
+
+If the `rx` line is held low (`0`)
+for more than the time it takes to receive a complete octet,
+we will enter a BREAK state.
+This is sometimes used by transmitters
+to reset the receiver to a known state.
+We come out of break/reset into IDLE state
+when we see the line held high (`1`)
+for at least `HALF_BIT_TIME`.
 
 ```verilog
       `BREAK :
@@ -627,6 +654,10 @@ indicating the end of a `1` bit.
         else  // come out of break/reset
           state <= `IDLE;
 ```
+
+If we get any unexpected state
+(which shouldn't happen, since all bit combinations are in use),
+we treat it as a BREAK condition.
 
 ```verilog
       default :  // unexpected state
