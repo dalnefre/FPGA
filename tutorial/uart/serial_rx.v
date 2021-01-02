@@ -47,7 +47,6 @@ module serial_rx #(
   wire in = sync[2];  // synchronized input
 
   // receiver state-machine
-//  reg [9:0] shift = { 10 { `IDLE_BIT } };
   reg [3:0] cnt = 0;
   reg [2:0] state = `IDLE;
   always @(posedge clk)
