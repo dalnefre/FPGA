@@ -919,6 +919,9 @@ Compile and run the simulation.
 ```
 $ iverilog -o test_bench.sim serial_tx.v serial_rx.v uart.v uart_tb.v
 $ ./test_bench.sim
+BIT_PERIOD =           5
+FULL_BIT_TIME =           4
+HALF_BIT_TIME =           1
 VCD info: dumpfile test_bench.vcd opened for output.
 ```
 
