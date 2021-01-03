@@ -925,11 +925,3 @@ VCD info: dumpfile test_bench.vcd opened for output.
 Examine the waveform traces.
 
 ![test_bench.vcd](uart_vcd.png)
-
-### Links
-
- * [UART (Wikipedia)](https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter)
- * [Serial Communication (sparkfun)](https://learn.sparkfun.com/tutorials/serial-communication)
- * [UART vs I2C vs SPI (Seeed Studio)](https://www.seeedstudio.com/blog/2019/09/25/uart-vs-i2c-vs-spi-communication-protocols-and-uses/)
- * [Metastability (Wikipedia)](https://en.wikipedia.org/wiki/Metastability_(electronics))
- * [Null Modem (Wikipedia)](https://en.wikipedia.org/wiki/Null_modem)
