@@ -100,7 +100,7 @@ Compile the modules and run the simulation, as usual.
 
 ```
 $ iverilog -o test_bench.sim baud_gen.v baud_gen_tb.v
-$ ./test_bench.sim 
+$ ./test_bench.sim
 VCD info: dumpfile test_bench.vcd opened for output.
 ```
 
@@ -121,7 +121,7 @@ This includes a START bit, 8 data bits, and a STOP bit (8-N-1 format).
 
 ```
 _____     _______     ___         ___     _________
-     \___/       \___/   \_______/   \___/          
+     \___/       \___/   \_______/   \___/         
 IDLE | + | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | - | IDLE
      START                                STOP
 ```
@@ -282,7 +282,7 @@ Compile all the modules and run the simulation.
 
 ```
 $ iverilog -o test_bench.sim baud_gen.v serial_tx0.v serial_tx0_tb.v
-$ ./test_bench.sim 
+$ ./test_bench.sim
 VCD info: dumpfile test_bench.vcd opened for output.
 ```
 
@@ -669,7 +669,7 @@ simulates receiving a single letter "K".
 
 ```
 $ iverilog -o test_bench.sim serial_rx.v serial_rx_tb.v
-$ ./test_bench.sim 
+$ ./test_bench.sim
 BIT_PERIOD =          14
 FULL_BIT_TIME =          13
 HALF_BIT_TIME =           6
@@ -682,6 +682,26 @@ Examine the waveform traces with GTKWave.
 ![test_bench.vcd](serial_rx_vcd.png)
 
 ### Serial Transmitter (revisited)
+
+In our initial design,
+the serial transmitter was driven by
+a bit-clock signal from the baud-generator.
+This produced a continuous stream of data bits
+at a pace defined by the transmitter.
+
+Now that we've seen a more sophisticated implementation
+in the serial receiver,
+we will apply those techniques
+in the serial transmitter as well.
+We add control signals indicating
+when new data is available (`input wr`),
+and when the transmitter is busy sending bits (`output busy`).
+These signals are necessary
+to integrate the transmitter into larger designs.
+As a consequence of these "external" signals,
+the transmitter is no longer free to set its own pace,
+but rather must start, run, and stop a timer
+when needed for bit transmission.
 
 ```verilog
 // serial_tx.v
@@ -737,6 +757,37 @@ module serial_tx #(
 endmodule
 ```
 
+We embed our own timer implementation,
+so we can start, run, and stop the timer as needed.
+We drive all activity on the positive edge of the system clock (`clk`),
+as dictated by synchronous design rules.
+The transmitter state-machine
+is implemented with conditional branches
+rather than a `case` statement,
+but it's still a state-machine
+(controlled by `cnt` and `timer`).
+
+When `cnt == 0` the transmitter is idle,
+so we transmit `IDLE_BIT` until the `wr` signal is asserted.
+When `wr` is `1` we have new data to begin transmitting,
+so we initialize the `timer`,
+fill the `shift` register with the new data,
+and start the bit `cnt` at `1`.
+
+When `cnt != 0` the transmitter is busy sending bits.
+If the `timer` has not reached `0`,
+we simply decrement the `timer` value,
+continuing to transmit the LSB of `shift`.
+
+When the `timer` reaches `0` a `FULL_BIT_TIME` has passed,
+so we reset the `timer`,
+shift the next bit into position,
+and increment the bit `cnt`.
+When `cnt` reaches `10`
+we've transmitted the entire octet (plus START and STOP bits),
+so we clear the `cnt` to `0`,
+returning the transmitter to idle.
+
 ```verilog
 // serial_tx_tb.v
 //
@@ -791,11 +842,22 @@ module test_bench;
 endmodule
 ```
 
+Most of the test bench code should be familiar by now.
+However, we added another simple state-machine here
+to provide a sequence of characters for transmission.
+When the transmitter is not busy (`BSY`) sending an octet,
+we raise the write signal (`WR`) for one clock-cycle,
+and provide new character `DATA` to the transmitter.
+The one-bit counter `N` naturally wraps around after two increments,
+so `N` alternates between `0` and `1`,
+producing an alternating sequence of "O" and "K" characters
+for the transmitter.
+
 Compile and run the simulation.
 
 ```
 $ iverilog -o test_bench.sim serial_tx.v serial_tx_tb.v
-$ ./test_bench.sim 
+$ ./test_bench.sim
 VCD info: dumpfile test_bench.vcd opened for output.
 ```
 
@@ -809,7 +871,7 @@ A Universal Asynchronous Receiver-Transmitter (UART)
 naturally contains both `serial_rx` and `serial_tx` modules.
 For testing,
 we will wire up the _transmitter_ and _receiver_
-as if they were connected by a [Null Modem](https://en.wikipedia.org/wiki/Null_modem).
+as if they were connected through a [Null Modem](https://en.wikipedia.org/wiki/Null_modem).
 This loop-back connection will echo transmitted data back to the receiver.
 
 ```
@@ -856,7 +918,7 @@ Compile and run the simulation.
 
 ```
 $ iverilog -o test_bench.sim serial_tx.v serial_rx.v uart.v uart_tb.v
-$ ./test_bench.sim 
+$ ./test_bench.sim
 VCD info: dumpfile test_bench.vcd opened for output.
 ```
 
