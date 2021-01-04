@@ -130,7 +130,10 @@ module serial_rx #(
             state <= (cnt < 8) ? `ZERO : `BREAK;
           end
       `STOP :
-        state <= `IDLE;  // only one clock-cycle in `STOP
+        begin
+          state <= `IDLE;  // only one clock-cycle in `STOP
+//          $display("received = 16#%x", data);
+        end
       `BREAK :
         if (in == 0)
           timer <= 0;  // reset counter

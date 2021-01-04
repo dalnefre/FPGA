@@ -33,6 +33,7 @@ module serial_tx #(
           timer <= FULL_BIT_TIME;
           shift <= { `STOP_BIT, data, `START_BIT };  // load data into shift-register
           cnt <= 1;  // start counting bits
+//          $display("sending = 16#%x", data);
         end
       else
         shift = { 10 { `IDLE_BIT } };  // reset shift-register
