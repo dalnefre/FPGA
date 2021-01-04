@@ -654,9 +654,9 @@ for at least `HALF_BIT_TIME`.
           state <= `IDLE;
 ```
 
-If we get any unexpected state
-(which shouldn't happen, since all bit combinations are in use),
-we treat it as a BREAK condition.
+If we get any unexpected state,
+we treat it as a BREAK condition
+(this shouldn't happen, since all bit combinations are in use).
 
 ```verilog
       default :  // unexpected state
@@ -759,7 +759,7 @@ endmodule
 
 We embed our own timer implementation,
 so we can start, run, and stop the timer as needed.
-We drive all activity on the positive edge of the system clock (`clk`),
+We drive all activity from the positive edge of the system clock (`clk`),
 as dictated by synchronous design rules.
 The transmitter state-machine
 is implemented with conditional branches
@@ -845,7 +845,7 @@ endmodule
 Most of the test bench code should be familiar by now.
 However, we added another simple state-machine here
 to provide a sequence of characters for transmission.
-When the transmitter is not busy (`BSY`) sending an octet,
+When the transmitter is not busy sending an octet (`BSY`),
 we raise the write signal (`WR`) for one clock-cycle,
 and provide new character `DATA` to the transmitter.
 The one-bit counter `N` naturally wraps around after two increments,
@@ -914,6 +914,16 @@ This loop-back connection will echo transmitted data back to the receiver.
 +-----------------------------------------------------------------+
 ```
 
+The complete implementation
+in [uart.v](uart.v)
+and the test bench in
+[uart_tb.v](uart_tb.v)
+should hold no surprises.
+All of the hard work is done
+in [serial_tx.v](serial_tx.v)
+and [serial_rx.v](serial_rx.v),
+which we've already reviewed.
+
 Compile and run the simulation.
 
 ```
@@ -928,3 +938,9 @@ VCD info: dumpfile test_bench.vcd opened for output.
 Examine the waveform traces.
 
 ![test_bench.vcd](uart_vcd.png)
+
+### Exercises
+
+ 1. Drive the UART with the sequencer from [serial_tx_tb.v](serial_tx_tb.v).
+ 2. Define a longer sequence of test-data characters (e.g.: "Hello\n").
+ 3. Create a serial loop-back device by feeding data received back to the transmitter.
