@@ -472,6 +472,8 @@ and where we expect to find edge transitions, if any, between bits.
   reg [2:0] state = `IDLE;
 ```
 
+![serial_rx state-machine](serial_rx_state.png)
+
 In the IDLE state, the transmitter will be holding `rx` high (1).
 We watch for `in` to go low (0),
 indicating the beginning of a (possible) START bit.
@@ -766,6 +768,8 @@ is implemented with conditional branches
 rather than a `case` statement,
 but it's still a state-machine
 (controlled by `cnt` and `timer`).
+
+![serial_tx state-machine](serial_tx_state.png)
 
 When `cnt == 0` the transmitter is idle,
 so we transmit `IDLE_BIT` until the `wr` signal is asserted.
