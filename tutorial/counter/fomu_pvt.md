@@ -1,0 +1,202 @@
+## Fomu Counter
+
+```verilog
+// count_3_fomu.v
+//
+// top-level module for Fomu PVT device (uses count_3.v)
+//
+
+// Correctly map pins for the iCE40UP5K SB_RGBA_DRV hard macro.
+`define GREENPWM RGB0PWM
+`define REDPWM   RGB1PWM
+`define BLUEPWM  RGB2PWM
+
+module fomu_pvt (
+  input  clki,      // 48MHz oscillator input
+  output rgb0,      // RGB LED pin 0 (**DO NOT** drive directly)
+  output rgb1,      // RGB LED pin 1 (**DO NOT** drive directly)
+  output rgb2,      // RGB LED pin 2 (**DO NOT** drive directly)
+  output usb_dp,    // USB D+
+  output usb_dn,    // USB D-
+  output usb_dp_pu  // USB D+ pull-up
+);
+
+  // Drive USB pins to 0 to disconnect Fomu from the host system.
+  // Otherwise it would try to talk to us over USB,
+  // which wouldn't work since we have no stack.
+  assign usb_dp = 1'b0;
+  assign usb_dn = 1'b0;
+  assign usb_dp_pu = 1'b0;
+
+  // Connect to system clock (with buffering)
+  wire clk;  // 48MHz system clock
+  SB_GB clk_gb (
+    .USER_SIGNAL_TO_GLOBAL_BUFFER(clki),
+    .GLOBAL_BUFFER_OUTPUT(clk)
+  );
+
+  // Instantiate iCE40 LED driver hard logic
+  wire LED_r, LED_g, LED_b;
+  SB_RGBA_DRV #(
+    .CURRENT_MODE("0b1"),       // half current
+    .RGB0_CURRENT("0b000011"),  // 4 mA
+    .RGB1_CURRENT("0b000011"),  // 4 mA
+    .RGB2_CURRENT("0b000011")   // 4 mA
+  ) RGBA_DRIVER (
+    .CURREN(1'b1),
+    .RGBLEDEN(1'b1),
+    .`REDPWM(LED_r),    // Red
+    .`GREENPWM(LED_g),  // Green
+    .`BLUEPWM(LED_b),   // Blue
+    .RGB0(rgb0),
+    .RGB1(rgb1),
+    .RGB2(rgb2)
+  );
+
+  // Instantiate counter
+  localparam N = 28;
+  wire [N-1:0] out;
+  count #(
+    .WIDTH(N)
+  ) counter (
+    ._reset(1'b1),
+    .clock(clk),
+    .count(out)
+  );
+
+  // Connect counter bits to LED
+  assign LED_r = out[N-2];  // bit 26 ( ~2.8s cycle, ~1.4s on/off)
+  assign LED_g = out[N-3];  // bit 25 ( ~1.4s cycle, ~0.7s on/off)
+  assign LED_b = out[N-1];  // bit 27 ( ~5.6s cycle, ~2.8s on/off)
+
+endmodule
+```
+
+The following block diagram illustrates our final design.
+
+```
+  +-------------------------------------------------------------------------+
+  | fomu_pvt                                                                |
+  |                                                          0 --> usb_dp_pu|--
+  |                                                          0 -----> usb_dp|--
+  |                                                          0 -----> usb_dn|--
+  |                                                                         |
+  |       clk_gb                                    RGBA_DRIVER             |
+  |       +------------------------------+          +---------------+       |
+  |       | SB_GB                        |          | SB_RGBA_DRV   |       |
+  |       |                              |          |               |       |
+->|clki ->|USER_SIGNAL_TO_GLOBAL_BUFFER  |     1 -->|CURREN         |       |
+  |       |                              |     1 -->|RGBLEDEN       |       |
+  |       |          GLOBAL_BUFFER_OUTPUT|-+        |               |       |
+  |       |                              | |   +--->|RGB0PWM    RGB0|-> rgb0|--
+  |       +------------------------------+ |   |+-->|RGB1PWM    RGB1|-> rgb1|--
+  |                                        |   ||+->|RGB2PWM    RGB2|-> rgb2|--
+  |  +-----------------clk-----------------+   |||  |               |       |
+  |  |                                         |||  +---------------+       |
+  |  |       counter                           |||                          |
+  |  |       +--------------+                  |||                          |
+  |  |       | count        |                  |||                          |
+  |  |       |              | 28     out       |||                          |
+  |  |  1 -->|_reset   count|--/--+--[0]-x     |||                          |
+  |  |       |              |     +-  :        |||                          |
+  |  +------>|clock      msb|-x   +--[25]------+|| LED_g                    |
+  |          |              |     +--[26]-------+| LED_r                    |
+  |          +--------------+     +--[27]--------+ LED_b                    |
+  |                                                                         |
+  +-------------------------------------------------------------------------+
+```
+
+### Using Individual Bits
+
+One common use of a counter
+is to "pre-scale" the clock signal
+to a lower frequency.
+Each bit of the counter
+divides the frequency in half.
+For example,
+if our system clock was 48MHz
+(as it is on the [Fomu](../fomu.md))
+and we set the counter `WIDTH` to `4`,
+the most-significant bit (MSB) of the `count`
+would toggle at a frequency of 3MHz.
+
+```verilog
+// count_3.v
+//
+// free-running counter
+//
+
+module count #(
+  parameter INIT = 0,                   // initial value
+  parameter WIDTH = 16                  // counter bit-width
+) (
+  input                  _reset,        // active-low reset
+  input                  clock,         // system clock
+  output                 msb,           // MSB of counter (pre-scaler)
+  output reg [WIDTH-1:0] count = INIT   // free-running counter
+);
+
+  // count positive-edge transitions of the clock
+  always @(posedge clock)
+    count <= _reset ? count + 1'b1 : INIT;
+
+  assign msb = count[WIDTH-1];
+
+endmodule
+```
+
+Our test bench breaks out each of the `out` bits individually.
+
+```verilog
+// count_3_tb.v
+//
+// simulation test bench for count_3.v
+//
+
+module test_bench;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("test_bench.vcd");
+      $dumpvars(0, test_bench);
+      #5 _rst <= 1;  // come out of reset after 5 clock edges
+      #85 _rst <= 0;  // re-assert reset after 85 clock edges
+      #10 $finish;  // stop simulation after 10 clock edges
+    end
+
+  // generate chip clock
+  reg clk = 0;
+  always
+    #1 clk = !clk;
+
+  // instantiate device-under-test
+  localparam N = 4;
+  wire [N-1:0] out;
+  wire b0, b1, b2, b3;
+  reg _rst = 0;
+  count #(
+    .WIDTH(N)
+  ) DUT (
+    ._reset(_rst),
+    .clock(clk),
+    .count(out)
+  );
+  assign b0 = out[0];
+  assign b1 = out[1];
+  assign b2 = out[2];
+  assign b3 = out[3];
+
+endmodule
+```
+
+Synthesis, Place and Route, Package, and Deploy.
+
+```
+$ yosys -p 'synth_ice40 -json fomu_pvt.json' count_3.v count_3_fomu.v
+$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json fomu_pvt.json --asc fomu_pvt.asc
+$ icepack fomu_pvt.asc fomu_pvt.bit
+$ cp fomu_pvt.bit fomu_pvt.dfu
+$ dfu-suffix -v 1209 -p 70b1 -a fomu_pvt.dfu
+$ dfu-util -D fomu_pvt.dfu
+```
