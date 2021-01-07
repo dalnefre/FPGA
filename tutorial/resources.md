@@ -2,8 +2,10 @@
 
 Here are some links to additional resources you may find useful.
 
+ * https://en.wikibooks.org/wiki/Programmable_Logic/Verilog
  * http://www.asic-world.com/verilog/index.html
  * https://www.cis.upenn.edu/~milom/cis371-Spring13/lab/textbook-verilog-tutorial/VOL/main.htm
+ * https://www.tutorialspoint.com/vlsi_design/vlsi_design_verilog_introduction.htm
  * http://www.fpga4fun.com/HDLtutorials.html
  * https://hackaday.io/project/27550-the-hobbyists-guide-to-fpgas
  * https://learn.sparkfun.com/tutorials/tags/fpga

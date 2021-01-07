@@ -273,3 +273,9 @@ endmodule
 00 82
 00 82
 ```
+
+### Exercises
+
+ 1. Add support for dotted note durations (1.5x normal).
+ 2. Add support for looping note sequences.
+ 3. Add support for counted repeats.

@@ -948,3 +948,4 @@ Examine the waveform traces.
  1. Drive the UART with the sequencer from [serial_tx_tb.v](serial_tx_tb.v).
  2. Define a longer sequence of test-data characters (e.g.: "Hello\n").
  3. Create a serial loop-back device by feeding data received back to the transmitter.
+ 4. Add support for an optional [_parity bit_](https://en.wikipedia.org/wiki/Parity_bit) and configurable _stop bits_.
