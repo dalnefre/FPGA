@@ -35,13 +35,25 @@ module fomu_pvt (
     .GLOBAL_BUFFER_OUTPUT(clk)
   );
 
+  // Parameters from iCE40 UltraPlus LED Driver Usage Guide, pages 19-20
+  localparam RGBA_CURRENT_MODE_FULL = "0b0";
+  localparam RGBA_CURRENT_MODE_HALF = "0b1";
+  // Current levels in Full / Half mode
+  localparam RGBA_CURRENT_04MA_02MA = "0b000001";
+  localparam RGBA_CURRENT_08MA_04MA = "0b000011";
+  localparam RGBA_CURRENT_12MA_06MA = "0b000111";
+  localparam RGBA_CURRENT_16MA_08MA = "0b001111";
+  localparam RGBA_CURRENT_20MA_10MA = "0b011111";
+  localparam RGBA_CURRENT_24MA_12MA = "0b111111";
+
   // Instantiate iCE40 LED driver hard logic
   wire LED_r, LED_g, LED_b;
   SB_RGBA_DRV #(
-    .CURRENT_MODE("0b1"),       // half current
-    .RGB0_CURRENT("0b000011"),  // 4 mA
-    .RGB1_CURRENT("0b000011"),  // 4 mA
-    .RGB2_CURRENT("0b000011")   // 4 mA
+    .CURRENT_MODE(RGBA_CURRENT_MODE_HALF),
+//    .RGB0_CURRENT(RGBA_CURRENT_08MA_04MA),
+    .RGB0_CURRENT(RGBA_CURRENT_16MA_08MA),  // green needs more current
+    .RGB1_CURRENT(RGBA_CURRENT_08MA_04MA),
+    .RGB2_CURRENT(RGBA_CURRENT_08MA_04MA)
   ) RGBA_DRIVER (
     .CURREN(1'b1),
     .RGBLEDEN(1'b1),
