@@ -1,5 +1,11 @@
 ## Fomu Counter
 
+The traditional ["Hello, World!"](https://en.wikipedia.org/wiki/%22Hello,_World!%22_program) program
+for hardware is simply blinking an LED.
+We can use our basic [Counter](README.md)
+to control the color of
+the RGB LED on the [Fomu](../fomu.md).
+
 ```verilog
 // count_3_fomu.v
 //

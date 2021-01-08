@@ -1,10 +1,15 @@
 ## Tone Generator
 
-### Links
+### Resources
 
  * [Orders of Magnitude — Frequency (Wikipedia)](https://en.wikipedia.org/wiki/Orders_of_magnitude_(frequency))
  * [Orders of Magnitude — Time (Wikipedia)](https://en.wikipedia.org/wiki/Orders_of_magnitude_(time))
  * [Piano Key Frequencies (Wikipedia)](https://en.wikipedia.org/wiki/Piano_key_frequencies)
+ * [MIDI](https://en.wikipedia.org/wiki/MIDI)
+   * [What is MIDI?](https://www.instructables.com/What-is-MIDI/)
+   * [Send and Receive MIDI With Arduino](https://www.instructables.com/Send-and-Receive-MIDI-with-Arduino/)
+   * [Lab: MIDI Output using an Arduino](https://itp.nyu.edu/physcomp/labs/labs-serial-communication/lab-midi-output-using-an-arduino/)
+   * [MIDI, an Overview](https://tigoe.github.io/SoundExamples/midi.html) **RECOMMENDED**
 
 ### Code
 
@@ -241,7 +246,7 @@ module test_bench;
               end
             else if (ins[7] == `OP_DELAY)
               begin
-                seq_cnt <= `WHL_NOTE >> ins[3:0];
+                seq_cnt <= (`WHL_NOTE >> ins[3:0]) - `NOTE_GAP;
                 seq_state <= `SEQ_TONE;
               end
             seq_index <= seq_index + 1;  // move to next instruction (loop on zero)
@@ -263,7 +268,7 @@ endmodule
 ```
 
 ```verilog
-// Close Encounters: D4(Red/Pink) E4(Orange) C4(Purple) C3(Yellow) G3(White)
+// Close Encounters: D4(Red/Pink) E4(Orange) C4(Magenta/Purple) C3(Yellow) G3(White/Blue)
 4a 82
 48 82
 4c 82
@@ -276,6 +281,7 @@ endmodule
 
 ### Exercises
 
- 1. Add support for dotted note durations (1.5x normal).
+ 1. Implement dotted note durations (1.5x normal).
  2. Add support for looping note sequences.
  3. Add support for counted repeats.
+ 4. Implement tied notes (no gap between notes).
