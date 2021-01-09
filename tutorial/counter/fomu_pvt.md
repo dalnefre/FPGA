@@ -6,6 +6,42 @@ We can use our basic [Counter](README.md)
 to control the color of
 the RGB LED on the [Fomu](../fomu.md).
 
+```
+  // clock divisions
+  wire div_24MHz    = count[0];
+  wire div_12MHz    = count[1];
+  wire div_6MHz     = count[2];
+  wire div_3MHz     = count[3];
+  wire div_1_5MHz   = count[4];
+  wire div_750KHz   = count[5];
+  wire div_375KHz   = count[6];
+  wire div_187_5KHz = count[7];
+
+  wire div_93_75KHz = count[8];
+  wire div_46_875KHz = count[9];
+  wire div_23_437_5KHz = count[10];
+  wire div_11_718_75KHz = count[11];
+  wire div_5_859_375KHz = count[12];
+  wire div_2_929_687_5KHz = count[13];
+  wire div_1_464_843_75KHz = count[14];
+  wire div_732_421_875Hz = count[15];
+
+  wire div_366_210_937_5Hz = count[16];
+  wire div_183_105_468_75Hz = count[17];
+  wire div_91_552_734_375Hz = count[18];
+  wire div_45_776_367_187_5Hz = count[19];
+  wire div_22_888_183_593_75Hz = count[20];
+  wire div_11_444_091_796_875Hz = count[21];
+  wire div_5_722_045_898_437_5Hz = count[22];
+  wire div_2_861_022_949_218_75Hz = count[23];
+
+  wire div_1_430_511_474_609_375Hz = count[24];
+  wire div_0_715_255_737_304_687_5Hz = count[25];
+  wire div_0_357_627_868_652_343_75Hz = count[26];
+  wire div_0_178_813_934_326_171_875Hz = count[27];
+  wire div_0_089_406_967_163_085_937_5Hz = count[28];
+```
+
 ```verilog
 // count_3_fomu.v
 //
@@ -163,47 +199,23 @@ module count #(
 endmodule
 ```
 
-Our test bench breaks out each of the `out` bits individually.
-
 ```verilog
-// count_3_tb.v
+// pwm_0.v
 //
-// simulation test bench for count_3.v
+// pulse-width modulation
 //
 
-module test_bench;
+module pwm #(
+  parameter P = 0,                      // phase offset
+  parameter N = 8                       // counter resolution
+) (
+  input          [N-1:0] pulse,         // pulse threshold
+  input          [N-1:0] count,         // duty-cycle counter
+  output                 out            // on/off output signal
+);
 
-  // dump simulation signals
-  initial
-    begin
-      $dumpfile("test_bench.vcd");
-      $dumpvars(0, test_bench);
-      #5 _rst <= 1;  // come out of reset after 5 clock edges
-      #85 _rst <= 0;  // re-assert reset after 85 clock edges
-      #10 $finish;  // stop simulation after 10 clock edges
-    end
-
-  // generate chip clock
-  reg clk = 0;
-  always
-    #1 clk = !clk;
-
-  // instantiate device-under-test
-  localparam N = 4;
-  wire [N-1:0] out;
-  wire b0, b1, b2, b3;
-  reg _rst = 0;
-  count #(
-    .WIDTH(N)
-  ) DUT (
-    ._reset(_rst),
-    .clock(clk),
-    .count(out)
-  );
-  assign b0 = out[0];
-  assign b1 = out[1];
-  assign b2 = out[2];
-  assign b3 = out[3];
+  wire [N-1:0] mod = (count + P);
+  assign out = pulse < mod;
 
 endmodule
 ```

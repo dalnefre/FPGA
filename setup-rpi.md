@@ -86,3 +86,38 @@ To list USB devices:
 ```
 $ sudo ls /proc/bus/usb
 ```
+
+## TinyFPGA-BX
+
+The [TinyFPGA boards](https://tinyfpga.com/) are a series
+of low-cost, [open-source](https://github.com/tinyfpga) FPGA boards in a tiny form factor.
+
+The TinyFPGA-BX [User Guide](https://tinyfpga.com/bx/guide.html)
+described how to install and setup
+the tools required for FPGA development.
+
+Here's a summary of steps taken on a Raspberry Pi4:
+```
+$ sudo usermod -a -G dialout $USER
+$ pip install --upgrade pip
+$ pip install apio==0.4.0b5 tinyprog
+WARNING: pip is being invoked by an old script wrapper. This will fail in a future version of pip.
+Please see https://github.com/pypa/pip/issues/5599 for advice on fixing the underlying issue.
+To avoid this problem you can invoke Python with '-m pip' instead of running pip directly.
+DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.
+Defaulting to user installation because normal site-packages is not writeable
+...
+Successfully built apio pyusb jsonmerge functools32 pyrsistent scandir
+Installing collected packages: click, semantic-version, apio, pyparsing, packaging, pyusb, functools32, attrs, pyrsistent, contextlib2, zipp, configparser, scandir, pathlib2, importlib-metadata, jsonschema, jsonmerge, tqdm, intelhex, tinyprog
+  WARNING: The script apio is installed in '/home/pi/.local/bin' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+  WARNING: The script jsonschema is installed in '/home/pi/.local/bin' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+  WARNING: The script tqdm is installed in '/home/pi/.local/bin' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+  WARNING: The script tinyprog is installed in '/home/pi/.local/bin' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+Successfully installed apio-0.4.0b5 attrs-20.3.0 click-6.7 configparser-4.0.2 contextlib2-0.6.0.post1 functools32-3.2.3.post2 importlib-metadata-2.1.1 intelhex-2.3.0 jsonmerge-1.7.0 jsonschema-3.2.0 packaging-20.8 pathlib2-2.3.5 pyparsing-2.4.7 pyrsistent-0.16.1 pyusb-1.1.0 scandir-1.10.0 semantic-version-2.8.5 tinyprog-1.0.23 tqdm-4.55.1 zipp-1.2.0
+$ apio install system scons icestorm iverilog
+$ apio drivers --serial-enable
+```
