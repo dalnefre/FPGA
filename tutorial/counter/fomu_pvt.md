@@ -160,6 +160,17 @@ The following block diagram illustrates our final design.
   +-------------------------------------------------------------------------+
 ```
 
+Synthesis, Place and Route, Package, and Deploy.
+
+```
+$ yosys -p 'synth_ice40 -json fomu_pvt.json' count_3.v count_3_fomu.v
+$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json fomu_pvt.json --asc fomu_pvt.asc
+$ icepack fomu_pvt.asc fomu_pvt.bit
+$ cp fomu_pvt.bit fomu_pvt.dfu
+$ dfu-suffix -v 1209 -p 70b1 -a fomu_pvt.dfu
+$ dfu-util -D fomu_pvt.dfu
+```
+
 ### Using Individual Bits
 
 One common use of a counter
@@ -206,7 +217,6 @@ endmodule
 //
 
 module pwm #(
-  parameter P = 0,                      // phase offset
   parameter N = 8                       // counter resolution
 ) (
   input          [N-1:0] pulse,         // pulse threshold
@@ -214,8 +224,51 @@ module pwm #(
   output                 out            // on/off output signal
 );
 
-  wire [N-1:0] mod = (count + P);
-  assign out = pulse < mod;
+  assign out = (count < pulse);
+
+endmodule
+```
+
+```verilog
+// pwm_0_tb.v
+//
+// simulation test bench for count_3.v + pwm_0.v
+//
+
+module test_bench;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("test_bench.vcd");
+      $dumpvars(0, test_bench);
+      #120 $finish;  // stop simulation after 120 clock edges
+    end
+
+  // generate chip clock
+  reg clk = 0;
+  always
+    #1 clk = !clk;
+
+  // instantiate counter
+  wire [4:0] cnt;
+  count #(
+    .WIDTH(5)
+  ) counter (
+    ._reset(1'b1),
+    .clock(clk),
+    .count(cnt)
+  );
+
+  // instantiate pulse-width modulator
+  wire out;
+  pwm #(
+    .N(2)
+  ) pwm (
+    .pulse(cnt[4:3]),
+    .count(cnt[1:0]),
+    .out(out)
+  );
 
 endmodule
 ```
@@ -223,7 +276,7 @@ endmodule
 Synthesis, Place and Route, Package, and Deploy.
 
 ```
-$ yosys -p 'synth_ice40 -json fomu_pvt.json' count_3.v count_3_fomu.v
+$ yosys -p 'synth_ice40 -json fomu_pvt.json' count_3.v pwm_0.v pwm_fomu.v
 $ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json fomu_pvt.json --asc fomu_pvt.asc
 $ icepack fomu_pvt.asc fomu_pvt.bit
 $ cp fomu_pvt.bit fomu_pvt.dfu
