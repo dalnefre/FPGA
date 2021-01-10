@@ -540,14 +540,14 @@ Use GTKWave to visualize the traces of interest.
 ### Pulse-Width Modulation
 
 So far, all of the counting signals we've produced
-have been [_square waves_](https://en.wikipedia.org/wiki/Square_wave).
-They have a 50% [_duty cycle_](https://en.wikipedia.org/wiki/Duty_cycle).
+have been [_square waves_](https://en.wikipedia.org/wiki/Square_wave)
+(they have a 50% [_duty cycle_](https://en.wikipedia.org/wiki/Duty_cycle)).
 [_Pulse-Width Modulation_](https://en.wikipedia.org/wiki/Pulse-width_modulation) (PWM)
 allows us to control the duty cycle,
 specifying the relationship between on-time and off-time
 for a signal of a particular [_frequency_](https://en.wikipedia.org/wiki/Frequency).
-PWM signals have a (variety of applications)[https://learn.sparkfun.com/tutorials/pulse-width-modulation/all]
-including dimmable LED and motor controls.
+PWM signals have a [variety of applications](https://learn.sparkfun.com/tutorials/pulse-width-modulation/all),
+including dimmable LEDs and motor controls.
 Fortunately,
 PWM is very easy to define
 given our `count` module.
@@ -575,8 +575,8 @@ We define a new `pwm` module
 with equal-width `pulse` and `count` inputs.
 The `pulse` value defines how many clock-cycles wide the pulse is
 out of `count` total cycles.
-When `count` is less than `pulse`, we `out` is `1`.
-Otherwise `out` is `0`.
+When `count` is less than `pulse`, `out` is `1`.
+Otherwise, `out` is `0`.
 That's all there is to it!
 
 ```verilog
@@ -625,7 +625,7 @@ endmodule
 
 Our test bench instantiates both the `count` and `pwm` components,
 feeding the lowest 2 bits of `cnt` to the PWM `count`,
-and the highest 2 bits of `cnt` to the define the PWM `pulse`-width.
+and the highest 2 bits of `cnt` to the define the PWM `pulse` width.
 This way the pulse-width cycles through different values
 every two-times the count wraps around to zero.
 This is easiest to understand by looking at the waveform traces.
