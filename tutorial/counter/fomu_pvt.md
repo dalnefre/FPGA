@@ -6,6 +6,14 @@ We can use our basic [Counter](README.md)
 to control the color of
 the RGB LED on the [Fomu](../fomu.md).
 
+| Count Bit | Frequency | Period |
+|-----------|-----------|--------|
+| `clk` | 48.000 Mhz | 20.833 ns |
+| 0 | 24.000 Mhz | 41.666 ns |
+| 1 | 12.000 Mhz | 83.333 ns |
+| 2 | 6.000 Mhz | 166.66 ns |
+| 3 | 3.000 Mhz | 333.33 ns |
+
 ```
   // clock divisions
   wire div_24MHz    = count[0];
