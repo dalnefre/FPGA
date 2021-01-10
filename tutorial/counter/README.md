@@ -536,3 +536,108 @@ VCD info: dumpfile count_3.vcd opened for output.
 Use GTKWave to visualize the traces of interest.
 
 ![count_3.vcd](count_3_vcd.png)
+
+### Pulse-Width Modulation
+
+So far, all of the counting signals we've produced
+have been [_square waves_](https://en.wikipedia.org/wiki/Square_wave).
+They have a 50% [_duty cycle_](https://en.wikipedia.org/wiki/Duty_cycle).
+[_Pulse-Width Modulation_](https://en.wikipedia.org/wiki/Pulse-width_modulation) (PWM)
+allows us to control the duty cycle,
+specifying the relationship between on-time and off-time
+for a signal of a particular [_frequency_](https://en.wikipedia.org/wiki/Frequency).
+PWM signals have a (variety of applications)[https://learn.sparkfun.com/tutorials/pulse-width-modulation/all]
+including dimmable LED and motor controls.
+Fortunately,
+PWM is very easy to define
+given our `count` module.
+
+```verilog
+// pwm_0.v
+//
+// pulse-width modulation
+//
+
+module pwm #(
+  parameter N = 8                       // counter resolution
+) (
+  input          [N-1:0] pulse,         // pulse threshold
+  input          [N-1:0] count,         // duty-cycle counter
+  output                 out            // on/off output signal
+);
+
+  assign out = (count < pulse);
+
+endmodule
+```
+
+We define a new `pwm` module
+with equal-width `pulse` and `count` inputs.
+The `pulse` value defines how many clock-cycles wide the pulse is
+out of `count` total cycles.
+When `count` is less than `pulse`, we `out` is `1`.
+Otherwise `out` is `0`.
+That's all there is to it!
+
+```verilog
+// pwm_0_tb.v
+//
+// simulation test bench for count_3.v + pwm_0.v
+//
+
+module test_bench;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("pwm_0.vcd");
+      $dumpvars(0, test_bench);
+      #120 $finish;  // stop simulation after 120 clock edges
+    end
+
+  // generate chip clock
+  reg clk = 0;
+  always
+    #1 clk = !clk;
+
+  // instantiate counter
+  wire [4:0] cnt;
+  count #(
+    .WIDTH(5)
+  ) counter (
+    ._reset(1'b1),
+    .clock(clk),
+    .count(cnt)
+  );
+
+  // instantiate pulse-width modulator
+  wire out;
+  pwm #(
+    .N(2)
+  ) pwm (
+    .pulse(cnt[4:3]),
+    .count(cnt[1:0]),
+    .out(out)
+  );
+
+endmodule
+```
+
+Our test bench instantiates both the `count` and `pwm` components,
+feeding the lowest 2 bits of `cnt` to the PWM `count`,
+and the highest 2 bits of `cnt` to the define the PWM `pulse`-width.
+This way the pulse-width cycles through different values
+every two-times the count wraps around to zero.
+This is easiest to understand by looking at the waveform traces.
+
+Compile the module definitions, and run the simulation to create a trace file.
+
+```
+$ iverilog -o pwm_0.sim count_3.v pwm_0.v pwm_0_tb.v
+$ ./pwm_0.sim
+VCD info: dumpfile pwm_0.vcd opened for output.
+```
+
+Use GTKWave to visualize the traces.
+
+![pwm_0.vcd](pwm_0_vcd.png)

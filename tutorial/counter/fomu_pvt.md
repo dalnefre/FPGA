@@ -42,6 +42,12 @@ the RGB LED on the [Fomu](../fomu.md).
 | 30 | 0.0234 Hz | 44.739 s |
 | 31 | 0.0112 Hz | 89.478 s |
 
+Remember that each clock-cycle includes both
+a rising and falling edge,
+so with a 48MHz clock
+each simulation time-step represents
+10.4166... nanoseconds (ns).
+
 ```verilog
 // count_3_fomu.v
 //
@@ -209,73 +215,6 @@ module count #(
 
 endmodule
 ```
-
-```verilog
-// pwm_0.v
-//
-// pulse-width modulation
-//
-
-module pwm #(
-  parameter N = 8                       // counter resolution
-) (
-  input          [N-1:0] pulse,         // pulse threshold
-  input          [N-1:0] count,         // duty-cycle counter
-  output                 out            // on/off output signal
-);
-
-  assign out = (count < pulse);
-
-endmodule
-```
-
-```verilog
-// pwm_0_tb.v
-//
-// simulation test bench for count_3.v + pwm_0.v
-//
-
-module test_bench;
-
-  // dump simulation signals
-  initial
-    begin
-      $dumpfile("pwm_0.vcd");
-      $dumpvars(0, test_bench);
-      #120 $finish;  // stop simulation after 120 clock edges
-    end
-
-  // generate chip clock
-  reg clk = 0;
-  always
-    #1 clk = !clk;
-
-  // instantiate counter
-  wire [4:0] cnt;
-  count #(
-    .WIDTH(5)
-  ) counter (
-    ._reset(1'b1),
-    .clock(clk),
-    .count(cnt)
-  );
-
-  // instantiate pulse-width modulator
-  wire out;
-  pwm #(
-    .N(2)
-  ) pwm (
-    .pulse(cnt[4:3]),
-    .count(cnt[1:0]),
-    .out(out)
-  );
-
-endmodule
-```
-
-Use GTKWave to visualize the traces of interest.
-
-![pwm_0.vcd](pwm_0_vcd.png)
 
 Synthesis, Place and Route, Package, and Deploy.
 
