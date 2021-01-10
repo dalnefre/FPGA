@@ -8,47 +8,39 @@ the RGB LED on the [Fomu](../fomu.md).
 
 | Count Bit | Frequency | Period |
 |-----------|-----------|--------|
-| `clk` | 48.000 Mhz | 20.833 ns |
-| 0 | 24.000 Mhz | 41.666 ns |
-| 1 | 12.000 Mhz | 83.333 ns |
-| 2 | 6.000 Mhz | 166.66 ns |
-| 3 | 3.000 Mhz | 333.33 ns |
-
-```
-  // clock divisions
-  wire div_24MHz    = count[0];
-  wire div_12MHz    = count[1];
-  wire div_6MHz     = count[2];
-  wire div_3MHz     = count[3];
-  wire div_1_5MHz   = count[4];
-  wire div_750KHz   = count[5];
-  wire div_375KHz   = count[6];
-  wire div_187_5KHz = count[7];
-
-  wire div_93_75KHz = count[8];
-  wire div_46_875KHz = count[9];
-  wire div_23_437_5KHz = count[10];
-  wire div_11_718_75KHz = count[11];
-  wire div_5_859_375KHz = count[12];
-  wire div_2_929_687_5KHz = count[13];
-  wire div_1_464_843_75KHz = count[14];
-  wire div_732_421_875Hz = count[15];
-
-  wire div_366_210_937_5Hz = count[16];
-  wire div_183_105_468_75Hz = count[17];
-  wire div_91_552_734_375Hz = count[18];
-  wire div_45_776_367_187_5Hz = count[19];
-  wire div_22_888_183_593_75Hz = count[20];
-  wire div_11_444_091_796_875Hz = count[21];
-  wire div_5_722_045_898_437_5Hz = count[22];
-  wire div_2_861_022_949_218_75Hz = count[23];
-
-  wire div_1_430_511_474_609_375Hz = count[24];
-  wire div_0_715_255_737_304_687_5Hz = count[25];
-  wire div_0_357_627_868_652_343_75Hz = count[26];
-  wire div_0_178_813_934_326_171_875Hz = count[27];
-  wire div_0_089_406_967_163_085_937_5Hz = count[28];
-```
+| `clk` | 48.000 MHz | 20.833... ns |
+| 0 | 24.000 MHz | 41.666... ns |
+| 1 | 12.000 MHz | 83.333... ns |
+| 2 | 6.000 MHz | 166.66... ns |
+| 3 | 3.000 MHz | 333.33... ns |
+| 4 | 1.500 MHz | 666.66... ns |
+| 5 | 750.00 KHz | 1.333... μs |
+| 6 | 375.00 KHz | 2.666... μs |
+| 7 | 187.50 KHz | 5.333... μs |
+| 8 | 93.750 KHz | 10.666... μs |
+| 9 | 46.875 KHz | 21.333... μs |
+| 10 | 23.4375 KHz | 42.666... μs |
+| 11 | 11.719 KHz | 85.333... μs |
+| 12 | 5.859 KHz | 170.66... μs |
+| 13 | 2.930 KHz | 341.33... μs |
+| 14 | 1.465 KHz | 682.66... μs |
+| 15 | 732.42 Hz | 1.3653... ms |
+| 16 | 366.21 Hz | 2.7306... ms |
+| 17 | 183.11 Hz | 5.4613... ms |
+| 18 | 91.553 Hz | 10.9226... ms |
+| 19 | 45.776 Hz | 21.8453... ms |
+| 20 | 22.888 Hz | 43.6906... ms |
+| 21 | 11.444 Hz | 87.3813... ms |
+| 22 | 5.722 Hz | 174.7626... ms |
+| 23 | 2.861 Hz | 349.5253... ms |
+| 24 | 1.430 Hz | 699.0506... ms |
+| 25 | 0.715 Hz | 1.398 s |
+| 26 | 0.358 Hz | 2.796 s |
+| 27 | 0.179 Hz | 5.592 s |
+| 28 | 0.0894 Hz | 11.185 s |
+| 29 | 0.0447 Hz | 22.370 s |
+| 30 | 0.0234 Hz | 44.739 s |
+| 31 | 0.0112 Hz | 89.478 s |
 
 ```verilog
 // count_3_fomu.v
