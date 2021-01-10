@@ -8,7 +8,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("pwm_0.vcd");
       $dumpvars(0, test_bench);
       #120 $finish;  // stop simulation after 120 clock edges
     end

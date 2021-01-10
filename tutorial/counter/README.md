@@ -99,7 +99,7 @@ This code does not affect the FPGA configuration.
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("count_0.vcd");
       $dumpvars(0, test_bench);
       #50;  // after 50 clock edges...
       $display("final count = %d", count);
@@ -111,7 +111,7 @@ We place our simulation controls in an `initial` block,
 which is like `always`, except that it only executes once.
 We use `begin` and `end` to include multiple statements in the `initial` block.
 As with any procedural block, these statements execute sequentially.
-We arrange to dump all of the variable values to the `test_bench.vcd` file.
+We arrange to dump all of the variable values to the `count_0.vcd` file.
 The `#50;` statement is a delay of 50 time-units
 with a null statement to execute.
 The `$display` directive prints formatted information
@@ -129,7 +129,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("count_0.vcd");
       $dumpvars(0, test_bench);
       #50;  // after 50 clock edges...
       $display("final count = %d", count);
@@ -149,23 +149,23 @@ module test_bench;
 endmodule
 ```
 
-We use Icarus Verilog to compile `count_0.v` into the executable program `test_bench.sim`.
+We use Icarus Verilog to compile `count_0.v` into the executable program `count_0.sim`.
 
 ```
-$ iverilog -o test_bench.sim count_0.v
+$ iverilog -o count_0.sim count_0.v
 ```
 
-We can now run the simulation to generate console output and the trace file `test_bench.vcd`.
+We can now run the simulation to generate console output and the trace file `count_0.vcd`.
 
 ```
-$ ./test_bench.sim
-VCD info: dumpfile test_bench.vcd opened for output.
+$ ./count_0.sim
+VCD info: dumpfile count_0.vcd opened for output.
 final count =  9
 ```
 
-GTKWave gives us a visual display of `test_bench.vcd`.
+GTKWave gives us a visual display of `count_0.vcd`.
 
-![test_bench.vcd](count_0_vcd.png)
+![count_0.vcd](count_0_vcd.png)
 
 _Note:_ You will have to select the `test_bench` module,
 then drag the `clock` and `count` signals into the display list to see the traces.
@@ -244,7 +244,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("count_1.vcd");
       $dumpvars(0, test_bench);
       #50;  // after 50 clock edges...
       $display("final count = %d", out);
@@ -276,9 +276,9 @@ versus `wire` (meaning they are just connections).
 We must compile both modules together to create a simulation.
 
 ```
-$ iverilog -o test_bench.sim count_1.v count_1_tb.v
-$ ./test_bench.sim
-VCD info: dumpfile test_bench.vcd opened for output.
+$ iverilog -o count_1.sim count_1.v count_1_tb.v
+$ ./count_1.sim
+VCD info: dumpfile count_1.vcd opened for output.
 final count =  9
 ```
 
@@ -352,7 +352,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("count_2.vcd");
       $dumpvars(0, test_bench);
       #5 _rst = 1;  // come out of reset after 5 clock edges
       #45 _rst = 0;  // re-assert reset after 45 clock edges
@@ -400,14 +400,14 @@ so our script will take 60 time-units to complete.
 Compile the new module definitions, and run the simulation to create the trace file.
 
 ```
-$ iverilog -o test_bench.sim count_2.v count_2_tb.v
-$ ./test_bench.sim
-VCD info: dumpfile test_bench.vcd opened for output.
+$ iverilog -o count_2.sim count_2.v count_2_tb.v
+$ ./count_2.sim
+VCD info: dumpfile count_2.vcd opened for output.
 ```
 
 Use GTKWave to visualize the traces, including the new `_rst` signal.
 
-![test_bench.vcd](count_2_vcd.png)
+![count_2.vcd](count_2_vcd.png)
 
 ### Using Individual Bits
 
@@ -472,7 +472,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("count_3.vcd");
       $dumpvars(0, test_bench);
       #5 _rst <= 1;  // come out of reset after 5 clock edges
       #85 _rst <= 0;  // re-assert reset after 85 clock edges
@@ -528,11 +528,11 @@ The following block diagram illustrates our final design.
 Compile the module definitions, and run the simulation to create the trace file.
 
 ```
-$ iverilog -o test_bench.sim count_3.v count_3_tb.v
-$ ./test_bench.sim
-VCD info: dumpfile test_bench.vcd opened for output.
+$ iverilog -o count_3.sim count_3.v count_3_tb.v
+$ ./count_3.sim
+VCD info: dumpfile count_3.vcd opened for output.
 ```
 
 Use GTKWave to visualize the traces of interest.
 
-![test_bench.vcd](count_3_vcd.png)
+![count_3.vcd](count_3_vcd.png)

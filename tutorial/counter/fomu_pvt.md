@@ -163,12 +163,12 @@ The following block diagram illustrates our final design.
 Synthesis, Place and Route, Package, and Deploy.
 
 ```
-$ yosys -p 'synth_ice40 -json fomu_pvt.json' count_3.v count_3_fomu.v
-$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json fomu_pvt.json --asc fomu_pvt.asc
-$ icepack fomu_pvt.asc fomu_pvt.bit
-$ cp fomu_pvt.bit fomu_pvt.dfu
-$ dfu-suffix -v 1209 -p 70b1 -a fomu_pvt.dfu
-$ dfu-util -D fomu_pvt.dfu
+$ yosys -p 'synth_ice40 -json count_3_fomu.json' count_3.v count_3_fomu.v
+$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json count_3_fomu.json --asc count_3_fomu.asc
+$ icepack count_3_fomu.asc count_3_fomu.bit
+$ cp count_3_fomu.bit count_3_fomu.dfu
+$ dfu-suffix -v 1209 -p 70b1 -a count_3_fomu.dfu
+$ dfu-util -D count_3_fomu.dfu
 ```
 
 ### Using Individual Bits
@@ -240,7 +240,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("pwm_0.vcd");
       $dumpvars(0, test_bench);
       #120 $finish;  // stop simulation after 120 clock edges
     end
@@ -273,13 +273,21 @@ module test_bench;
 endmodule
 ```
 
+Use GTKWave to visualize the traces of interest.
+
+![pwm_0.vcd](pwm_0_vcd.png)
+
 Synthesis, Place and Route, Package, and Deploy.
 
 ```
-$ yosys -p 'synth_ice40 -json fomu_pvt.json' count_3.v pwm_0.v pwm_fomu.v
-$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json fomu_pvt.json --asc fomu_pvt.asc
-$ icepack fomu_pvt.asc fomu_pvt.bit
-$ cp fomu_pvt.bit fomu_pvt.dfu
-$ dfu-suffix -v 1209 -p 70b1 -a fomu_pvt.dfu
-$ dfu-util -D fomu_pvt.dfu
+$ yosys -p 'synth_ice40 -json pwm_0_fomu.json' count_3.v pwm_0.v pwm_0_fomu.v >pwm_0_fomu.log
+$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json pwm_0_fomu.json --asc pwm_0_fomu.asc
+$ icepack pwm_0_fomu.asc pwm_0_fomu.bit
+$ cp pwm_0_fomu.bit pwm_0_fomu.dfu
+$ dfu-suffix -v 1209 -p 70b1 -a pwm_0_fomu.dfu
+$ dfu-util -D pwm_0_fomu.dfu
 ```
+
+We vary the PWM in 4 phases to create a gradually-changing rainbow effect.
+
+![pwm_rgb_fade](pwm_rgb_fade.png)

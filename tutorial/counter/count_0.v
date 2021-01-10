@@ -5,7 +5,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("count_0.vcd");
       $dumpvars(0, test_bench);
       #50;  // after 50 clock edges...
       $display("final count = %d", count);

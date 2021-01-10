@@ -8,7 +8,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("count_3.vcd");
       $dumpvars(0, test_bench);
       #5 _rst <= 1;  // come out of reset after 5 clock edges
       #85 _rst <= 0;  // re-assert reset after 85 clock edges
