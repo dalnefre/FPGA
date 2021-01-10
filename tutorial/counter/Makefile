@@ -17,7 +17,8 @@ VCD =	count_0.vcd \
 	pwm_0.vcd
 
 DFU =	count_3_fomu.dfu \
-	pwm_0_fomu.dfu
+	pwm_0_fomu.dfu \
+	pwm_1_fomu.dfu
 
 ALL =	$(SIM) $(VCD) $(DFU)
 
@@ -49,6 +50,9 @@ count_3_fomu.json: count_3.v count_3_fomu.v
 
 pwm_0_fomu.json: count_3.v pwm_0.v pwm_0_fomu.v
 	yosys -p 'synth_ice40 -json $@' $^ >pwm_0_fomu.log
+
+pwm_1_fomu.json: count_3.v pwm_0.v pwm_1_fomu.v
+	yosys -p 'synth_ice40 -json $@' $^ >pwm_1_fomu.log
 
 %.asc: %.json
 	nextpnr-ice40 $(PNR_OPTS) --json $< --asc $@

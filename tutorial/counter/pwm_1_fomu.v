@@ -1,4 +1,4 @@
-// pwm_0_fomu.v
+// pwm_1_fomu.v
 //
 // top-level module for Fomu PVT device (uses count_3.v and pwm_0.v)
 //
@@ -60,12 +60,58 @@ module fomu_pvt (
   );
 
   // Calculate PWM levels
-  wire       phase = cnt[27];  // ~5.6s
+  wire [1:0] phase = cnt[28:27];  // ~11.2s
   wire [7:0] ramp = cnt[26:19];  // ~2.8s
-  wire [7:0] pulse_r = (phase
-    ? (8'hFF - ramp[7:0])  // ramp down
-    : ramp[7:0]  // ramp up
+  wire [7:0] pulse_r = (phase[1]
+    ? (phase[0] ? 8'h00 : 8'hFF - ramp[7:0])
+    : (phase[0] ? 8'hFF : ramp[7:0])
   );
+  wire [7:0] pulse_g = (phase[1]
+    ? (phase[0] ? 8'hFF - ramp[7:0] : 8'hFF)
+    : (phase[0] ? ramp[7:0] : 8'h00)
+  );
+  wire [7:0] pulse_b = (phase[1]
+    ? (phase[0] ? ramp[7:0] : 8'h00)
+    : (phase[0] ? 8'h00 : 8'hFF - ramp[7:0])
+  );
+/*
+  reg [7:0] pulse_r;  // PWM level for Red LED
+  reg [7:0] pulse_g;  // PWM level for Green LED
+  reg [7:0] pulse_b;  // PWM level for Blue LED
+  always @(posedge clk)
+    case (phase)
+      2'b00 :
+        begin
+          pulse_r <= ramp[7:0];  // ramp up
+          pulse_g <= 8'h00;  // off
+          pulse_b <= 8'hFF - ramp[7:0];  // ramp down
+        end
+      2'b01 :
+        begin
+          pulse_r <= 8'hFF;  // full on
+          pulse_g <= ramp[7:0];  // ramp up
+          pulse_b <= 8'h00;  // off
+        end
+      2'b10 :
+        begin
+          pulse_r <= 8'hFF - ramp[7:0];  // ramp down
+          pulse_g <= 8'hFF;  // full on
+          pulse_b <= 8'h00;  // off
+        end
+      2'b11 :
+        begin
+          pulse_r <= 8'h00;  // off
+          pulse_g <= 8'hFF - ramp[7:0];  // ramp down
+          pulse_b <= ramp[7:0];  // ramp up
+        end
+      default :  // unexpected state
+        begin
+          pulse_r <= 8'h00;  // off
+          pulse_g <= 8'h00;  // off
+          pulse_b <= 8'h00;  // off
+        end
+    endcase
+*/
 
   // Instantiate pulse-width modulators
   pwm pwm_r (
@@ -74,12 +120,12 @@ module fomu_pvt (
     .out(LED_r)
   );
   pwm pwm_g (
-    .pulse(8'h0),
+    .pulse(pulse_g),
     .count(cnt[16:9]),  // 46.875KHz
     .out(LED_g)
   );
   pwm pwm_b (
-    .pulse(8'h0),
+    .pulse(pulse_b),
     .count(cnt[16:9]),  // 46.875KHz
     .out(LED_b)
   );
