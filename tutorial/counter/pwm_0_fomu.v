@@ -1,4 +1,4 @@
-// pwm_fomu.v
+// pwm_0_fomu.v
 //
 // top-level module for Fomu PVT device (uses count_3.v and pwm_0.v)
 //

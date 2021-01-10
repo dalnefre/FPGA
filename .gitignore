@@ -1,5 +1,5 @@
 .DS_Store
-test_bench.sim
-test_bench.vcd
+*.sim
+*.vcd
 *.asc
 *.bit
