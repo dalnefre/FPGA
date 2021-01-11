@@ -643,8 +643,8 @@ Use GTKWave to visualize the traces.
 ![pwm_0.vcd](pwm_0_vcd.png)
 
 The previous example shows a repeating PWM ramp-up,
-starting over from 0 when it reaches the maximum duty cycle.
-This produces a [_sawtooth wave_](https://en.wikipedia.org/wiki/Sawtooth_wave) in the frequency domain.
+starting over from 0 when it reaches the maximum value.
+This produces a [_sawtooth wave_](https://en.wikipedia.org/wiki/Sawtooth_wave) in the duty cycle.
 Often we would prefer a gradual ramp-up followed by a gradual ramp-down
 that gives us a [_triangle wave_](https://en.wikipedia.org/wiki/Triangle_wave) instead.
 This is very easy to accomplish with our PWM generator.
