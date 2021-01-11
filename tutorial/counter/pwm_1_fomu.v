@@ -78,17 +78,17 @@ module fomu_pvt (
   // Instantiate pulse-width modulators
   pwm pwm_r (
     .pulse(pulse_r),
-    .count(cnt[16:9]),  // 46.875KHz
+    .count(cnt[16:9]),  // 46.875kHz
     .out(LED_r)
   );
   pwm pwm_g (
     .pulse(pulse_g),
-    .count(cnt[16:9]),  // 46.875KHz
+    .count(cnt[16:9]),  // 46.875kHz
     .out(LED_g)
   );
   pwm pwm_b (
     .pulse(pulse_b),
-    .count(cnt[16:9]),  // 46.875KHz
+    .count(cnt[16:9]),  // 46.875kHz
     .out(LED_b)
   );
 
