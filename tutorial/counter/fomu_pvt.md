@@ -230,3 +230,76 @@ $ dfu-util -D pwm_0_fomu.dfu
 We vary the PWM in 4 phases to create a gradually-changing rainbow effect.
 
 ![pwm_rgb_fade](pwm_rgb_fade.png)
+
+
+```
+$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json count_3_fomu.json --asc count_3_fomu.asc
+...
+Info: Device utilisation:
+Info:            ICESTORM_LC:    31/ 5280     0%
+Info:           ICESTORM_RAM:     0/   30     0%
+Info:                  SB_IO:     4/   96     4%
+Info:                  SB_GB:     1/    8    12%
+Info:           ICESTORM_PLL:     0/    1     0%
+Info:            SB_WARMBOOT:     0/    1     0%
+Info:           ICESTORM_DSP:     0/    8     0%
+Info:         ICESTORM_HFOSC:     0/    1     0%
+Info:         ICESTORM_LFOSC:     0/    1     0%
+Info:                 SB_I2C:     0/    2     0%
+Info:                 SB_SPI:     0/    2     0%
+Info:                 IO_I3C:     0/    2     0%
+Info:            SB_LEDDA_IP:     0/    1     0%
+Info:            SB_RGBA_DRV:     1/    1   100%
+Info:         ICESTORM_SPRAM:     0/    4     0%
+...
+Info: Max frequency for clock 'clk': 70.39 MHz (PASS at 12.00 MHz)
+...
+```
+
+```
+$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json pwm_0_fomu.json --asc pwm_0_fomu.asc
+...
+Info: Device utilisation:
+Info:            ICESTORM_LC:    49/ 5280     0%
+Info:           ICESTORM_RAM:     0/   30     0%
+Info:                  SB_IO:     4/   96     4%
+Info:                  SB_GB:     1/    8    12%
+Info:           ICESTORM_PLL:     0/    1     0%
+Info:            SB_WARMBOOT:     0/    1     0%
+Info:           ICESTORM_DSP:     0/    8     0%
+Info:         ICESTORM_HFOSC:     0/    1     0%
+Info:         ICESTORM_LFOSC:     0/    1     0%
+Info:                 SB_I2C:     0/    2     0%
+Info:                 SB_SPI:     0/    2     0%
+Info:                 IO_I3C:     0/    2     0%
+Info:            SB_LEDDA_IP:     0/    1     0%
+Info:            SB_RGBA_DRV:     1/    1   100%
+Info:         ICESTORM_SPRAM:     0/    4     0%
+...
+Info: Max frequency for clock 'clk': 70.39 MHz (PASS at 12.00 MHz)
+...
+```
+
+```
+$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json pwm_1_fomu.json --asc pwm_1_fomu.asc
+...
+Info: Device utilisation:
+Info:            ICESTORM_LC:   111/ 5280     2%
+Info:           ICESTORM_RAM:     0/   30     0%
+Info:                  SB_IO:     4/   96     4%
+Info:                  SB_GB:     1/    8    12%
+Info:           ICESTORM_PLL:     0/    1     0%
+Info:            SB_WARMBOOT:     0/    1     0%
+Info:           ICESTORM_DSP:     0/    8     0%
+Info:         ICESTORM_HFOSC:     0/    1     0%
+Info:         ICESTORM_LFOSC:     0/    1     0%
+Info:                 SB_I2C:     0/    2     0%
+Info:                 SB_SPI:     0/    2     0%
+Info:                 IO_I3C:     0/    2     0%
+Info:            SB_LEDDA_IP:     0/    1     0%
+Info:            SB_RGBA_DRV:     1/    1   100%
+Info:         ICESTORM_SPRAM:     0/    4     0%
+...
+Info: Max frequency for clock 'clk': 69.04 MHz (PASS at 12.00 MHz)
+...
+```

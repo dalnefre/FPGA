@@ -8,12 +8,14 @@ SIM =	count_0.sim \
 	count_1.sim \
 	count_2.sim \
 	count_3.sim \
+	pwm_1.sim \
 	pwm_0.sim
 
 VCD =	count_0.vcd \
 	count_1.vcd \
 	count_2.vcd \
 	count_3.vcd \
+	pwm_1.vcd \
 	pwm_0.vcd
 
 DFU =	count_3_fomu.dfu \
@@ -37,6 +39,9 @@ count_0.sim: count_0.v
 	iverilog -o $@ $^
 
 pwm_0.sim: count_3.v pwm_0.v pwm_0_tb.v
+	iverilog -o $@ $^
+
+pwm_1.sim: count_3.v pwm_0.v pwm_1_tb.v
 	iverilog -o $@ $^
 
 %.sim: %.v %_tb.v

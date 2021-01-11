@@ -641,3 +641,60 @@ VCD info: dumpfile pwm_0.vcd opened for output.
 Use GTKWave to visualize the traces.
 
 ![pwm_0.vcd](pwm_0_vcd.png)
+
+The previous example shows a repeating PWM ramp-up,
+starting over from 0 when it reaches the maximum duty cycle.
+This produces a [_sawtooth wave_](https://en.wikipedia.org/wiki/Sawtooth_wave) in the frequency domain.
+Often we would prefer a gradual ramp-up followed by a gradual ramp-down
+that gives us a [_triangle wave_](https://en.wikipedia.org/wiki/Triangle_wave) instead.
+This is very easy to accomplish with our PWM generator.
+The expression `cnt[6] ? ~cnt[5:3] : cnt[5:3]` uses bit-6 as a phase indicator
+and inverts the pulse-width value when the phase is `1`.
+
+```verilog
+// pwm_1_tb.v
+//
+// simulation test bench for count_3.v + pwm_0.v
+//
+
+module test_bench;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("pwm_1.vcd");
+      $dumpvars(0, test_bench);
+      #250 $finish;  // stop simulation after 250 clock edges
+    end
+
+  // generate chip clock
+  reg clk = 0;
+  always
+    #1 clk = !clk;
+
+  // instantiate counter
+  wire [6:0] cnt;
+  count #(
+    .WIDTH(7)
+  ) counter (
+    ._reset(1'b1),
+    .clock(clk),
+    .count(cnt)
+  );
+
+  // instantiate pulse-width modulator
+  wire out;
+  pwm #(
+    .N(3)
+  ) pwm (
+    .pulse(cnt[6] ? ~cnt[5:3] : cnt[5:3]),
+    .count(cnt[2:0]),
+    .out(out)
+  );
+
+endmodule
+```
+
+Examine the traces to see the PWM ramp-up and ramp-down.
+
+![pwm_1.vcd](pwm_1_vcd.png)
