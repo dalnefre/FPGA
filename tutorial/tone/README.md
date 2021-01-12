@@ -151,24 +151,27 @@ endmodule
 
 //`define CLK_FREQ = 48_000_000
 //`define CLK_FREQ = 16_000_000
-`define CLK_FREQ 6_000
+`define CLK_FREQ 16_000
+//`define NOTE_DUR (`CLK_FREQ << 1)
+`define NOTE_DUR (`CLK_FREQ >> 1)
 
-`define WHL_NOTE (`CLK_FREQ << 1)
-`define HLF_NOTE (`CLK_FREQ >> 0)
-`define QTR_NOTE (`CLK_FREQ >> 1)
-`define ETH_NOTE (`CLK_FREQ >> 2)
-`define SIX_NOTE (`CLK_FREQ >> 3)
+`define WHL_NOTE (`NOTE_DUR >> 0)
+`define HLF_NOTE (`NOTE_DUR >> 1)
+`define QTR_NOTE (`NOTE_DUR >> 2)
+`define ETH_NOTE (`NOTE_DUR >> 3)
+`define SIX_NOTE (`NOTE_DUR >> 4)
 
-`define NOTE_GAP (`CLK_FREQ >> 5)
+`define NOTE_GAP (`NOTE_DUR >> 6)
 
 module test_bench;
 
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("pitch.vcd");
       $dumpvars(0, test_bench);
-      #(`CLK_FREQ << 4) $finish;  // stop simulation
+      #(`NOTE_DUR * 3);  // run for a while
+      $finish;  // stop simulation
     end
 
   // generate chip clock
@@ -274,6 +277,8 @@ endmodule
 00 82
 00 82
 ```
+
+![pitch.vcd](pitch_vcd.png)
 
 ### Exercises
 
