@@ -52,7 +52,6 @@ module test_bench;
       $finish;
     end
 
-/*
   // generate test signal
   initial
     begin
@@ -78,6 +77,7 @@ module test_bench;
       usb_p = 0; usb_n = 1;  // K
       #(`BIT_TIME);
 
+/*
       // NAK packet
       usb_p = 1; usb_n = 0;  // J
       #(`BIT_TIME);
@@ -95,6 +95,26 @@ module test_bench;
       #(`BIT_TIME);
       usb_p = 0; usb_n = 1;  // K
       #(`BIT_TIME);
+*/
+      // Too many 1's
+      usb_p = 0; usb_n = 1;  // K
+      #(`BIT_TIME);
+      usb_p = 0; usb_n = 1;  // K
+      #(`BIT_TIME);
+      usb_p = 0; usb_n = 1;  // K
+      #(`BIT_TIME);
+      usb_p = 0; usb_n = 1;  // K
+      #(`BIT_TIME);
+      usb_p = 0; usb_n = 1;  // K
+      #(`BIT_TIME);
+      usb_p = 1; usb_n = 0;  // J ("stuffed" 0)
+      #(`BIT_TIME);
+      usb_p = 1; usb_n = 0;  // J
+      #(`BIT_TIME);
+      usb_p = 1; usb_n = 0;  // J
+      #(`BIT_TIME);
+      usb_p = 0; usb_n = 1;  // K (MSB 0)
+      #(`BIT_TIME);
 
       // end of packet
       usb_p = 0; usb_n = 0;  // Z
@@ -104,8 +124,8 @@ module test_bench;
       usb_p = 1; usb_n = 0;  // J
       #(`BIT_TIME);
     end
-*/
 
+/*
   // generate D+ signal
   initial
     begin
@@ -209,6 +229,7 @@ module test_bench;
       usb_n = 0;  // J
       #(`BIT_TIME);
     end
+*/
 
   // generate chip clock
   reg clk = 0;

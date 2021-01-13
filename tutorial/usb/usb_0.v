@@ -39,7 +39,9 @@ module usb_rx (
   reg [2:0] state = RESET;
   reg [1:0] phase = `LINE_J;
   reg [1:0] tick = 0;
-  reg [2:0] nbit = 0;
+  reg [2:0] bits = 0;
+  reg [2:0] ones = 0;
+  wire bit = (D == phase);
   always @(posedge clk)
     case (state)
       RESET :
@@ -53,7 +55,8 @@ module usb_rx (
               phase <= `LINE_J;
               state <= SYNC;
               tick <= 0;
-              nbit <= 0;
+              bits <= 0;
+              ones <= 0;
               data <= 8'hFF;
             end
           else if (V && (D == `LINE_Z))
@@ -65,17 +68,18 @@ module usb_rx (
             begin
               if (V)
                 begin
-                  data <= { (D == phase), data[7:1] };
+                  data <= { bit, data[7:1] };
                   phase <= D;
-                  if (nbit == 3'd7)
+                  if (bits == 3'd7)
                     begin
                       state <= DATA;
                       ready <= 1;
+                      ones <= 1;
                     end
                 end
               else
                 state <= ERROR;
-              nbit <= nbit + 1'b1;
+              bits <= bits + 1'b1;
             end
           tick <= tick + 1'b1;
         end
@@ -84,18 +88,31 @@ module usb_rx (
           ready <= 0;
           if (!tick)
             begin
-              if (!nbit && (D == `LINE_Z))
-                state <= END;
+              if (!bits && (D == `LINE_Z))
+                begin
+                  state <= END;
+                  bits <= bits + 1'b1;
+                end
               else if (V)
                 begin
-                  data <= { (D == phase), data[7:1] };
+                  if (ones < 6)
+                    begin
+                      data <= { bit, data[7:1] };
+                      ones <= bit ? ones + 1'b1 : 0;
+                      bits <= bits + 1'b1;
+                    end
+/*
+                  else if (bit)
+                    state <= ERROR;
+*/
+                  else  // ignore "stuffed" bit
+                    ones <= 0;
                   phase <= D;
-                  if (nbit == 3'd7)
+                  if (bits == 3'd7)
                     ready <= 1;
                 end
               else
                 state <= ERROR;
-              nbit <= nbit + 1'b1;
             end
           tick <= tick + 1'b1;
         end
@@ -103,12 +120,12 @@ module usb_rx (
         begin
           data <= 8'hFF;
           if (!tick)
-            if ((nbit == 1) && (D != `LINE_Z))
+            if ((bits == 3'd1) && (D != `LINE_Z))
               state <= ERROR;
-            else if ((nbit == 2) && (D != `LINE_J))
+            else if ((bits == 3'd2) && (D != `LINE_J))
               state <= ERROR;
-            else if (nbit != 3)
-              nbit <= nbit + 1'b1;
+            else if (bits != 3'd3)
+              bits <= bits + 1'b1;
             else
               begin
                 state <= IDLE;
