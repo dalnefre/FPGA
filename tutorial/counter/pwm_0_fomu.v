@@ -32,11 +32,11 @@ module fomu_pvt (
   // Instantiate iCE40 LED driver hard logic
   wire LED_r, LED_g, LED_b;
   SB_RGBA_DRV #(
-    .CURRENT_MODE(RGBA_CURRENT_MODE_HALF),
-//    .RGB0_CURRENT(RGBA_CURRENT_08mA_04mA),
-    .RGB0_CURRENT(RGBA_CURRENT_16mA_08mA),  // green needs more current
-    .RGB1_CURRENT(RGBA_CURRENT_08mA_04mA),
-    .RGB2_CURRENT(RGBA_CURRENT_08mA_04mA)
+    .CURRENT_MODE(`RGBA_CURRENT_MODE_HALF),
+//    .RGB0_CURRENT(`RGBA_CURRENT_08mA_04mA),
+    .RGB0_CURRENT(`RGBA_CURRENT_16mA_08mA),  // green needs more current
+    .RGB1_CURRENT(`RGBA_CURRENT_08mA_04mA),
+    .RGB2_CURRENT(`RGBA_CURRENT_08mA_04mA)
   ) RGBA_DRIVER (
     .CURREN(1'b1),
     .RGBLEDEN(1'b1),
