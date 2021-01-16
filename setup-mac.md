@@ -2,6 +2,13 @@
 
 Installation instructions for MacOS (Catalina 10.15.7)
 
+## WARNING! THESE NOTES MAY BE INCORRECT/INCOMPLETE
+
+See further:
+ * [FOMU Toolchain](https://github.com/im-tomu/fomu-toolchain)
+ * [TinyFPGA-BX User Guide](https://tinyfpga.com/bx/guide.html)
+ * [learn-fpga toolchain](https://github.com/BrunoLevy/learn-fpga/blob/master/FemtoRV/TUTORIALS/toolchain.md)
+
 ## Fomu
 
 The [Fomu](https://tomu.im/fomu.html) is a programmable/reconfigurable FPGA platform
