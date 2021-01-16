@@ -698,3 +698,9 @@ endmodule
 Examine the traces to see the PWM ramp-up and ramp-down.
 
 ![pwm_1.vcd](pwm_1_vcd.png)
+
+### Next Steps
+
+ * [FOMU Counter](fomu_pvt.md) (_under construction_)
+ * [TinyFPGA-BX Counter](tinyfpga-bx.md) (_coming soon_)
+ * ([_Back to Simulation_](../simulation.md))

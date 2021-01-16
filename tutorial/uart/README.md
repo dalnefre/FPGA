@@ -949,3 +949,9 @@ Examine the waveform traces.
  2. Define a longer sequence of test-data characters (e.g.: "Hello\n").
  3. Create a serial loop-back device by feeding data received back to the transmitter.
  4. Add support for an optional [_parity bit_](https://en.wikipedia.org/wiki/Parity_bit) and configurable _stop bits_.
+
+### Next Steps
+
+ * [FOMU UART](fomu_pvt.md) (_coming soon_)
+ * [TinyFPGA-BX UART](tinyfpga-bx.md) (_coming soon_)
+ * ([_Back to Simulation_](../simulation.md))

@@ -17,4 +17,10 @@ is [published online](https://workshop.fomu.im/en/latest/).
 This tutorial uses the Fomu as a deployment target
 to demonstrate FPGA design on real hardware.
 
+### Projects
+
+ 1. [Counter](counter/fomu_pvt.md)
+ 2. [Serial UART](uart/fomu_pvt.md) (_coming soon_)
+ 3. [Tone Generator](tone/fomu_pvt.md) (_coming soon_)
+
 ([_Back to Index_](README.md))

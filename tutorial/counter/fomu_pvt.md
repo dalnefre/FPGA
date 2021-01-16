@@ -3,8 +3,7 @@
 The traditional ["Hello, World!"](https://en.wikipedia.org/wiki/%22Hello,_World!%22_program) program
 for hardware is simply blinking an LED.
 We can use our basic [Counter](README.md)
-to control the color of
-the RGB LED on the [Fomu](../fomu.md).
+to control the RGB LED on the [Fomu](../fomu.md).
 
 | Count Bit | Frequency | Period | Clock Cycles |
 |-----------|-----------|--------|--------------|
@@ -303,3 +302,5 @@ Info:         ICESTORM_SPRAM:     0/    4     0%
 Info: Max frequency for clock 'clk': 69.04 MHz (PASS at 12.00 MHz)
 ...
 ```
+
+([_Back to FOMU Projects_](../fomu.md))
