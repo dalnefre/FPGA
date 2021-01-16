@@ -23,3 +23,25 @@ DIFF   K J K J K J K K J J K K K J J K Z Z J
 NRZI   0 0 0 0 0 0 0 1 0 1 0 1 1 0 1 0 - - -
       |--clock sync---|--NAK packet---|-EOP-|
 */
+
+/*
+Proposed module defintion.
+
+module usb_uart (
+  input clk_48mhz,
+  input resetq,
+  output host_presence,
+
+  // USB pins
+  inout  pin_usb_p,
+  inout  pin_usb_n,
+
+  // UART interface
+  input  uart_wr,
+  input  uart_rd,
+  input  [7:0] uart_tx_data,
+  output [7:0] uart_rx_data,
+  output uart_busy,
+  output uart_valid
+);
+*/

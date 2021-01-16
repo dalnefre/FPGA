@@ -4,6 +4,8 @@ The traditional ["Hello, World!"](https://en.wikipedia.org/wiki/%22Hello,_World!
 for hardware is simply blinking an LED.
 We can use our basic [Counter](README.md)
 to control the RGB LED on the [Fomu](../fomu.md).
+We will use the counter to divide the 48MHz system clock
+down to human-perceptible blink frequencies.
 
 | Count Bit | Frequency | Period | Clock Cycles |
 |-----------|-----------|--------|--------------|
@@ -47,91 +49,16 @@ so with a 48MHz clock
 each simulation time-step represents
 10.4166... nanoseconds (ns).
 
-```verilog
-// count_3_fomu.v
-//
-// top-level module for Fomu PVT device (uses count_3.v)
-//
-
-// Correctly map pins for the iCE40UP5K SB_RGBA_DRV hard macro.
-`define GREENPWM RGB0PWM
-`define REDPWM   RGB1PWM
-`define BLUEPWM  RGB2PWM
-
-module fomu_pvt (
-  input  clki,      // 48MHz oscillator input
-  output rgb0,      // RGB LED pin 0 (**DO NOT** drive directly)
-  output rgb1,      // RGB LED pin 1 (**DO NOT** drive directly)
-  output rgb2,      // RGB LED pin 2 (**DO NOT** drive directly)
-  output usb_dp,    // USB D+
-  output usb_dn,    // USB D-
-  output usb_dp_pu  // USB D+ pull-up
-);
-
-  // Drive USB pins to 0 to disconnect Fomu from the host system.
-  // Otherwise it would try to talk to us over USB,
-  // which wouldn't work since we have no stack.
-  assign usb_dp = 1'b0;
-  assign usb_dn = 1'b0;
-  assign usb_dp_pu = 1'b0;
-
-  // Connect to system clock (with buffering)
-  wire clk;  // 48MHz system clock
-  SB_GB clk_gb (
-    .USER_SIGNAL_TO_GLOBAL_BUFFER(clki),
-    .GLOBAL_BUFFER_OUTPUT(clk)
-  );
-
-  // Parameters from iCE40 UltraPlus LED Driver Usage Guide, pages 19-20
-  localparam RGBA_CURRENT_MODE_FULL = "0b0";
-  localparam RGBA_CURRENT_MODE_HALF = "0b1";
-  // Current levels in Full / Half mode
-  localparam RGBA_CURRENT_04mA_02mA = "0b000001";
-  localparam RGBA_CURRENT_08mA_04mA = "0b000011";
-  localparam RGBA_CURRENT_12mA_06mA = "0b000111";
-  localparam RGBA_CURRENT_16mA_08mA = "0b001111";
-  localparam RGBA_CURRENT_20mA_10mA = "0b011111";
-  localparam RGBA_CURRENT_24mA_12mA = "0b111111";
-
-  // Instantiate iCE40 LED driver hard logic
-  wire LED_r, LED_g, LED_b;
-  SB_RGBA_DRV #(
-    .CURRENT_MODE(RGBA_CURRENT_MODE_HALF),
-//    .RGB0_CURRENT(RGBA_CURRENT_08mA_04mA),
-    .RGB0_CURRENT(RGBA_CURRENT_16mA_08mA),  // green needs more current
-    .RGB1_CURRENT(RGBA_CURRENT_08mA_04mA),
-    .RGB2_CURRENT(RGBA_CURRENT_08mA_04mA)
-  ) RGBA_DRIVER (
-    .CURREN(1'b1),
-    .RGBLEDEN(1'b1),
-    .`REDPWM(LED_r),    // Red
-    .`GREENPWM(LED_g),  // Green
-    .`BLUEPWM(LED_b),   // Blue
-    .RGB0(rgb0),
-    .RGB1(rgb1),
-    .RGB2(rgb2)
-  );
-
-  // Instantiate counter
-  localparam N = 28;
-  wire [N-1:0] out;
-  count #(
-    .WIDTH(N)
-  ) counter (
-    ._reset(1'b1),
-    .clock(clk),
-    .count(out)
-  );
-
-  // Connect counter bits to LED
-  assign LED_r = out[N-2];  // bit 26 ( ~2.8s cycle, ~1.4s on/off)
-  assign LED_g = out[N-3];  // bit 25 ( ~1.4s cycle, ~0.7s on/off)
-  assign LED_b = out[N-1];  // bit 27 ( ~5.6s cycle, ~2.8s on/off)
-
-endmodule
-```
-
-The following block diagram illustrates our final design.
+On the Fomu,
+we will use _counter_ bits in the 25-27 range
+to get blink periods measured in seconds.
+We instatiate three components;
+our (counter)[count_3.v],
+a global signal driver (`SB_GB`),
+and the RGB LED driver (`SB_RGBA_DRV`).
+The [hard blocks](https://en.wikipedia.org/wiki/Logic_block)
+`SB_GB` and `SB_RGBA_DRV` are predefined for the Fomu platform.
+The following block diagram illustrates our design.
 
 ```
   +-------------------------------------------------------------------------+
@@ -164,17 +91,161 @@ The following block diagram illustrates our final design.
   |                                                                         |
   +-------------------------------------------------------------------------+
 ```
+Our top-level module
+defines the Fomu platform
+and instantiates the main components.
+The `input`/`output` signals
+represent external connections
+(generally I/O pin pads).
+
+```verilog
+// count_3_fomu.v
+//
+// top-level module for Fomu PVT device (uses count_3.v)
+//
+
+`include "fomu_pvt.vh"
+
+module fomu_pvt (
+  input  clki,      // 48MHz oscillator input
+  output rgb0,      // RGB LED pin 0 (**DO NOT** drive directly)
+  output rgb1,      // RGB LED pin 1 (**DO NOT** drive directly)
+  output rgb2,      // RGB LED pin 2 (**DO NOT** drive directly)
+  output usb_dp,    // USB D+
+  output usb_dn,    // USB D-
+  output usb_dp_pu  // USB D+ pull-up
+);
+
+...
+
+endmodule
+```
+
+Available top-level signals
+are defined in [`fomu_pvt.pcf`](../../Fomu/pcf/fomu-pvt.pcf).
+Note that there are many aliases for the same pin-pads.
+
+The Fomu draws power (5V) from the USB host port.
+Since we are not implementing a USB device on the Fomu,
+we drive the USB pins to `0`,
+which prevents the host from trying to enumerate this device.
+
+```verilog
+  // Drive USB pins to 0 to disconnect Fomu from the host system.
+  // Otherwise it would try to talk to us over USB,
+  // which wouldn't work since we have no stack.
+  assign usb_dp = 1'b0;
+  assign usb_dn = 1'b0;
+  assign usb_dp_pu = 1'b0;
+```
+
+The 48MHz system clock signal requires special treatment.
+Since it must drive synchronization throughout the design,
+we connect it to one of the global buffer hard-blocks.
+
+```verilog
+  // Connect to system clock (with buffering)
+  wire clk;  // 48MHz system clock
+  SB_GB clk_gb (
+    .USER_SIGNAL_TO_GLOBAL_BUFFER(clki),
+    .GLOBAL_BUFFER_OUTPUT(clk)
+  );
+```
+
+The raw LED output signals also require special treatment.
+The Fomu has a special LED driver hard-block
+that can be configured to properly drive the LED pins.
+We define `wire LED_r, LED_g, LED_b;` to be
+our connections to the RGB LED driver.
+
+```verilog
+  // Instantiate iCE40 LED driver hard logic
+  wire LED_r, LED_g, LED_b;
+  SB_RGBA_DRV #(
+    .CURRENT_MODE(`RGBA_CURRENT_MODE_HALF),
+//    .RGB0_CURRENT(`RGBA_CURRENT_08mA_04mA),
+    .RGB0_CURRENT(`RGBA_CURRENT_16mA_08mA),  // green needs more current
+    .RGB1_CURRENT(`RGBA_CURRENT_08mA_04mA),
+    .RGB2_CURRENT(`RGBA_CURRENT_08mA_04mA)
+  ) RGBA_DRIVER (
+    .CURREN(1'b1),
+    .RGBLEDEN(1'b1),
+    .`REDPWM(LED_r),    // Red
+    .`GREENPWM(LED_g),  // Green
+    .`BLUEPWM(LED_b),   // Blue
+    .RGB0(rgb0),
+    .RGB1(rgb1),
+    .RGB2(rgb2)
+  );
+```
+
+We've collected the symbolic constant definitions (used above)
+into a [header file](fomu_pvt.h) for convenient re-use.
+
+```verilog
+// fomu_pvt.vh
+
+// Correctly map pins for the iCE40UP5K SB_RGBA_DRV hard macro.
+`define GREENPWM RGB0PWM
+`define REDPWM   RGB1PWM
+`define BLUEPWM  RGB2PWM
+
+// Parameters from iCE40 UltraPlus LED Driver Usage Guide, pages 19-20
+`define RGBA_CURRENT_MODE_FULL "0b0"
+`define RGBA_CURRENT_MODE_HALF "0b1"
+// Current levels in Full / Half mode
+`define RGBA_CURRENT_04mA_02mA "0b000001"
+`define RGBA_CURRENT_08mA_04mA "0b000011"
+`define RGBA_CURRENT_12mA_06mA "0b000111"
+`define RGBA_CURRENT_16mA_08mA "0b001111"
+`define RGBA_CURRENT_20mA_10mA "0b011111"
+`define RGBA_CURRENT_24mA_12mA "0b111111"
+```
+
+We instantiate a 28-bit counter (from [`count_3.v`](count_3.v))
+and expose the count bits as `out`.
+
+```verilog
+  // Instantiate counter
+  localparam N = 28;
+  wire [N-1:0] out;
+  count #(
+    .WIDTH(N)
+  ) counter (
+    ._reset(1'b1),
+    .clock(clk),
+    .count(out)
+  );
+```
+
+We connect bits 25-27 to our LED control lines
+through continuous assignment.
+
+```verilog
+  // Connect counter bits to LED
+  assign LED_r = out[N-2];  // bit 26 ( ~2.8s cycle, ~1.4s on/off)
+  assign LED_g = out[N-3];  // bit 25 ( ~1.4s cycle, ~0.7s on/off)
+  assign LED_b = out[N-1];  // bit 27 ( ~5.6s cycle, ~2.8s on/off)
+```
+
+Now that our module is complete,
+we have to generate a bitstream
+to configure the FPGA on the Fomu device.
 
 Synthesis, Place and Route, Package, and Deploy.
 
 ```
-$ yosys -p 'synth_ice40 -json count_3_fomu.json' count_3.v count_3_fomu.v
+$ yosys -p 'synth_ice40 -json count_3_fomu.json' count_3.v count_3_fomu.v >count_3_fomu.log
 $ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json count_3_fomu.json --asc count_3_fomu.asc
 $ icepack count_3_fomu.asc count_3_fomu.bit
 $ cp count_3_fomu.bit count_3_fomu.dfu
 $ dfu-suffix -v 1209 -p 70b1 -a count_3_fomu.dfu
 $ dfu-util -D count_3_fomu.dfu
 ```
+
+When this program is downloaded to the Fomu,
+it should start cycling through colors,
+changing color every 0.7 seconds.
 
 ### Using Individual Bits
 
