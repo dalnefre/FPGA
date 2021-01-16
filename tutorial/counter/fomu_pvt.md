@@ -1,5 +1,7 @@
 ## Fomu Counter
 
+### **WARNING: THIS TUTORIAL IS UNDER CONSTRUCTION**
+
 The traditional ["Hello, World!"](https://en.wikipedia.org/wiki/%22Hello,_World!%22_program) program
 for hardware is simply blinking an LED.
 We can use our basic [Counter](README.md)
@@ -50,10 +52,10 @@ each simulation time-step represents
 10.4166... nanoseconds (ns).
 
 On the Fomu,
-we will use _counter_ bits in the 25-27 range
+we will use _counter_ bits 25-27
 to get blink periods measured in seconds.
 We instatiate three components;
-our (counter)[count_3.v],
+our [counter](count_3.v),
 a global signal driver (`SB_GB`),
 and the RGB LED driver (`SB_RGBA_DRV`).
 The [hard blocks](https://en.wikipedia.org/wiki/Logic_block)
@@ -123,7 +125,7 @@ endmodule
 
 Available top-level signals
 are defined in [`fomu_pvt.pcf`](../../Fomu/pcf/fomu-pvt.pcf).
-Note that there are many aliases for the same pin-pads.
+Note that there are many names for the same pin.
 
 The Fomu draws power (5V) from the USB host port.
 Since we are not implementing a USB device on the Fomu,
@@ -180,7 +182,7 @@ our connections to the RGB LED driver.
 ```
 
 We've collected the symbolic constant definitions (used above)
-into a [header file](fomu_pvt.h) for convenient re-use.
+into the [`fomu_pvt.h`](fomu_pvt.h) header file for convenient re-use.
 
 ```verilog
 // fomu_pvt.vh

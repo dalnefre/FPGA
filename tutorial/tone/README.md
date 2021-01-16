@@ -1,6 +1,6 @@
 ## Tone Generator
 
-### **WARNING: THIS TUTORIAL IS NOT YET READY FOR REVIEW**
+### **WARNING: THIS TUTORIAL IS UNDER CONSTRUCTION**
 
 | Note    | Frequency | Comments      |
 |---------|-----------|---------------|
