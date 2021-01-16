@@ -22,7 +22,7 @@ module test_bench;
     #1 clk = !clk;
 
   // instantiate usb transmitter
-  wire usb_p, usb_n;  // D+, D- signals
+  tri usb_p, usb_n;  // D+, D- signals
   reg valid = 0;
   reg [7:0] d_out = 0;
   wire tx_rd;

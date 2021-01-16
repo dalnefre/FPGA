@@ -7,8 +7,8 @@
 
 module usb_rx (
   input            clk,                 // 48MHz system clock
-  input            usb_p,               // USB D+ signal
-  input            usb_n,               // USB D- signal
+  inout            usb_p,               // USB D+ signal
+  inout            usb_n,               // USB D- signal
   output reg       ready = 0,           // data ready
   output reg       eop = 0,             // end-of-packet
   output reg [7:0] data = 8'hFF         // data received
@@ -45,7 +45,7 @@ module usb_rx (
   always @(posedge clk)
     case (state)
       RESET :
-        if (V && (D == `LINE_J))
+        if (V && (D != `LINE_Z))
           state <= IDLE;
       IDLE :
         begin

@@ -225,16 +225,25 @@ module test_bench;
 
   // instantiate usb receiver
   reg usb_p, usb_n;  // D+, D- signals
+  tri tri_p, tri_n;
   wire ready;
   wire eop;
   wire [7:0] d_in;
   usb_rx USB_RX (
     .clk(clk),
-    .usb_p(usb_p),
-    .usb_n(usb_n),
+    .usb_p(tri_p),
+    .usb_n(tri_n),
     .ready(ready),
     .eop(eop),
     .data(d_in)
   );
+  assign tri_p = usb_p;
+  assign tri_n = usb_n;
+
+  // receive register
+  reg [7:0] rcvd;
+  always @(posedge clk)
+    if (ready)
+      rcvd <= d_in;  // capture byte received
 
 endmodule

@@ -11,8 +11,8 @@ module usb_tx (
   input      [7:0] data,                // data to send
   output reg       rd = 0,              // read data
   output reg       en = 0,              // transmit enable
-  output           usb_p,               // USB D+ signal
-  output           usb_n                // USB D- signal
+  inout            usb_p,               // USB D+ signal
+  inout            usb_n                // USB D- signal
 );
 
   localparam BIT_PERIOD = 4;  // (48MHz / 12Mbps) = 4 clocks per bit
@@ -102,6 +102,6 @@ module usb_tx (
           end
     end
 
-  assign { usb_p, usb_n } = D;  // transmit differential signal
+  assign { usb_p, usb_n } = en ? D : 2'bZ;  // transmit differential signal
 
 endmodule
