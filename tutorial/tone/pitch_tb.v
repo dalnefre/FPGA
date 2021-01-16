@@ -89,7 +89,7 @@ module test_bench;
   wire [7:0] ins = tune[seq_index];  // current instruction
   always @(posedge clk)
     if (seq_cnt)  // count down to zero
-      seq_cnt <= seq_cnt - 1;
+      seq_cnt <= seq_cnt - 1'b1;
     else  // take action on zero
       case (seq_state)
         `SEQ_EXEC :  // execute instruction

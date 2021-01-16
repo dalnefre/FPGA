@@ -1,6 +1,6 @@
 // usb_0.v
 //
-// USB full-speed device
+// USB full-speed device (rx)
 //
 
 `include "usb.vh"
@@ -35,7 +35,7 @@ module usb_rx (
   localparam END = 4'h4;
   localparam ERROR = 4'hF;
 
-  // receiver state-machine ---------- FIXME: IMPLEMENT BIT-STUFFING!
+  // receiver state-machine
   reg [2:0] state = RESET;
   reg [1:0] phase = `LINE_J;
   reg [1:0] tick = 0;
