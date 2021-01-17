@@ -282,7 +282,7 @@ about the synthesized circuit.
 
 The next step is to map the digital circuit
 onto the resources and interconnects of the FPGA.
-This process is called [[_place and route_](https://en.wikipedia.org/wiki/Place_and_route) (PNR).
+This process is called [_place and route_](https://en.wikipedia.org/wiki/Place_and_route) (PNR).
 
 ```
 $ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json count_3_fomu.json --asc count_3_fomu.asc
@@ -299,8 +299,12 @@ We want to ensure that this value is less than the 48MHz system clock on the Fom
 Info: Max frequency for clock 'clk': 70.39 MHz (PASS at 12.00 MHz)
 ```
 
-You will also find statistics about the usage
+Earlier in the output
+you will also find statistics about the usage
 of available resources on the FPGA.
+For example,
+the `ICESTORM_LC` statistic shows
+how many _logic cells_ our design occupies.
 
 ```
 Info: Device utilisation:
@@ -343,7 +347,8 @@ the boot-loader will _warm-boot_ into your design.
 Since our design does not contain its own USB boot-loader,
 we have to power-cycle the Fomu
 so it will re-load the default boot-loader
-(which pulses the LED in cyan).
+(which pulses the LED in cyan)
+before we can upload a new design.
 
 ### LED Pulse-Width Modulation (PWM)
 
@@ -411,5 +416,5 @@ to drive the LEDs.
 
 ### Next Steps
 
- * ([_Back to FOMU Projects_](../fomu.md))
+ * ([_Back to Fomu Projects_](../fomu.md))
  * ([_Back to Simulation_](../simulation.md))
