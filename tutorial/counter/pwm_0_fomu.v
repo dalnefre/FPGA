@@ -49,7 +49,7 @@ module fomu_pvt (
   );
 
   // Instantiate counter
-  localparam N = 29;
+  localparam N = 28;
   wire [N-1:0] cnt;
   count #(
     .WIDTH(N)

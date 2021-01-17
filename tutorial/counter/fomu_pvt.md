@@ -352,6 +352,27 @@ before we can upload a new design.
 
 ### LED Pulse-Width Modulation (PWM)
 
+```verilog
+  // Calculate PWM levels
+  wire       phase = cnt[27];  // ~5.6s
+  wire [7:0] ramp = cnt[26:19];  // ~2.8s
+  wire [7:0] pulse_r = (phase
+    ? (8'hFF - ramp[7:0])  // ramp down
+    : ramp[7:0]  // ramp up
+  );
+```
+
+```verilog
+  // Instantiate pulse-width modulator
+  pwm pwm_r (
+    .pulse(pulse_r),
+    .count(cnt[16:9]),  // 46.875kHz
+    .out(LED_r)
+  );
+  assign LED_g = 0;
+  assign LED_b = 0;
+```
+
 ```
 $ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json pwm_0_fomu.json --asc pwm_0_fomu.asc
 ...
@@ -378,16 +399,65 @@ Info: Max frequency for clock 'clk': 70.39 MHz (PASS at 12.00 MHz)
 
 ### LED Rainbow Fade
 
+```verilog
+  // Instantiate counter
+  localparam N = 29;
+  wire [N-1:0] cnt;
+  count #(
+    .WIDTH(N)
+  ) counter (
+    ._reset(1'b1),
+    .clock(clk),
+    .count(cnt)
+  );
+```
+
 We vary the PWM in 4 phases to create a gradually-changing rainbow effect.
 
 ![pwm_rgb_fade](pwm_rgb_fade.png)
 
+```verilog
+  // Calculate PWM levels
+  wire [1:0] phase = cnt[28:27];  // ~11.2s
+  wire [7:0] ramp = cnt[26:19];  // ~2.8s
+  wire [7:0] pulse_r = (phase[1]
+    ? (phase[0] ? 8'h00 : ~ramp[7:0])
+    : (phase[0] ? 8'hFF : ramp[7:0])
+  );
+  wire [7:0] pulse_g = (phase[1]
+    ? (phase[0] ? ~ramp[7:0] : 8'hFF)
+    : (phase[0] ? ramp[7:0] : 8'h00)
+  );
+  wire [7:0] pulse_b = (phase[1]
+    ? (phase[0] ? ramp[7:0] : 8'h00)
+    : (phase[0] ? 8'h00 : ~ramp[7:0])
+  );
+```
+
+```verilog
+  // Instantiate pulse-width modulators
+  pwm pwm_r (
+    .pulse(pulse_r),
+    .count(cnt[16:9]),  // 46.875kHz
+    .out(LED_r)
+  );
+  pwm pwm_g (
+    .pulse(pulse_g),
+    .count(cnt[16:9]),  // 46.875kHz
+    .out(LED_g)
+  );
+  pwm pwm_b (
+    .pulse(pulse_b),
+    .count(cnt[16:9]),  // 46.875kHz
+    .out(LED_b)
+  );
+```
 
 ```
 $ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json pwm_1_fomu.json --asc pwm_1_fomu.asc
 ...
 Info: Device utilisation:
-Info:            ICESTORM_LC:   111/ 5280     2%
+Info:            ICESTORM_LC:   108/ 5280     2%
 Info:           ICESTORM_RAM:     0/   30     0%
 Info:                  SB_IO:     4/   96     4%
 Info:                  SB_GB:     1/    8    12%
