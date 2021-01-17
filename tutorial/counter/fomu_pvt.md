@@ -2,6 +2,8 @@
 
 ### **WARNING: THIS TUTORIAL IS UNDER CONSTRUCTION**
 
+### Basic LED Color-Cycle
+
 The traditional ["Hello, World!"](https://en.wikipedia.org/wiki/%22Hello,_World!%22_program) program
 for hardware is simply blinking an LED.
 We can use our basic [Counter](README.md)
@@ -182,7 +184,7 @@ our connections to the RGB LED driver.
 ```
 
 We've collected the symbolic constant definitions (used above)
-into the [`fomu_pvt.h`](fomu_pvt.h) header file for convenient re-use.
+into the [`fomu_pvt.vh`](fomu_pvt.vh) header file for convenient re-use.
 
 ```verilog
 // fomu_pvt.vh
@@ -230,83 +232,77 @@ through continuous assignment.
   assign LED_b = out[N-1];  // bit 27 ( ~5.6s cycle, ~2.8s on/off)
 ```
 
-Now that our module is complete,
-we have to generate a bitstream
-to configure the FPGA on the Fomu device.
-
-Synthesis, Place and Route, Package, and Deploy.
-
-```
-$ yosys -p 'synth_ice40 -json count_3_fomu.json' count_3.v count_3_fomu.v >count_3_fomu.log
-$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json count_3_fomu.json --asc count_3_fomu.asc
-$ icepack count_3_fomu.asc count_3_fomu.bit
-$ cp count_3_fomu.bit count_3_fomu.dfu
-$ dfu-suffix -v 1209 -p 70b1 -a count_3_fomu.dfu
-$ dfu-util -D count_3_fomu.dfu
-```
-
 When this program is downloaded to the Fomu,
 it should start cycling through colors,
 changing color every 0.7 seconds.
 
-### Using Individual Bits
+#### Synthesis, Place and Route, Package and Deploy
 
-One common use of a counter
-is to "pre-scale" the clock signal
-to a lower frequency.
-Each bit of the counter
-divides the frequency in half.
-For example,
-if our system clock was 48MHz
-(as it is on the [Fomu](../fomu.md))
-and we set the counter `WIDTH` to `4`,
-the most-significant bit (MSB) of the `count`
-would toggle at a frequency of 3MHz.
+Now that our module is complete,
+we have to generate a bitstream
+to configure the FPGA on the Fomu device.
+We use the open-source [IceStorm](http://www.clifford.at/icestorm/) tools,
+which target the iCE40 FPGA on the Fomu.
+The [`Makefile`](Makefile) contains complete build recipes,
+however we will explore each step explicitly.
 
-```verilog
-// count_3.v
-//
-// free-running counter
-//
-
-module count #(
-  parameter INIT = 0,                   // initial value
-  parameter WIDTH = 16                  // counter bit-width
-) (
-  input                  _reset,        // active-low reset
-  input                  clock,         // system clock
-  output                 msb,           // MSB of counter (pre-scaler)
-  output reg [WIDTH-1:0] count = INIT   // free-running counter
-);
-
-  // count positive-edge transitions of the clock
-  always @(posedge clock)
-    count <= _reset ? count + 1'b1 : INIT;
-
-  assign msb = count[WIDTH-1];
-
-endmodule
-```
-
-Synthesis, Place and Route, Package, and Deploy.
+The first step is to convert our Verilog specification
+into a digital logic circuit (gate-level).
+This process is called [_synthesis_](https://en.wikipedia.org/wiki/Logic_synthesis).
 
 ```
-$ yosys -p 'synth_ice40 -json pwm_0_fomu.json' count_3.v pwm_0.v pwm_0_fomu.v >pwm_0_fomu.log
-$ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json pwm_0_fomu.json --asc pwm_0_fomu.asc
-$ icepack pwm_0_fomu.asc pwm_0_fomu.bit
-$ cp pwm_0_fomu.bit pwm_0_fomu.dfu
-$ dfu-suffix -v 1209 -p 70b1 -a pwm_0_fomu.dfu
-$ dfu-util -D pwm_0_fomu.dfu
+$ yosys -p 'synth_ice40 -json count_3_fomu.json' count_3.v count_3_fomu.v >count_3_fomu.log
 ```
 
-We vary the PWM in 4 phases to create a gradually-changing rainbow effect.
+Synthesis generates a **lot** of output,
+so we capture it on a `.log` file.
+However, any errors will still appear on the console.
+At the end of the log you can find some statistics
+about the synthesized circuit.
 
-![pwm_rgb_fade](pwm_rgb_fade.png)
+```
+3.50. Printing statistics.
 
+=== fomu_pvt ===
+
+   Number of wires:                 19
+   Number of wire bits:            127
+   Number of public wires:          19
+   Number of public wire bits:     127
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 84
+     SB_CARRY                       26
+     SB_DFF                         28
+     SB_GB                           1
+     SB_LUT4                        28
+     SB_RGBA_DRV                     1
+```
+
+The next step is to map the digital circuit
+onto the resources and interconnects of the FPGA.
+This process is called [[_place and route_](https://en.wikipedia.org/wiki/Place_and_route) (PNR).
 
 ```
 $ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json count_3_fomu.json --asc count_3_fomu.asc
-...
+```
+
+This also generates a signficant amount of output.
+Near the end you should find a message indicating
+how fast your design can run.
+This comes from an analysis of the worst-case [propagation-delay](https://en.wikipedia.org/wiki/Propagation_delay)
+between clock-synchronized storage elements (flip-flops).
+We want to ensure that this value is less than the 48MHz system clock on the Fomu.
+
+```
+Info: Max frequency for clock 'clk': 70.39 MHz (PASS at 12.00 MHz)
+```
+
+You will also find statistics about the usage
+of available resources on the FPGA.
+
+```
 Info: Device utilisation:
 Info:            ICESTORM_LC:    31/ 5280     0%
 Info:           ICESTORM_RAM:     0/   30     0%
@@ -323,10 +319,33 @@ Info:                 IO_I3C:     0/    2     0%
 Info:            SB_LEDDA_IP:     0/    1     0%
 Info:            SB_RGBA_DRV:     1/    1   100%
 Info:         ICESTORM_SPRAM:     0/    4     0%
-...
-Info: Max frequency for clock 'clk': 70.39 MHz (PASS at 12.00 MHz)
-...
 ```
+
+Now that we have an FPGA configuration bitstream,
+we need to package it for installation on the Fomu.
+
+```
+$ icepack count_3_fomu.asc count_3_fomu.bit
+$ cp count_3_fomu.bit count_3_fomu.dfu
+$ dfu-suffix -v 1209 -p 70b1 -a count_3_fomu.dfu
+```
+
+The _device-firmware update_ file (DFU)
+can be uploaded into the Fomu via the USB boot-loader.
+
+```
+$ dfu-util -D count_3_fomu.dfu
+```
+
+During upload, the Fomu LED will blink dark blue.
+When the upload is complete,
+the boot-loader will _warm-boot_ into your design.
+Since our design does not contain its own USB boot-loader,
+we have to power-cycle the Fomu
+so it will re-load the default boot-loader
+(which pulses the LED in cyan).
+
+### LED Pulse-Width Modulation (PWM)
 
 ```
 $ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json pwm_0_fomu.json --asc pwm_0_fomu.asc
@@ -352,6 +371,13 @@ Info: Max frequency for clock 'clk': 70.39 MHz (PASS at 12.00 MHz)
 ...
 ```
 
+### LED Rainbow Fade
+
+We vary the PWM in 4 phases to create a gradually-changing rainbow effect.
+
+![pwm_rgb_fade](pwm_rgb_fade.png)
+
+
 ```
 $ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json pwm_1_fomu.json --asc pwm_1_fomu.asc
 ...
@@ -376,4 +402,14 @@ Info: Max frequency for clock 'clk': 69.04 MHz (PASS at 12.00 MHz)
 ...
 ```
 
-([_Back to FOMU Projects_](../fomu.md))
+### PWM Hard-Block
+
+We've shown how to implement PWM directly.
+However, the Fomu contains a convenient hard-block
+that generates PWM signals
+to drive the LEDs.
+
+### Next Steps
+
+ * ([_Back to FOMU Projects_](../fomu.md))
+ * ([_Back to Simulation_](../simulation.md))
