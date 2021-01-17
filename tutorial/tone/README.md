@@ -289,6 +289,6 @@ endmodule
 
 ### Next Steps
 
- * [FOMU Tone](fomu_pvt.md) (_coming soon_)
+ * [Fomu Tone](fomu_pvt.md) (_coming soon_)
  * [TinyFPGA-BX Tone](tinyfpga-bx.md) (_coming soon_)
- * ([_Back to Simulation_](../simulation.md))
+ * ([_Back to Simulation_](../simulation.md#projects))

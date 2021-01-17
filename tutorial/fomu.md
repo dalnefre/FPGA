@@ -19,7 +19,7 @@ to demonstrate FPGA design on real hardware.
 
 ### Projects
 
- 1. [Counter](counter/fomu_pvt.md)
+ 1. [Counter](counter/fomu_pvt.md) (_under construction_)
  2. [Serial UART](uart/fomu_pvt.md) (_coming soon_)
  3. [Tone Generator](tone/fomu_pvt.md) (_coming soon_)
 

@@ -703,4 +703,4 @@ Examine the traces to see the PWM ramp-up and ramp-down.
 
  * [Fomu Counter](fomu_pvt.md) (_under construction_)
  * [TinyFPGA-BX Counter](tinyfpga-bx.md) (_coming soon_)
- * ([_Back to Simulation_](../simulation.md))
+ * ([_Back to Simulation_](../simulation.md#projects))

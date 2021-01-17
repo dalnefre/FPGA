@@ -952,6 +952,6 @@ Examine the waveform traces.
 
 ### Next Steps
 
- * [FOMU UART](fomu_pvt.md) (_coming soon_)
+ * [Fomu UART](fomu_pvt.md) (_coming soon_)
  * [TinyFPGA-BX UART](tinyfpga-bx.md) (_coming soon_)
- * ([_Back to Simulation_](../simulation.md))
+ * ([_Back to Simulation_](../simulation.md#projects))

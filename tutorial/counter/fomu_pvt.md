@@ -416,5 +416,5 @@ to drive the LEDs.
 
 ### Next Steps
 
- * ([_Back to Fomu Projects_](../fomu.md))
- * ([_Back to Simulation_](../simulation.md))
+ * ([_Back to Fomu Projects_](../fomu.md#projects))
+ * ([_Back to Simulation_](../simulation.md#projects))
