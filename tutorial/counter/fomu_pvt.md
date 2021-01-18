@@ -352,6 +352,16 @@ before we can upload a new design.
 
 ### LED Pulse-Width Modulation (PWM)
 
+Now that we've seen how to turn the LEDs on and off,
+let's see how to control the intensity of each color.
+If we turn the LEDs on and off very quickly,
+they will appear to gradually dim or brighten
+based on the proportion of on-time to off-time
+([_duty cycle_](https://en.wikipedia.org/wiki/Duty_cycle)).
+We will use our previously-defined PWM module (from [`pwm_0.v`](pwm_0.v)),
+driven by a 28-bit counter,
+to vary the LED's duty-cycles over time.
+
 ```verilog
   // Calculate PWM levels
   wire       phase = cnt[27];  // ~5.6s
@@ -361,6 +371,14 @@ before we can upload a new design.
     : ramp[7:0]  // ramp up
   );
 ```
+
+We use _counter_ bits 19-26 to give us a 0-255 ramp over 2.8 seconds.
+When the ramp reaches it's maximum,
+we use bit 27 (the next higher bit)
+to toggle the ramp direction.
+A 255-0 ramp down is achieved
+by subtracting the positive ramp from 255
+(`8h'FF` in hexadecimal).
 
 ```verilog
   // Instantiate pulse-width modulator
@@ -373,7 +391,16 @@ before we can upload a new design.
   assign LED_b = 0;
 ```
 
+We instantiate our PWM, tied to the counter,
+and connect the output to `LED_r`.
+`LED_g` and `LED_b` are assigned `0` constants,
+so we will only be pulsing the red portion of the LED.
+
+Run synthesis, place, and route, to create the FPGA configuration bitstream.
+Note how the resource usage compares to the color-cycle example.
+
 ```
+$ yosys -p 'synth_ice40 -json pwm_0_fomu.json' count_3.v pwm_0.v pwm_0_fomu.v >pwm_0_fomu.log
 $ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json pwm_0_fomu.json --asc pwm_0_fomu.asc
 ...
 Info: Device utilisation:
@@ -397,7 +424,24 @@ Info: Max frequency for clock 'clk': 70.39 MHz (PASS at 12.00 MHz)
 ...
 ```
 
+Package and install the DFU to the Fomu.
+
+```
+$ icepack pwm_0_fomu.asc pwm_0_fomu.bit
+$ cp pwm_0_fomu.bit pwm_0_fomu.dfu
+$ dfu-suffix -v 1209 -p 70b1 -a pwm_0_fomu.dfu
+$ dfu-util -D pwm_0_fomu.dfu
+```
+
+The red LED should be pulsing on a 5.6s cycle.
+
 ### LED Rainbow Fade
+
+By using PWM we can vary the intensity of each LED.
+Let's vary the PWM in 4 phases to create a gradually-changing rainbow effect.
+
+First, we'll need one more counter bit,
+so we can ramp more slowly.
 
 ```verilog
   // Instantiate counter
@@ -412,7 +456,7 @@ Info: Max frequency for clock 'clk': 70.39 MHz (PASS at 12.00 MHz)
   );
 ```
 
-We vary the PWM in 4 phases to create a gradually-changing rainbow effect.
+Next, we'll calculate a more complex multi-phase ramp.
 
 ![pwm_rgb_fade](pwm_rgb_fade.png)
 
@@ -434,6 +478,18 @@ We vary the PWM in 4 phases to create a gradually-changing rainbow effect.
   );
 ```
 
+Finally, we instantiate separate PWM controls for each LED,
+but all driven by the same 29-bit counter.
+We've chosen the least-significant-bit (LSB)
+of each PWM to be bit 9 of the 48Mhz counter,
+which means that the minimum pulse-width
+corresponding to a frequency of 46.875Mhz.
+The specifications for the iCE40 FPGA used in the Fomu
+say that the LED signal frequency should stay below 64Mhz,
+so we're safe with this value.
+It's fast enough that the human eye won't see the flicker,
+yet slow enough to stay withing the LED driver's operating range.
+
 ```verilog
   // Instantiate pulse-width modulators
   pwm pwm_r (
@@ -453,7 +509,11 @@ We vary the PWM in 4 phases to create a gradually-changing rainbow effect.
   );
 ```
 
+Run synthesis, place, and route, to create the FPGA configuration bitstream.
+Note again how the resource usage compares to the previous examples.
+
 ```
+$ yosys -p 'synth_ice40 -json pwm_1_fomu.json' count_3.v pwm_0.v pwm_1_fomu.v >pwm_1_fomu.log
 $ nextpnr-ice40 --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf --json pwm_1_fomu.json --asc pwm_1_fomu.asc
 ...
 Info: Device utilisation:
@@ -477,12 +537,25 @@ Info: Max frequency for clock 'clk': 69.04 MHz (PASS at 12.00 MHz)
 ...
 ```
 
+Package and install the DFU to the Fomu.
+
+```
+$ icepack pwm_1_fomu.asc pwm_1_fomu.bit
+$ cp pwm_1_fomu.bit pwm_1_fomu.dfu
+$ dfu-suffix -v 1209 -p 70b1 -a pwm_1_fomu.dfu
+$ dfu-util -D pwm_0_fomu.dfu
+```
+
+The RGB LED should now be gradually sliding through the colors of the rainbow.
+
 ### PWM Hard-Block
 
 We've shown how to implement PWM directly.
 However, the Fomu contains a convenient hard-block
 that generates PWM signals
 to drive the LEDs.
+
+_**TODO:** demonstrate using the PWM hard-block to recreate the rainbow demo (note the lower resource usage)._
 
 ### Next Steps
 
