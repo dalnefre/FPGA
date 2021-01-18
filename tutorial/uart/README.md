@@ -72,7 +72,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("baud_gen.vcd");
       $dumpvars(0, test_bench);
       #50;
       $finish;
@@ -99,14 +99,14 @@ endmodule
 Compile the modules and run the simulation, as usual.
 
 ```
-$ iverilog -o test_bench.sim baud_gen.v baud_gen_tb.v
-$ ./test_bench.sim
-VCD info: dumpfile test_bench.vcd opened for output.
+$ iverilog -o baud_gen.sim baud_gen.v baud_gen_tb.v
+$ ./baud_gen.sim
+VCD info: dumpfile baud_gen.vcd opened for output.
 ```
 
 Examine the waveform traces with GTKWave.
 
-![test_bench.vcd](baud_gen_vcd.png)
+![baud_gen.vcd](baud_gen_vcd.png)
 
 _Note:_ Right-click on the `cnt[2:0]` signal and select **Data Format -> Decimal**.
 
@@ -222,7 +222,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("serial_tx0.vcd");
       $dumpvars(0, test_bench);
       #120;
       $finish;
@@ -281,14 +281,14 @@ as illustrated by this block-diagram:
 Compile all the modules and run the simulation.
 
 ```
-$ iverilog -o test_bench.sim baud_gen.v serial_tx0.v serial_tx0_tb.v
-$ ./test_bench.sim
-VCD info: dumpfile test_bench.vcd opened for output.
+$ iverilog -o serial_tx0.sim baud_gen.v serial_tx0.v serial_tx0_tb.v
+$ ./serial_tx0.sim
+VCD info: dumpfile serial_tx0.vcd opened for output.
 ```
 
 Examine the waveform traces with GTKWave.
 
-![test_bench.vcd](serial_tx0_vcd.png)
+![serial_tx0.vcd](serial_tx0_vcd.png)
 
 ### Serial Receiver
 
@@ -343,7 +343,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("sync.vcd");
       $dumpvars(0, test_bench);
       #120;
       $finish;
@@ -374,7 +374,7 @@ endmodule
 
 Compile, simulate, and visualize.
 
-![test_bench.vcd](sync_vcd.png)
+![sync.vcd](sync_vcd.png)
 
 Notice how the `rx` transitions are not aligned with the `clk`.
 Also, each DFF stage introduces a delay of one clock-cycle.
@@ -670,18 +670,18 @@ The corresponding test bench [`serial_rx_tb.v`](serial_rx_tb.v)
 simulates receiving a single letter "K".
 
 ```
-$ iverilog -o test_bench.sim serial_rx.v serial_rx_tb.v
-$ ./test_bench.sim
+$ iverilog -o serial_rx.sim serial_rx.v serial_rx_tb.v
+$ ./serial_rx.sim
 BIT_PERIOD =          14
 FULL_BIT_TIME =          13
 HALF_BIT_TIME =           6
-VCD info: dumpfile test_bench.vcd opened for output.
+VCD info: dumpfile serial_rx.vcd opened for output.
 `PACE =          27
 ```
 
 Examine the waveform traces with GTKWave.
 
-![test_bench.vcd](serial_rx_vcd.png)
+![serial_rx.vcd](serial_rx_vcd.png)
 
 ### Serial Transmitter (revisited)
 
@@ -741,6 +741,7 @@ module serial_tx #(
           timer <= FULL_BIT_TIME;
           shift <= { `STOP_BIT, data, `START_BIT };  // load data into shift-register
           cnt <= 1;  // start counting bits
+//          $display("sending = 0x%x", data);
         end
       else
         shift = { 10 { `IDLE_BIT } };  // reset shift-register
@@ -803,7 +804,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("serial_tx.vcd");
       $dumpvars(0, test_bench);
       #240;
       $finish;
@@ -860,14 +861,14 @@ for the transmitter.
 Compile and run the simulation.
 
 ```
-$ iverilog -o test_bench.sim serial_tx.v serial_tx_tb.v
-$ ./test_bench.sim
-VCD info: dumpfile test_bench.vcd opened for output.
+$ iverilog -o serial_tx.sim serial_tx.v serial_tx_tb.v
+$ ./serial_tx.sim
+VCD info: dumpfile serial_tx.vcd opened for output.
 ```
 
 Examine the waveform traces.
 
-![test_bench.vcd](serial_tx_vcd.png)
+![serial_tx.vcd](serial_tx_vcd.png)
 
 ### Serial UART
 
@@ -931,17 +932,17 @@ which we've already reviewed.
 Compile and run the simulation.
 
 ```
-$ iverilog -o test_bench.sim serial_tx.v serial_rx.v uart.v uart_tb.v
-$ ./test_bench.sim
+$ iverilog -o uart.sim serial_rx.v serial_tx.v uart.v uart_tb.v
+$ ./uart.sim
 BIT_PERIOD =           5
 FULL_BIT_TIME =           4
 HALF_BIT_TIME =           1
-VCD info: dumpfile test_bench.vcd opened for output.
+VCD info: dumpfile uart.vcd opened for output.
 ```
 
 Examine the waveform traces.
 
-![test_bench.vcd](uart_vcd.png)
+![uart.vcd](uart_vcd.png)
 
 ### Exercises
 

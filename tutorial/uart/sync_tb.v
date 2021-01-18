@@ -5,7 +5,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("sync.vcd");
       $dumpvars(0, test_bench);
       #120;
       $finish;

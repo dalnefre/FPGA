@@ -2,6 +2,10 @@
 //
 // universal asynchronous receiver-transmitter (UART)
 //
+// requires:
+//    serial_rx.v
+//    serial_tx.v
+//
 
 `include "uart.vh"
 

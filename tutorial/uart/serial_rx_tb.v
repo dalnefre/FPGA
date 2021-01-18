@@ -22,7 +22,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("test_bench.vcd");
+      $dumpfile("serial_rx.vcd");
       $dumpvars(0, test_bench);
       $display("`PACE = %d", `PACE);
       RX = `IDLE_BIT;
