@@ -1,7 +1,5 @@
 ## Fomu Counter
 
-### **WARNING: THIS TUTORIAL IS UNDER CONSTRUCTION**
-
 ### Basic LED Color-Cycle
 
 The traditional ["Hello, World!"](https://en.wikipedia.org/wiki/%22Hello,_World!%22_program) program
@@ -359,7 +357,7 @@ they will appear to gradually dim or brighten
 based on the proportion of on-time to off-time
 ([_duty cycle_](https://en.wikipedia.org/wiki/Duty_cycle)).
 We will use our previously-defined PWM module (from [`pwm_0.v`](pwm_0.v)),
-driven by a 28-bit counter,
+driven by the 28-bit counter,
 to vary the LED's duty-cycles over time.
 
 ```verilog
@@ -441,7 +439,7 @@ By using PWM we can vary the intensity of each LED.
 Let's vary the PWM in 4 phases to create a gradually-changing rainbow effect.
 
 First, we'll need one more counter bit,
-so we can ramp more slowly.
+so we will have 2 bits for `phase`.
 
 ```verilog
   // Instantiate counter
@@ -457,6 +455,7 @@ so we can ramp more slowly.
 ```
 
 Next, we'll calculate a more complex multi-phase ramp.
+It will take 11.2 seconds to cycle through all the colors.
 
 ![pwm_rgb_fade](pwm_rgb_fade.png)
 
@@ -483,7 +482,7 @@ but all driven by the same 29-bit counter.
 We've chosen the least-significant-bit (LSB)
 of each PWM to be bit 9 of the 48Mhz counter,
 which means that the minimum pulse-width
-corresponding to a frequency of 46.875Mhz.
+corresponds to a frequency of 46.875Mhz.
 The specifications for the iCE40 FPGA used in the Fomu
 say that the LED signal frequency should stay below 64Mhz,
 so we're safe with this value.
@@ -555,7 +554,7 @@ However, the Fomu contains a convenient hard-block
 that generates PWM signals
 to drive the LEDs.
 
-_**TODO:** demonstrate using the PWM hard-block to recreate the rainbow demo (note the lower resource usage)._
+_**TODO:** demonstrate using the PWM hard-block to recreate the rainbow demo (note the reduced resource usage)._
 
 ### Next Steps
 
