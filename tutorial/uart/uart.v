@@ -7,6 +7,26 @@
 //    serial_tx.v
 //
 
+/*
+         +--------------+
+         | uart         |
+         |              |
+    ---->|clk           |
+         |              |
+      8  |              |
+    --/->|tx_data     tx|---->
+    ---->|wr            |
+    <----|busy          |
+         |              |
+      8  |              |
+    <-/--|rx_data     rx|<----
+    ---->|rd            |
+    <----|valid         |
+    <----|break         |
+         |              |
+         +--------------+
+*/
+
 `include "uart.vh"
 
 module uart #(
@@ -15,15 +35,17 @@ module uart #(
 ) (
   input            clk,                 // system clock
 
+  input      [7:0] tx_data,             // octet to transmit
   input            wr,                  // write data
-  input      [7:0] din,                 // octet to transmit
   output           busy,                // transmitter busy
-  output           tx,                  // transmit data
 
-  input            rx,                  // received data (async)
+  output reg [7:0] rx_data,             // octet received
+  input            rd,                  // read data (acknowledgement)
+  output reg       valid,               // octet is ready
   output           break,               // line break condition
-  output           ready,               // octet is ready
-  output     [7:0] dout                 // octet received
+
+  input            rx,                  // receive line (async)
+  output           tx                   // transmit line
 );
 
   // instantiate serial transmitter
@@ -32,8 +54,8 @@ module uart #(
     .BIT_FREQ(BIT_FREQ)
   ) SER_TX (
     .clk(clk),
+    .data(tx_data),
     .wr(wr),
-    .data(din),
     .busy(busy),
     .tx(tx)
   );
@@ -44,10 +66,27 @@ module uart #(
     .BIT_FREQ(BIT_FREQ)
   ) SER_RX (
     .clk(clk),
-    .rx(rx),
-    .break(break),
+    .data(rxd),
     .ready(ready),
-    .data(dout)
+    .break(break),
+    .rx(rx)
   );
+
+  // RXD buffer
+  wire ready;
+  wire [7:0] rxd;
+  always @(posedge clk)
+    begin
+      if (ready)
+        begin
+          rx_data <= rxd;
+          valid <= 1;
+        end
+      if (rd)
+        begin
+          rx_data <= 0;
+          valid <= 0;
+        end
+    end
 
 endmodule

@@ -20,7 +20,7 @@ module test_bench;
     #1 CLK = !CLK;
 
   // simulation signals
-  reg [7:0] DIN = "K";
+  wire [7:0] DIN;
   wire BSY;
   wire LINE;
   wire RDY;
@@ -33,14 +33,15 @@ module test_bench;
     .BIT_FREQ(3)
   ) DUT (
     .clk(CLK),
+    .tx_data(DOUT),
     .wr(!BSY),
-    .din(DIN),
     .busy(BSY),
-    .tx(LINE),
-    .rx(LINE),
-    .ready(RDY),
+    .rx_data(DIN),
+    .rd(RDY),
+//    .valid(VLD),
     .break(BRK),
-    .dout(DOUT)
+    .rx(LINE),
+    .tx(LINE)
   );
 
 endmodule
