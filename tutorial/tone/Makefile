@@ -2,23 +2,46 @@
 # Makefile
 #
 
+PNR_OPTS = --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf
+
 SIM =	pitch.sim
 
 VCD =	pitch.vcd
 
-ALL =	$(SIM) $(VCD)
+DFU =	pitch_0_fomu.dfu
+
+ALL =	$(SIM) $(VCD) $(DFU)
 
 all: $(ALL)
 
 clean:
-	rm -f $(ALL)
+	rm -f $(ALL) *.json *.asc *.bit *.log
 
 sim: $(SIM)
 
 vcd: $(VCD)
+
+dfu: $(DFU)
 
 %.sim: %.v %_tb.v
 	iverilog -o $@ $^
 
 %.vcd: %.sim
 	./$<
+
+pitch_0_fomu.json: pitch.v pitch_0_fomu.v
+	yosys -p 'synth_ice40 -json $@' $^ >pitch_0_fomu.log
+
+%.asc: %.json
+	nextpnr-ice40 $(PNR_OPTS) --json $< --asc $@
+
+%.bit: %.asc
+	icepack $< $@
+
+%.time: %.asc
+	icetime -mit -d up5k -c 48 -r $@ $<
+
+%.dfu: %.bit
+	cp $< $@
+	dfu-suffix -v 1209 -p 70b1 -a $@
+
