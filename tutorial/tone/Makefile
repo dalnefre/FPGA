@@ -8,7 +8,8 @@ SIM =	pitch.sim
 
 VCD =	pitch.vcd
 
-DFU =	pitch_0_fomu.dfu
+DFU =	pitch_0_fomu.dfu \
+	pitch_1_fomu.dfu
 
 ALL =	$(SIM) $(VCD) $(DFU)
 
@@ -31,6 +32,9 @@ dfu: $(DFU)
 
 pitch_0_fomu.json: pitch.v pitch_0_fomu.v
 	yosys -p 'synth_ice40 -json $@' $^ >pitch_0_fomu.log
+
+pitch_1_fomu.json: pitch.v player.v pitch_1_fomu.v
+	yosys -p 'synth_ice40 -json $@' $^ >pitch_1_fomu.log
 
 %.asc: %.json
 	nextpnr-ice40 $(PNR_OPTS) --json $< --asc $@

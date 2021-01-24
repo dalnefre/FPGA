@@ -1,9 +1,10 @@
-// pitch_0_fomu.v
+// pitch_1_fomu.v
 //
 // top-level module for Fomu PVT device
 //
 // requires:
 //    pitch.v
+//    player.v
 //
 
 `include "fomu_pvt.vh"
@@ -33,9 +34,13 @@ module fomu_pvt (
   assign usb_dp_pu = 1'b0;
 
   // Connect to system clock (with buffering)
-  wire clk;  // 48MHz system clock
+  reg clk_24MHz = 0;
+  always @(posedge clki)
+    clk_24MHz = !clk_24MHz;
+  wire clk;  // system clock
+  localparam CLK_FREQ = (`SYS_CLK_FREQ >> 1);  // divide-by-2
   SB_GB clk_gb (
-    .USER_SIGNAL_TO_GLOBAL_BUFFER(clki),
+    .USER_SIGNAL_TO_GLOBAL_BUFFER(clk_24MHz),
     .GLOBAL_BUFFER_OUTPUT(clk)
   );
 
@@ -65,11 +70,11 @@ module fomu_pvt (
     count <= count + 1'b1;
 
   // Instantiate tone generator
-  reg [3:0] pitch = `C;
-  reg [2:0] octave = 4;
+  wire [3:0] pitch;
+  wire [2:0] octave;
   wire spkr;
   tone_gen #(
-    .CLK_FREQ(`SYS_CLK_FREQ)
+    .CLK_FREQ(CLK_FREQ)
   ) TONE (
     .clk(clk),
     .pitch(pitch),
@@ -77,8 +82,17 @@ module fomu_pvt (
     .tone(spkr)
   );
 
+  // Instantiate tone sequencer
+  tone_seq #(
+    .CLK_FREQ(CLK_FREQ)
+  ) PLAY (
+    .clk(clk),
+    .pitch(pitch),
+    .octave(octave)
+  );
+
   wire EN;  // enable tone
-  assign EN = count[NC-2];  // bit 26 ( ~2.8s cycle, ~1.4s on/off)
+  assign EN = 1'b1; // always enabled
 
   // Configure user pin 1
   wire pin_1_en = EN;
@@ -100,8 +114,8 @@ module fomu_pvt (
   assign user_4 = 1'b0;  // "ground" pin
 
   // Connect counter bits to LED
-  assign LED_r = count[NC-2];  // bit 26 ( ~2.8s cycle, ~1.4s on/off)
-  assign LED_g = count[NC-1];  // bit 27 ( ~5.6s cycle, ~2.8s on/off)
-  assign LED_b = count[NC-3];  // bit 25 ( ~1.4s cycle, ~0.7s on/off)
+  assign LED_r = count[NC-3];  // bit 25 (~2.8s cycle, ~1.4s on/off @ 24MHz)
+  assign LED_g = count[NC-2];  // bit 26 (~5.6s cycle, ~2.8s on/off @ 24MHz)
+  assign LED_b = count[NC-4];  // bit 24 (~1.4s cycle, ~0.7s on/off @ 24MHz)
 
 endmodule

@@ -8,10 +8,10 @@
 module tone_gen #(
   parameter CLK_FREQ = 48_000_000
 ) (
-  input       clk,                      // input clock (@ CLK_FREQ)
-  input [3:0] pitch,                    // pitch index
-  input [2:0] octave,                   // octave index
-  output reg  tone = 0                  // output tone (@ OUT_FREQ)
+  input            clk,                 // input clock (@ CLK_FREQ)
+  input      [3:0] pitch,               // pitch index
+  input      [2:0] octave,              // octave index
+  output reg       tone = 0             // output tone (@ OUT_FREQ)
 );
 
   // frequency table
