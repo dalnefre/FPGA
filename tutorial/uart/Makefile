@@ -9,6 +9,7 @@ SIM =	baud_gen.sim \
 	sync.sim \
 	serial_rx.sim \
 	serial_tx.sim \
+	serial_rx1.sim \
 	uart.sim
 
 VCD =	baud_gen.vcd \
@@ -16,11 +17,14 @@ VCD =	baud_gen.vcd \
 	sync.vcd \
 	serial_rx.vcd \
 	serial_tx.vcd \
+	serial_rx1.vcd \
 	uart.vcd
 
-DFU =	uart_0_fomu.dfu
+DFU =	uart_0_fomu.dfu \
+	uart_1_fomu.dfu
 
-TIME =	uart_0_fomu.time
+TIME =	uart_0_fomu.time \
+	uart_1_fomu.time
 
 ALL =	$(SIM) $(VCD) $(DFU)
 
@@ -43,6 +47,9 @@ serial_tx0.sim: baud_gen.v serial_tx0.v serial_tx0_tb.v
 sync.sim: sync_tb.v
 	iverilog -o $@ $^
 
+serial_rx1.sim: serial_rx1.v serial_rx1_tb.v
+	iverilog -o $@ $^
+
 uart.sim: serial_rx.v serial_tx.v uart.v uart_tb.v
 	iverilog -o $@ $^
 
@@ -54,6 +61,9 @@ uart.sim: serial_rx.v serial_tx.v uart.v uart_tb.v
 
 uart_0_fomu.json: serial_rx.v serial_tx.v uart.v uart_0_fomu.v
 	yosys -p 'synth_ice40 -json $@' $^ >uart_0_fomu.log
+
+uart_1_fomu.json: serial_rx1.v serial_tx.v uart.v uart_1_fomu.v
+	yosys -p 'synth_ice40 -json $@' $^ >uart_1_fomu.log
 
 %.asc: %.json
 	nextpnr-ice40 $(PNR_OPTS) --json $< --asc $@

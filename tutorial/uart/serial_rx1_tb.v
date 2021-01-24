@@ -1,6 +1,6 @@
-// serial_rx_tb.v
+// serial_rx1_tb.v
 //
-// simulation test bench for serial_rx.v
+// simulation test bench for serial_rx1.v
 //
 
 `include "uart.vh"
@@ -22,7 +22,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("serial_rx.vcd");
+      $dumpfile("serial_rx1.vcd");
       $dumpvars(0, test_bench);
       $display("`PACE = %d", `PACE);
       RX = `IDLE_BIT;
