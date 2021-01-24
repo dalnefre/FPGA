@@ -10,9 +10,6 @@
 
 `include "fomu_pvt.vh"
 
-`define UART_BAUD_RATE 115_200
-//`define UART_BAUD_RATE 9_600
-
 module fomu_pvt (
   input  clki,      // 48MHz oscillator input
 
@@ -38,9 +35,13 @@ module fomu_pvt (
   assign usb_dp_pu = 1'b0;
 
   // Connect to system clock (with buffering)
-  wire clk;  // 48MHz system clock
+  reg clk_24MHz = 0;
+  always @(posedge clki)
+    clk_24MHz = !clk_24MHz;
+  wire clk;  // system clock
+  localparam CLK_FREQ = (`SYS_CLK_FREQ >> 1);  // divide-by-2
   SB_GB clk_gb (
-    .USER_SIGNAL_TO_GLOBAL_BUFFER(clki),
+    .USER_SIGNAL_TO_GLOBAL_BUFFER(clk_24MHz),
     .GLOBAL_BUFFER_OUTPUT(clk)
   );
 
@@ -107,10 +108,13 @@ module fomu_pvt (
   reg WR = 0;
   wire BSY;
 
+  localparam BAUD_RATE = 115_200;
+//  localparam BAUD_RATE = 9_600;
+
   // instantiate UART
   uart #(
-    .CLK_FREQ(`SYS_CLK_FREQ),
-    .BIT_FREQ(`UART_BAUD_RATE)
+    .CLK_FREQ(CLK_FREQ),
+    .BIT_FREQ(BAUD_RATE)
   ) DUT (
     .clk(clk),
     .rx_data(RXD),
@@ -188,9 +192,9 @@ module usb_uart (
     count <= count + 1'b1;
 
   // Connect counter bits to LED
-  assign LED_r = count[N-2];  // bit 26 ( ~2.8s cycle, ~1.4s on/off)
-  assign LED_g = count[N-3];  // bit 25 ( ~1.4s cycle, ~0.7s on/off)
-  assign LED_b = count[N-1];  // bit 27 ( ~5.6s cycle, ~2.8s on/off)
+  assign LED_r = count[N-2];  // bit 26 (~2.8s cycle, ~1.4s on/off @48Mhz)
+  assign LED_g = count[N-3];  // bit 25 (~1.4s cycle, ~0.7s on/off @48Mhz)
+  assign LED_b = count[N-1];  // bit 27 (~5.6s cycle, ~2.8s on/off @48Mhz)
 */
 
 endmodule

@@ -20,7 +20,9 @@ VCD =	baud_gen.vcd \
 
 DFU =	uart_0_fomu.dfu
 
-ALL =	$(SIM) $(VCD) $(DFU)
+TIME =	uart_0_fomu.time
+
+ALL =	$(SIM) $(VCD) $(DFU) $(TIME)
 
 all: $(ALL)
 
@@ -32,6 +34,8 @@ sim: $(SIM)
 vcd: $(VCD)
 
 dfu: $(DFU)
+
+time: $(TIME)
 
 serial_tx0.sim: baud_gen.v serial_tx0.v serial_tx0_tb.v
 	iverilog -o $@ $^
