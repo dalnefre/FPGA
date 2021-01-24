@@ -137,7 +137,11 @@ module fomu_pvt (
       if (VLD)
         begin
           RD <= 1;  // ack input
-          TXD <= RXD;  // copy input to output
+          if (((RXD >= "A") && (RXD <= "Z"))
+          ||  ((RXD >= "a") && (RXD <= "z")))
+            TXD <= (RXD ^ 8'h20);  // swap case
+          else
+            TXD <= RXD;  // copy input to output
           WR <= 1;  // request output
         end
       else

@@ -22,12 +22,12 @@ DFU =	uart_0_fomu.dfu
 
 TIME =	uart_0_fomu.time
 
-ALL =	$(SIM) $(VCD) $(DFU) $(TIME)
+ALL =	$(SIM) $(VCD) $(DFU)
 
 all: $(ALL)
 
 clean:
-	rm -f $(ALL) *.json *.asc *.bit *.log
+	rm -f $(ALL) $(TIME) *.json *.asc *.bit *.log
 
 sim: $(SIM)
 
