@@ -11,7 +11,10 @@ VCD =	pitch.vcd
 DFU =	pitch_0_fomu.dfu \
 	pitch_1_fomu.dfu
 
-ALL =	$(SIM) $(VCD) $(DFU)
+TIME =	pitch_0_fomu.time \
+	pitch_1_fomu.time
+
+ALL =	$(SIM) $(VCD) $(DFU) $(TIME)
 
 all: $(ALL)
 
@@ -23,6 +26,8 @@ sim: $(SIM)
 vcd: $(VCD)
 
 dfu: $(DFU)
+
+time: $(TIME)
 
 %.sim: %.v %_tb.v
 	iverilog -o $@ $^
