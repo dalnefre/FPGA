@@ -1,6 +1,6 @@
-// uart_tb.v
+// uart1_tb.v
 //
-// simulation test bench for uart.v
+// simulation test bench for uart.v (using serial1_rx.v)
 //
 
 module test_bench;
@@ -8,7 +8,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("uart.vcd");
+      $dumpfile("uart1.vcd");
       $dumpvars(0, test_bench);
       #260;
       $finish;

@@ -10,7 +10,8 @@ SIM =	baud_gen.sim \
 	serial_rx.sim \
 	serial_tx.sim \
 	serial_rx1.sim \
-	uart.sim
+	uart.sim \
+	uart1.sim
 
 VCD =	baud_gen.vcd \
 	serial_tx0.vcd \
@@ -18,7 +19,8 @@ VCD =	baud_gen.vcd \
 	serial_rx.vcd \
 	serial_tx.vcd \
 	serial_rx1.vcd \
-	uart.vcd
+	uart.vcd \
+	uart1.vcd
 
 DFU =	uart_0_fomu.dfu \
 	uart_1_fomu.dfu
@@ -51,6 +53,9 @@ serial_rx1.sim: serial_rx1.v serial_rx1_tb.v
 	iverilog -o $@ $^
 
 uart.sim: serial_rx.v serial_tx.v uart.v uart_tb.v
+	iverilog -o $@ $^
+
+uart1.sim: serial_rx1.v serial_tx.v uart.v uart1_tb.v
 	iverilog -o $@ $^
 
 %.sim: %.v %_tb.v
