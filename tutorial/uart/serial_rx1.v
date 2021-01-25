@@ -11,8 +11,8 @@ module serial_rx #(
 ) (
   input            clk,                 // system clock
   input            rx,                  // received data (async)
-  output reg       break = 0,           // line break condition
-  output reg       ready = 0,           // character data ready
+  output reg       break = 1'b0,        // line break condition
+  output reg       ready = 1'b0,        // character data ready
   output reg [7:0] data                 // character received
 );
 

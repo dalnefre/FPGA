@@ -34,11 +34,24 @@ module fomu_pvt (
   assign usb_dn = 1'b0;
   assign usb_dp_pu = 1'b0;
 
+/*
   // Connect to system clock (with buffering)
   wire clk;  // system clock
   localparam CLK_FREQ = `SYS_CLK_FREQ;
   SB_GB clk_gb (
     .USER_SIGNAL_TO_GLOBAL_BUFFER(clki),
+    .GLOBAL_BUFFER_OUTPUT(clk)
+  );
+*/
+  // Connect to system clock (pre-scaled with buffering)
+  localparam DIV_N = 9;  // 48MHz -> 93.75KHz
+  reg [DIV_N-1:0] clk_div = 0;
+  always @(posedge clki)
+    clk_div <= clk_div + 1'b1;
+  wire clk;  // system clock
+  localparam CLK_FREQ = (`SYS_CLK_FREQ >> DIV_N);  // divide by 2^N
+  SB_GB clk_gb (
+    .USER_SIGNAL_TO_GLOBAL_BUFFER(clk_div[DIV_N-1]),
     .GLOBAL_BUFFER_OUTPUT(clk)
   );
 
@@ -105,8 +118,8 @@ module fomu_pvt (
   reg WR = 0;
   wire BSY;
 
-  localparam BAUD_RATE = 115_200;
-//  localparam BAUD_RATE = 9_600;
+//  localparam BAUD_RATE = 115_200;
+  localparam BAUD_RATE = 9_600;
 
   // instantiate UART
   uart #(
@@ -125,9 +138,12 @@ module fomu_pvt (
     .tx(TX)
   );
 
-  assign LED_r = !RX;  // connect red LED to UART RX signal
-  assign LED_g = !TX;  // connect green LED to UART TX signal
-  assign LED_b = BRK;  // connect blue LED to UART BREAK signal
+//  assign LED_r = !RX;  // connect red LED to UART RX signal
+  assign LED_r = RD;
+//  assign LED_g = !TX;  // connect green LED to UART TX signal
+  assign LED_g = VLD;
+//  assign LED_b = BRK;  // connect blue LED to UART BREAK signal
+  assign LED_b = WR;
 
   always @(posedge clk)
     begin

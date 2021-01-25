@@ -41,7 +41,7 @@ module uart #(
 
   output reg [7:0] rx_data,             // octet received
   input            rd,                  // read data (acknowledgement)
-  output reg       valid,               // octet is ready
+  output reg       valid = 1'b0,        // octet is ready
   output           break,               // line break condition
 
   input            rx,                  // receive line (async)
@@ -80,12 +80,12 @@ module uart #(
       if (ready)
         begin
           rx_data <= rxd;
-          valid <= 1;
+          valid <= 1'b1;
         end
       if (rd)
         begin
           rx_data <= 0;
-          valid <= 0;
+          valid <= 1'b0;
         end
     end
 

@@ -34,14 +34,24 @@ module fomu_pvt (
   assign usb_dn = 1'b0;
   assign usb_dp_pu = 1'b0;
 
+/*
   // Connect to system clock (with buffering)
-  reg clk_24MHz = 0;
-  always @(posedge clki)
-    clk_24MHz = !clk_24MHz;
   wire clk;  // system clock
-  localparam CLK_FREQ = (`SYS_CLK_FREQ >> 1);  // divide-by-2
+  localparam CLK_FREQ = `SYS_CLK_FREQ;
   SB_GB clk_gb (
-    .USER_SIGNAL_TO_GLOBAL_BUFFER(clk_24MHz),
+    .USER_SIGNAL_TO_GLOBAL_BUFFER(clki),
+    .GLOBAL_BUFFER_OUTPUT(clk)
+  );
+*/
+  // Connect to system clock (pre-scaled with buffering)
+  localparam DIV_N = 5;  // 48MHz -> 1.5MHz
+  reg [DIV_N-1:0] clk_div = 0;
+  always @(posedge clki)
+    clk_div <= clk_div + 1'b1;
+  wire clk;  // system clock
+  localparam CLK_FREQ = (`SYS_CLK_FREQ >> DIV_N);  // divide by 2^N
+  SB_GB clk_gb (
+    .USER_SIGNAL_TO_GLOBAL_BUFFER(clk_div[DIV_N-1]),
     .GLOBAL_BUFFER_OUTPUT(clk)
   );
 
