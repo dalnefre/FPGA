@@ -48,23 +48,15 @@ module fomu_pvt (
     .RGB2(rgb2)
   );
 
-/*
   // Instantiate counter
   localparam N = 28;
   wire [N-1:0] out;
   count #(
     .WIDTH(N)
   ) counter (
-    ._reset(1'b1),
     .clock(clk),
     .count(out)
   );
-*/
-  // Embed counter
-  localparam N = 28;
-  reg [N-1:0] out = 0;
-  always @(posedge clk)
-    out <= out + 1'b1;
 
   // Connect counter bits to LED
   assign LED_r = out[N-2];  // bit 26 ( ~2.8s cycle, ~1.4s on/off)
