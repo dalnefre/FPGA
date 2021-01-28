@@ -12,7 +12,7 @@ module count #(
 
   genvar i;
 
-  // count positive-edge transitions of the clock
+  // countdown positive-edge transitions of each clock division
   always @(posedge clock) count[0] = !count[0];
   generate
     for (i = 0; i < WIDTH-1; i = i+1)

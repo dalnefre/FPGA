@@ -16,6 +16,14 @@ is [published online](https://workshop.fomu.im/en/latest/).
 
 This tutorial uses the Fomu as a deployment target
 to demonstrate FPGA design on real hardware.
+I've soldered a 4-pin female header
+onto the Fomu touch pads
+to make it easier to attach test-leads.
+A less-permanent (but less stable) alternative
+would be something like alligator clips.
+YMMV.
+
+![Fomu with header](../Fomu/pics/Fomu_w_hdr_md.png)
 
 ### Projects
 

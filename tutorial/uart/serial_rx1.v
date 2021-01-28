@@ -31,7 +31,7 @@ module serial_rx #(
     end
 
   // register async rx
-  reg [2:0] sync;  // receive sync-register
+  reg [2:0] sync = { 3 { `IDLE_BIT } };  // receive sync-register
   always @(posedge clk)
     sync <= { sync[1:0], rx };
   wire in = sync[2];  // synchronized input
