@@ -23,7 +23,7 @@ A less-permanent (but less stable) alternative
 would be something like alligator clips.
 YMMV.
 
-![Fomu with header](../Fomu/pics/Fomu_w_hdr_md.png)
+![Fomu with header](../Fomu/pics/Fomu_w_hdr_sm.jpg)
 
 ### Projects
 
