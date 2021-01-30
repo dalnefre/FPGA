@@ -10,7 +10,7 @@ module test_bench;
     begin
       $dumpfile("uart.vcd");
       $dumpvars(0, test_bench);
-      #260;
+      #600;
       $finish;
     end
 
@@ -30,8 +30,8 @@ module test_bench;
 
   // instantiate UART
   uart #(
-    .CLK_FREQ(16),
-    .BIT_FREQ(3)
+    .CLK_FREQ(48),
+    .BIT_FREQ(5)
   ) DUT (
     .clk(clk),
     .tx_data(DIN),
@@ -47,5 +47,16 @@ module test_bench;
 
   always @(posedge clk)
     RDY <= VLD;
+
+  always @(posedge clk)
+    if (!BSY)
+      case (DIN)
+        "K" :
+          DIN <= "S";
+        "S" :
+          DIN <= "O";
+        default :
+          DIN <= "K";
+      endcase
 
 endmodule

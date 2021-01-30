@@ -138,12 +138,14 @@ module fomu_pvt (
     .tx(TX)
   );
 
-//  assign LED_r = !RX;  // connect red LED to UART RX signal
+  assign LED_r = !RX;  // connect red LED to UART RX signal
+  assign LED_g = !TX;  // connect green LED to UART TX signal
+  assign LED_b = BRK;  // connect blue LED to UART BREAK signal
+/*
   assign LED_r = RD;
-//  assign LED_g = !TX;  // connect green LED to UART TX signal
   assign LED_g = VLD;
-//  assign LED_b = BRK;  // connect blue LED to UART BREAK signal
   assign LED_b = WR;
+*/
 
   always @(posedge clk)
     begin

@@ -19,7 +19,7 @@ module serial_rx #(
   // receive baud-rate timer
   localparam BIT_PERIOD = CLK_FREQ / BIT_FREQ;
   localparam FULL_BIT_TIME = BIT_PERIOD - 1;
-  localparam HALF_BIT_TIME = (BIT_PERIOD >> 1) - 1;
+  localparam HALF_BIT_TIME = FULL_BIT_TIME >> 1;
   localparam N_TIMER = $clog2(BIT_PERIOD);
   reg [N_TIMER-1:0] timer = 0;
 

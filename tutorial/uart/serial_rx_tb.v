@@ -5,12 +5,8 @@
 
 `include "uart.vh"
 
-`define CLK_FREQ 100
-`define BIT_FREQ 7
-`define PACE ((`CLK_FREQ * 2 / `BIT_FREQ) - 1)
-
 /*
-The following waveform represents transmission of a single letter 'K' in isolation.
+The following waveform represents transmission of the letter 'K' in isolation.
 _____     _______     ___         ___     _________
      \___/       \___/   \_______/   \___/          
 IDLE | + | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | - | IDLE
@@ -19,36 +15,42 @@ IDLE | + | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | - | IDLE
 
 module test_bench;
 
+  localparam CLK_FREQ = 48;
+  localparam BIT_FREQ = 5;
+  localparam BIT_PERIOD = CLK_FREQ / BIT_FREQ;
+  localparam FULL_BIT_TIME = BIT_PERIOD - 1;
+  localparam PACE = FULL_BIT_TIME << 1;  // 2 edges per clock-cycle
+
   // dump simulation signals
   initial
     begin
       $dumpfile("serial_rx.vcd");
       $dumpvars(0, test_bench);
-      $display("`PACE = %d", `PACE);
+      $display("PACE = %d", PACE);
       RX = `IDLE_BIT;
-      #(`PACE);
+      #(PACE);
       RX = `START_BIT;
-      #(`PACE);
+      #(PACE);
       RX = 1'b1;  // bit 0
-      #(`PACE);
+      #(PACE);
       RX = 1'b1;  // bit 1
-      #(`PACE);
+      #(PACE);
       RX = 1'b0;  // bit 2
-      #(`PACE);
+      #(PACE);
       RX = 1'b1;  // bit 3
-      #(`PACE);
+      #(PACE);
       RX = 1'b0;  // bit 4
-      #(`PACE);
+      #(PACE);
       RX = 1'b0;  // bit 5
-      #(`PACE);
+      #(PACE);
       RX = 1'b1;  // bit 6
-      #(`PACE);
+      #(PACE);
       RX = 1'b0;  // bit 7
-      #(`PACE);
+      #(PACE);
       RX = `STOP_BIT;
-      #(`PACE);
+      #(PACE);
       RX = `START_BIT; //`IDLE_BIT;
-      #(`PACE);
+      #(PACE);
       $finish;
     end
 
@@ -60,8 +62,8 @@ module test_bench;
   // instantiate serial receiver
   reg RX;
   serial_rx #(
-    .CLK_FREQ(`CLK_FREQ),
-    .BIT_FREQ(`BIT_FREQ)
+    .CLK_FREQ(CLK_FREQ),
+    .BIT_FREQ(BIT_FREQ)
   ) SER_RX (
     .clk(clk),
     .rx(RX)
