@@ -48,15 +48,9 @@ module serial_rx #(
         else if (bits == 4'd10)  // stop
           begin
             if (in == `STOP_BIT)
-              begin
-                break <= 1'b0;  // no error
-                ready <= 1'b1;  // data ready
-              end
+              ready <= 1'b1;  // data ready
             else
-              begin
-                break <= 1'b1;  // framing error
-                timer <= HALF_BIT_TIME;
-              end
+              break <= 1'b1;  // framing error
             bits <= 4'd0;  // reset bit count
           end
         else  // data bit
@@ -66,6 +60,8 @@ module serial_rx #(
             bits <= bits + 1'b1;
           end
       end
+    else if (break && (in == `IDLE_BIT))
+      break <= 1'b0;  // clear error
     else if (in == `START_BIT)  // possible start
       begin
         timer <= HALF_BIT_TIME;

@@ -5,6 +5,9 @@
 
 module test_bench;
 
+  localparam CLK_FREQ = 48;
+  localparam BIT_FREQ = 5;
+
   // dump simulation signals
   initial
     begin
@@ -25,8 +28,8 @@ module test_bench;
   wire BSY;
   wire TX;
   serial_tx #(
-    .CLK_FREQ(16),
-    .BIT_FREQ(3)
+    .CLK_FREQ(CLK_FREQ),
+    .BIT_FREQ(BIT_FREQ)
   ) SER_TX (
     .clk(clk),
     .wr(WR),

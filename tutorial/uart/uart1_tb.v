@@ -5,10 +5,8 @@
 
 module test_bench;
 
-//  localparam CLK_FREQ = 48;
-//  localparam BIT_FREQ = 5;
-  localparam CLK_FREQ = 16;
-  localparam BIT_FREQ = 3;
+  localparam CLK_FREQ = 48;
+  localparam BIT_FREQ = 5;
 
   // dump simulation signals
   initial

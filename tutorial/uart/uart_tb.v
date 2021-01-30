@@ -5,6 +5,9 @@
 
 module test_bench;
 
+  localparam CLK_FREQ = 48;
+  localparam BIT_FREQ = 5;
+
   // dump simulation signals
   initial
     begin
@@ -30,8 +33,8 @@ module test_bench;
 
   // instantiate UART
   uart #(
-    .CLK_FREQ(48),
-    .BIT_FREQ(5)
+    .CLK_FREQ(CLK_FREQ),
+    .BIT_FREQ(BIT_FREQ)
   ) DUT (
     .clk(clk),
     .tx_data(DIN),

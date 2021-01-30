@@ -19,7 +19,7 @@ module test_bench;
   localparam BIT_FREQ = 5;
   localparam BIT_PERIOD = CLK_FREQ / BIT_FREQ;
   localparam FULL_BIT_TIME = BIT_PERIOD - 1;
-  localparam PACE = FULL_BIT_TIME << 1;  // 2 edges per clock-cycle
+  localparam PACE = BIT_PERIOD << 1;  // 2 edges per clock-cycle
 
   // dump simulation signals
   initial

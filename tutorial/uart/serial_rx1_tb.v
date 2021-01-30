@@ -15,11 +15,11 @@ IDLE | + | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | - | IDLE
 
 module test_bench;
 
-  localparam CLK_FREQ = 16;
-  localparam BIT_FREQ = 3;
+  localparam CLK_FREQ = 48;
+  localparam BIT_FREQ = 5;
   localparam BIT_PERIOD = CLK_FREQ / BIT_FREQ;
   localparam FULL_BIT_TIME = BIT_PERIOD - 1;
-  localparam PACE = FULL_BIT_TIME << 1;  // 2 edges per clock-cycle
+  localparam PACE = BIT_PERIOD << 1;  // 2 edges per clock-cycle
 
   // dump simulation signals
   initial

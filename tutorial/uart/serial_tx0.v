@@ -25,7 +25,7 @@ module serial_tx (
           end
         else
           begin
-            shift <= { `STOP_BIT, data, `START_BIT };  // load data into shift-register
+            shift <= { `STOP_BIT, data, `START_BIT };  // load data
             index <= 9;  // set full bit count
           end
       end

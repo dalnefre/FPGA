@@ -5,6 +5,9 @@
 
 module test_bench;
 
+  localparam CLK_FREQ = 48;
+  localparam BIT_FREQ = 5;
+
   // dump simulation signals
   initial
     begin
@@ -22,8 +25,8 @@ module test_bench;
   // instantiate baud-rate generator
   wire bit;
   baud_gen #(
-    .CLK_FREQ(16),
-    .BIT_FREQ(3)
+    .CLK_FREQ(CLK_FREQ),
+    .BIT_FREQ(BIT_FREQ)
   ) BD_GEN (
     .clk(clk),
     .zero(bit)
