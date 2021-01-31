@@ -31,6 +31,10 @@ module source #(
   reg valid = 1'b0;
   wire busy;
 
+  assign data_out = data;
+  assign do_valid = valid;
+  assign busy = busy_ready;
+
   always @(posedge clk)
     if (!full)
       begin
@@ -44,10 +48,6 @@ module source #(
         endcase
         full <= 1'b1;
       end
-
-  assign data_out = data;
-  assign do_valid = valid;
-  assign busy = busy_ready;
 
   always @(posedge clk)
     if (!busy && full)
@@ -60,29 +60,27 @@ module source #(
 
 /*
   always @(posedge clk)
-    if (!full)
+    if (!busy && full)
       begin
-        case (data)
-          "K" :
-            data <= "S";
-          "S" :
-            data <= "O";
-          default :
-            data <= "K";
-        endcase
-        full <= 1'b1;
+        valid <= 1'b1;
+        full <= 1'b0;
       end
-    else if (!busy)
-      valid <= 1'b1;
     else
       begin
-        full <= 1'b0;
         valid <= 1'b0;
+        if (!full)
+          begin
+            case (data)
+              "K" :
+                data <= "S";
+              "S" :
+                data <= "O";
+              default :
+                data <= "K";
+            endcase
+            full <= 1'b1;
+          end
       end
-
-  assign busy = busy_ready;
-  assign data_out = data;
-  assign do_valid = valid;
 */
 
 endmodule
