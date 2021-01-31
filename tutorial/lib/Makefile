@@ -5,10 +5,12 @@
 PNR_OPTS = --up5k --package uwg30 --pcf fomu_pvt.pcf
 
 SIM =	user.sim \
-	debounce.sim
+	debounce.sim \
+	buffer.sim
 
 VCD =	user.vcd \
-	debounce.vcd
+	debounce.vcd \
+	buffer.vcd
 
 DFU =	user_fomu.dfu
 
@@ -37,6 +39,9 @@ user.sim: clk_div.v user.v user_tb.v
 	iverilog -o $@ $^
 
 debounce.sim: async.v hyster.v debounce.v debounce_tb.v
+	iverilog -o $@ $^
+
+buffer.sim: source.v buffer.v buffer_tb.v
 	iverilog -o $@ $^
 
 %.vcd: %.sim
