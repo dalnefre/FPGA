@@ -35,6 +35,33 @@ module source #(
   assign do_valid = valid;
   assign busy = busy_ready;
 
+  localparam N = 4;
+  reg [7:0] msg [0:(1<<N)-1];
+  reg [N-1:0] index = 0;
+  initial
+    begin
+      msg[0] = "L";
+      msg[1] = "o";
+      msg[2] = "r";
+      msg[3] = "e";
+      msg[4] = "m";
+      msg[5] = " ";
+      msg[6] = "I";
+      msg[7] = "p";
+      msg[8] = "s";
+      msg[9] = "u";
+      msg[10] = "m";
+      msg[11] = "\r";
+      msg[12] = "\n";
+    end
+  always @(posedge clk)
+    if (!full)
+      begin
+        data <= msg[index];
+        index <= index + 1'b1;
+        full <= 1'b1;
+      end
+/*
   always @(posedge clk)
     if (!full)
       begin
@@ -48,6 +75,7 @@ module source #(
         endcase
         full <= 1'b1;
       end
+*/
 
   always @(posedge clk)
     if (!busy && full)

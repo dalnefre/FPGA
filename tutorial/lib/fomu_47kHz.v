@@ -1,6 +1,6 @@
-// fomu_pvt.v
+// fomu_47kHz.v
 //
-// top-level module for Fomu PVT device
+// top-level module for Fomu PVT device (47 kHz clock)
 //
 // requires:
 //    top.v
@@ -25,16 +25,10 @@ module fomu_pvt (
   inout             usb_dp,             // USB D+
   inout             usb_dn,             // USB D-
   output            usb_dp_pu           // USB D+ pull-up
-
-//00000001111111111222222222233333333334444444444555555555566666666
-//34567890123456789012345678901234567890123456789012345678901234567
-//      |       |   .   |       |       |       |       |       |
 );
 
-  localparam CHIP_FREQ = `SYS_CLK_FREQ;  // 48 MHz
-
   // instantiate fast clock divider
-  localparam FAST_FREQ = (CHIP_FREQ >> 10);  // 46.875 kHz
+  localparam FAST_FREQ = (`SYS_CLK_FREQ >> 10);  // 46.875 kHz
   wire clk_47kHz;
   clk_div #(
     .N_DIV(10)
@@ -43,17 +37,17 @@ module fomu_pvt (
     .clk_o(clk_47kHz)
   );
 
-  // instantiate slow clock divider
-  localparam SLOW_FREQ = (FAST_FREQ >> 8);  // 183 Hz
-  wire clk_183Hz;
-  clk_div #(
-    .N_DIV(8)
-  ) DIV_8 (
-    .clk_i(clk_47kHz),
-    .clk_o(clk_183Hz)
-  );
-
   // connect clock to global buffer
+  localparam CLK_FREQ = FAST_FREQ;  // 46.875 kHz
+  wire clk;
+  SB_GB clk_gb (
+    .USER_SIGNAL_TO_GLOBAL_BUFFER(clk_47kHz),
+    .GLOBAL_BUFFER_OUTPUT(clk)
+  );
+/*
+  assign clk = clk_47kHz;
+*/
+
   // instantiate iCE40 LED driver hard logic
   wire led_r, led_g, led_b;
   SB_RGBA_DRV #(
@@ -74,13 +68,9 @@ module fomu_pvt (
 
   // instantiate user design
   top #(
-    .CHIP_FREQ(CHIP_FREQ),
-    .FAST_FREQ(FAST_FREQ),
-    .SLOW_FREQ(SLOW_FREQ)
+    .CLK_FREQ(CLK_FREQ)
   ) USER (
-    .chip_clk(clk_48MHz),
-    .fast_clk(clk_47kHz),
-    .slow_clk(clk_183Hz),
+    .clk(clk),
     .led_r(led_r),
     .led_g(led_g),
     .led_b(led_b)

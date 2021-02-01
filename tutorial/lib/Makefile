@@ -5,16 +5,20 @@
 PNR_OPTS = --up5k --package uwg30 --pcf fomu_pvt.pcf
 
 SIM =	user.sim \
+	freq.sim \
 	debounce.sim \
 	buffer.sim
 
 VCD =	user.vcd \
+	freq.vcd \
 	debounce.vcd \
 	buffer.vcd
 
-DFU =	user_fomu.dfu
+DFU =	user_fomu.dfu \
+	freq_fomu.dfu
 
-TIME =	user_fomu.time
+TIME =	user_fomu.time \
+	freq_fomu.time
 
 ALL =	$(SIM) $(VCD) $(DFU)
 
@@ -50,6 +54,9 @@ buffer.sim: source.v buffer.v buffer_tb.v
 #user_fomu.json: prescale.v user.v fomu_pvt.v
 user_fomu.json: clk_div.v user.v fomu_pvt.v
 	yosys -p 'synth_ice40 -json $@' $^ >user_fomu.log
+
+freq_fomu.json: clk_div.v freq.v freq_top.v fomu_47khz.v
+	yosys -p 'synth_ice40 -json $@' $^ >freq_fomu.log
 
 %.asc: %.json
 	nextpnr-ice40 $(PNR_OPTS) --json $< --asc $@

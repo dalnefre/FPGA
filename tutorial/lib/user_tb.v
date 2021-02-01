@@ -3,6 +3,8 @@
 // simulation test bench for user.v
 //
 
+`default_nettype none
+
 module test_bench;
 
   localparam CLK_FREQ = 256;
@@ -36,9 +38,11 @@ module test_bench;
   wire led_g;
   wire led_b;
   top #(
-    .CLK_FREQ(CLK_FREQ >> N_DIV)
+    .CHIP_FREQ(CLK_FREQ),
+    .SLOW_FREQ(CLK_FREQ >> N_DIV)
   ) DUT (
-    .clk(div),
+    .chip_clk(clk),
+    .slow_clk(div),
     .led_r(led_r),
     .led_g(led_g),
     .led_b(led_b)
