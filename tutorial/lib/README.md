@@ -102,28 +102,31 @@ module buffer #(
   reg full = 1'b0;
   reg [Nd-1:0] data;
   reg valid = 1'b0;
-  wire busy;
+  wire busy = busy_ready;
 
+  assign full_empty = full;
+  assign data_out = data;
+  assign do_valid = valid;
+
+  // input interface
   always @(posedge clk)
     if (!full && di_valid)
       begin
         data <= data_in;
         full <= 1'b1;
+        if (!busy)
+          valid <= 1'b1;
       end
 
-  assign full_empty = full;
-  assign data_out = data;
-  assign do_valid = valid;
-  assign busy = busy_ready;
-
+  // output interface
   always @(posedge clk)
     if (!busy && full)
+      valid <= 1'b1;
+    else if (busy && valid)
       begin
-        valid <= 1'b1;
+        valid <= 1'b0;
         full <= 1'b0;
       end
-    else
-      valid <= 1'b0;
 
 endmodule
 ```
