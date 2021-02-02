@@ -74,6 +74,16 @@ endmodule
        +----------------------------+
 ```
 
+```
+         ______
+data  XXX______XXXXXXXXXX  `data` is only meaningful when `valid`, otherwise it can have any value
+         ______
+valid __/      \_________  `valid` may only be asserted when `!full`, and must remain asserted until `full`
+            __________
+full  _____/          \__  `full` may only be asserted when `valid`, and must remain asserted until `!valid'
+
+```
+
 ```verilog
 module buffer #(
   parameter              Nd = 8           // number of data bits

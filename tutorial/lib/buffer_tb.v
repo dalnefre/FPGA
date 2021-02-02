@@ -5,7 +5,7 @@
 
 module test_bench;
 
-  localparam CLK_FREQ = 32;
+  localparam CLK_FREQ = 64;
   localparam Nd = 8;           // number of data bits
 
   // dump simulation signals
@@ -68,15 +68,21 @@ module test_bench;
 
   wire [Nd-1:0] DOUT;
   wire valid;
-  reg busy;
+  reg busy = 1'b0;
 
+  // sink data by following `valid` signal (one clock delayed)
+  always @(posedge clk)
+    if (!hold)
+      busy <= valid;
+
+  reg hold;  // output hold
   initial
     begin
-      busy = 1'b0;
-      #(CLK_FREQ);
-      busy = 1'b1;
-      #(CLK_FREQ / 2);
-      busy = 1'b0;
+      hold = 1'b0;
+      #(CLK_FREQ - 2);
+      hold = 1'b1;
+      #12;
+      hold = 1'b0;
     end
 
 endmodule

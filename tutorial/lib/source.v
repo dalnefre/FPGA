@@ -51,64 +51,29 @@ module source #(
       msg[8] = "s";
       msg[9] = "u";
       msg[10] = "m";
-      msg[11] = "\r";
-      msg[12] = "\n";
+      msg[11] = 8'h0D;
+      msg[12] = 8'h0A;
     end
+
+  // input interface
   always @(posedge clk)
     if (!full)
       begin
         data <= msg[index];
         index <= index + 1'b1;
         full <= 1'b1;
+        if (!busy)
+          valid <= 1'b1;
       end
-/*
-  always @(posedge clk)
-    if (!full)
-      begin
-        case (data)
-          "K" :
-            data <= "S";
-          "S" :
-            data <= "O";
-          default :
-            data <= "K";
-        endcase
-        full <= 1'b1;
-      end
-*/
 
+  // output interface
   always @(posedge clk)
     if (!busy && full)
-      begin
-        valid <= 1'b1;
-        full <= 1'b0;
-      end
-    else
-      valid <= 1'b0;
-
-/*
-  always @(posedge clk)
-    if (!busy && full)
-      begin
-        valid <= 1'b1;
-        full <= 1'b0;
-      end
-    else
+      valid <= 1'b1;
+    else if (busy && valid)
       begin
         valid <= 1'b0;
-        if (!full)
-          begin
-            case (data)
-              "K" :
-                data <= "S";
-              "S" :
-                data <= "O";
-              default :
-                data <= "K";
-            endcase
-            full <= 1'b1;
-          end
+        full <= 1'b0;
       end
-*/
 
 endmodule
