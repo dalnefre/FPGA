@@ -3,6 +3,8 @@
 // simulation test bench for uart.v (using serial1_rx.v)
 //
 
+`default_nettype none
+
 module test_bench;
 
   localparam CLK_FREQ = 48;

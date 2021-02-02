@@ -1,5 +1,7 @@
 // sync_tb.v -- stand-alone synchronizer test
 
+`default_nettype none
+
 module test_bench;
 
   // dump simulation signals

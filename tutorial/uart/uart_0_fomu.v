@@ -8,6 +8,8 @@
 //    serial_tx.v
 //
 
+`default_nettype none
+
 `include "fomu_pvt.vh"
 
 module fomu_pvt (
@@ -44,7 +46,8 @@ module fomu_pvt (
   );
 */
   // Connect to system clock (pre-scaled with buffering)
-  localparam DIV_N = 5;  // 48MHz -> 1.5MHz
+//  localparam DIV_N = 5;  // 48MHz -> 1.5MHz
+  localparam DIV_N = 3;  // 48MHz -> 6MHz
   reg [DIV_N-1:0] clk_div = 0;
   always @(posedge clki)
     clk_div <= clk_div + 1'b1;
@@ -118,8 +121,8 @@ module fomu_pvt (
   reg WR = 0;
   wire BSY;
 
-  localparam BAUD_RATE = 115_200;
-//  localparam BAUD_RATE = 9_600;
+//  localparam BAUD_RATE = 115_200;
+  localparam BAUD_RATE = 9_600;
 
   // instantiate UART
   uart #(

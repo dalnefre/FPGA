@@ -3,6 +3,8 @@
 // serial receiver
 //
 
+`default_nettype none
+
 `include "uart.vh"
 
 // state-machine states

@@ -3,6 +3,8 @@
 // synchronous data source
 //
 
+`default_nettype none
+
 /**
        +--------------------+
        | source             |

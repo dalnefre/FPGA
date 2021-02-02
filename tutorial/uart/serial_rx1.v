@@ -3,6 +3,8 @@
 // serial receiver (no edge re-sync)
 //
 
+`default_nettype none
+
 `include "uart.vh"
 
 module serial_rx #(

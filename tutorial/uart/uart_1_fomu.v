@@ -8,6 +8,8 @@
 //    serial_tx.v
 //
 
+`default_nettype none
+
 `include "fomu_pvt.vh"
 
 module fomu_pvt (
@@ -44,7 +46,8 @@ module fomu_pvt (
   );
 */
   // Connect to system clock (pre-scaled with buffering)
-  localparam DIV_N = 9;  // 48MHz -> 93.75KHz
+//  localparam DIV_N = 9;  // 48MHz -> 93.75KHz
+  localparam DIV_N = 3;  // 48MHz -> 6MHz
   reg [DIV_N-1:0] clk_div = 0;
   always @(posedge clki)
     clk_div <= clk_div + 1'b1;
@@ -75,27 +78,27 @@ module fomu_pvt (
   );
 
   // Configure user pin 2
-  wire pin_2_en = 1'b1;  // output
+  wire pin_2_dir = 1'b1;  // output
   wire pin_2_in;
   wire pin_2_out;
   SB_IO #(
     .PIN_TYPE(6'b1010_01) // tri-statable output
   ) user_2_io (
     .PACKAGE_PIN(user_2),
-    .OUTPUT_ENABLE(pin_2_en),
+    .OUTPUT_ENABLE(pin_2_dir),
     .D_IN_0(pin_2_in),
     .D_OUT_0(pin_2_out)
   );
 
   // Configure user pin 3
-  wire pin_3_en = 1'b0;  // input
+  wire pin_3_dir = 1'b0;  // input
   wire pin_3_in;
   wire pin_3_out;
   SB_IO #(
     .PIN_TYPE(6'b1010_01) // tri-statable output
   ) user_3_io (
     .PACKAGE_PIN(user_3),
-    .OUTPUT_ENABLE(pin_3_en),
+    .OUTPUT_ENABLE(pin_3_dir),
     .D_IN_0(pin_3_in),
     .D_OUT_0(pin_3_out)
   );
@@ -139,13 +142,40 @@ module fomu_pvt (
   );
 
   assign LED_r = !RX;  // connect red LED to UART RX signal
+/*
   assign LED_g = !TX;  // connect green LED to UART TX signal
   assign LED_b = BRK;  // connect blue LED to UART BREAK signal
+*/
+
 /*
   assign LED_r = RD;
   assign LED_g = VLD;
   assign LED_b = WR;
 */
+
+/*
+  hyster #(
+    .MIN_TIME(CLK_FREQ >> 4)  // 1/16 second minimum pulse
+  ) PULSE_R (
+    .clk(clk),
+    .in(!RX),
+    .out(LED_r)
+  );
+*/
+  hyster #(
+    .MIN_TIME(CLK_FREQ >> 4)  // 1/16 second minimum pulse
+  ) PULSE_G (
+    .clk(clk),
+    .in(!TX),
+    .out(LED_g)
+  );
+  hyster #(
+    .MIN_TIME(CLK_FREQ >> 4)  // 1/16 second minimum pulse
+  ) PULSE_B (
+    .clk(clk),
+    .in(VLD),
+    .out(LED_b)
+  );
 
   always @(posedge clk)
     begin
@@ -178,42 +208,11 @@ module fomu_pvt (
          |              |
       8  |              |
     <-/--|rx_data     rx|<----
-    ---->|rd            |
     <----|valid         |
+    ---->|rd            |
     <----|break         |
          |              |
          +--------------+
-
-module usb_uart (
-  input clk_48mhz,
-  input resetq,
-  output host_presence,
-
-  // USB pins
-  inout  pin_usb_p,
-  inout  pin_usb_n,
-
-  // UART interface
-  input  uart_wr,
-  input  uart_rd,
-  input  [7:0] uart_tx_data,
-  output [7:0] uart_rx_data,
-  output uart_busy,
-  output uart_valid
-);
-*/
-
-/*
-  // 28-bit counter
-  localparam N = 28;
-  reg [N-1:0] count;
-  always @(posedge clk)
-    count <= count + 1'b1;
-
-  // Connect counter bits to LED
-  assign LED_r = count[N-2];  // bit 26 (~2.8s cycle, ~1.4s on/off @48Mhz)
-  assign LED_g = count[N-3];  // bit 25 (~1.4s cycle, ~0.7s on/off @48Mhz)
-  assign LED_b = count[N-1];  // bit 27 (~5.6s cycle, ~2.8s on/off @48Mhz)
 */
 
 endmodule

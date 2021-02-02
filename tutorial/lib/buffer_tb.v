@@ -3,6 +3,8 @@
 // simulation test bench for buffer.v
 //
 
+`default_nettype none
+
 module test_bench;
 
   localparam CLK_FREQ = 64;

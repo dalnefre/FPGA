@@ -3,6 +3,8 @@
 // simulation test bench for serial_rx.v
 //
 
+`default_nettype none
+
 `include "uart.vh"
 
 /*

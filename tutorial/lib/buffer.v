@@ -3,6 +3,8 @@
 // synchronous data buffer
 //
 
+`default_nettype none
+
 /**
        +----------------------------+
        | buffer                     |

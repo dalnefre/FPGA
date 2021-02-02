@@ -3,6 +3,8 @@
 // baud-rate generator
 //
 
+`default_nettype none
+
 module baud_gen #(
   parameter CLK_FREQ = 48_000_000,      // clock frequency (Hz)
   parameter BIT_FREQ = 115_200          // baud rate (bits per second)

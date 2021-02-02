@@ -7,6 +7,10 @@
 //    serial_tx.v
 //
 
+`default_nettype none
+
+`include "uart.vh"
+
 /*
          +--------------+
          | uart         |
@@ -20,14 +24,12 @@
          |              |
       8  |              |
     <-/--|rx_data     rx|<----
-    ---->|rd            |
     <----|valid         |
+    ---->|rd            |
     <----|break         |
          |              |
          +--------------+
 */
-
-`include "uart.vh"
 
 module uart #(
   parameter CLK_FREQ = 48_000_000,      // clock frequency (Hz)
@@ -40,8 +42,8 @@ module uart #(
   output           busy,                // transmitter busy
 
   output reg [7:0] rx_data,             // octet received
-  input            rd,                  // read data (acknowledgement)
   output reg       valid = 1'b0,        // octet is ready
+  input            rd,                  // read data (acknowledgement)
   output           break,               // line break condition
 
   input            rx,                  // receive line (async)

@@ -3,6 +3,8 @@
 // async input synchronizer
 //
 
+`default_nettype none
+
 module sync #(
   parameter N = 3                       // number of DFF stages
 ) (

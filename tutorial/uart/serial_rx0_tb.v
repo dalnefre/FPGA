@@ -1,6 +1,6 @@
-// serial_rx1_tb.v
+// serial_rx0_tb.v
 //
-// simulation test bench for serial_rx1.v
+// simulation test bench for serial_rx0.v
 //
 
 `default_nettype none
@@ -26,7 +26,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("serial_rx1.vcd");
+      $dumpfile("serial_rx0.vcd");
       $dumpvars(0, test_bench);
       $display("PACE = %d", PACE);
       RX = `IDLE_BIT;

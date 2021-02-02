@@ -3,6 +3,8 @@
 // serial transmitter
 //
 
+`default_nettype none
+
 `include "uart.vh"
 
 module serial_tx (

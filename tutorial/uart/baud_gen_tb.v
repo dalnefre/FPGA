@@ -3,6 +3,8 @@
 // simulation test bench for baud_gen.v
 //
 
+`default_nettype none
+
 module test_bench;
 
   // dump simulation signals

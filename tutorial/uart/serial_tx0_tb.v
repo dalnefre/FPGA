@@ -3,6 +3,8 @@
 // simulation test bench for baud_gen.v + serial_tx0.v
 //
 
+`default_nettype none
+
 module test_bench;
 
   localparam CLK_FREQ = 48;
