@@ -2,6 +2,7 @@
 
 Here are some links to additional resources you may find useful.
 
+ * https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/
  * https://en.wikibooks.org/wiki/Programmable_Logic/Verilog
  * http://www.asic-world.com/verilog/index.html
  * https://www.cis.upenn.edu/~milom/cis371-Spring13/lab/textbook-verilog-tutorial/VOL/main.htm
