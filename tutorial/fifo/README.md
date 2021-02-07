@@ -4,8 +4,10 @@
 
 ### Resources
 
- * [Wishbone Wikipedia Page](https://en.wikipedia.org/wiki/Wishbone_(computer_bus))
- * [Wishbone B4 bus spec](https://cdn.opencores.org/downloads/wbspec_b4.pdf)
+ * [Wishbone page on Wikipedia](https://en.wikipedia.org/wiki/Wishbone_(computer_bus))
+ * [Wishbone page on OpenCores.org](https://opencores.org/howto/wishbone)
+ * [Wishbone B4 bus spec (2010-06-22)](https://cdn.opencores.org/downloads/wbspec_b4.pdf)
+ * [Wishbone B3 bus spec (2002-07-09)](https://cdn.opencores.org/downloads/wbspec_b3.pdf)
 
 ### Synchronous Lock-Step Buffer
 
