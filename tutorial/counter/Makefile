@@ -8,7 +8,6 @@ SIM =	count_0.sim \
 	count_1.sim \
 	count_2.sim \
 	count_3.sim \
-	count_4.sim \
 	pwm_1.sim \
 	pwm_0.sim
 
@@ -16,12 +15,10 @@ VCD =	count_0.vcd \
 	count_1.vcd \
 	count_2.vcd \
 	count_3.vcd \
-	count_4.vcd \
 	pwm_1.vcd \
 	pwm_0.vcd
 
 DFU =	count_3_fomu.dfu \
-	count_4_fomu.dfu \
 	pwm_0_fomu.dfu \
 	pwm_1_fomu.dfu
 
@@ -55,9 +52,6 @@ pwm_1.sim: count_3.v pwm_0.v pwm_1_tb.v
 
 count_3_fomu.json: count_3_fomu.v
 	yosys -p 'synth_ice40 -json $@' $^ >count_3_fomu.log
-
-count_4_fomu.json: count_4.v count_4_fomu.v
-	yosys -p 'synth_ice40 -json $@' $^ >count_4_fomu.log
 
 pwm_0_fomu.json: count_3.v pwm_0.v pwm_0_fomu.v
 	yosys -p 'synth_ice40 -json $@' $^ >pwm_0_fomu.log

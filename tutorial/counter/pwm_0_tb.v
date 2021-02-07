@@ -3,6 +3,8 @@
 // simulation test bench for count_3.v + pwm_0.v
 //
 
+`default_nettype none
+
 module test_bench;
 
   // dump simulation signals

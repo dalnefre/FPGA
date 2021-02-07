@@ -3,6 +3,8 @@
 // free-running counter
 //
 
+`default_nettype none
+
 module count #(
   parameter INIT = 0,                   // initial value
   parameter WIDTH = 16                  // counter bit-width

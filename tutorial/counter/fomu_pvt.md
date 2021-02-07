@@ -49,7 +49,8 @@ Remember that each clock-cycle includes both
 a rising and falling edge,
 so with a 48MHz clock
 each simulation time-step represents
-10.4166... nanoseconds (ns).
+10.4166... nanoseconds (ns),
+and 1 clock-cycle is 2 time-steps.
 
 On the Fomu,
 we will use _counter_ bits 25-27
@@ -105,6 +106,8 @@ represent external connections
 //
 // top-level module for Fomu PVT device (uses count_3.v)
 //
+
+`default_nettype none
 
 `include "fomu_pvt.vh"
 
@@ -341,7 +344,8 @@ $ dfu-util -D count_3_fomu.dfu
 
 During upload, the Fomu LED will blink dark blue.
 When the upload is complete,
-the boot-loader will _warm-boot_ into your design.
+the boot-loader will _warm-boot_ into our design,
+cycling through colors.
 Since our design does not contain its own USB boot-loader,
 we have to power-cycle the Fomu
 so it will re-load the default boot-loader
@@ -482,12 +486,12 @@ but all driven by the same 29-bit counter.
 We've chosen the least-significant-bit (LSB)
 of each PWM to be bit 9 of the 48Mhz counter,
 which means that the minimum pulse-width
-corresponds to a frequency of 46.875Mhz.
+corresponds to a frequency of 46.875kHz.
 The specifications for the iCE40 FPGA used in the Fomu
-say that the LED signal frequency should stay below 64Mhz,
+say that the LED signal frequency should stay below 64kHz,
 so we're safe with this value.
 It's fast enough that the human eye won't see the flicker,
-yet slow enough to stay withing the LED driver's operating range.
+yet slow enough to stay within the LED driver's operating range.
 
 ```verilog
   // Instantiate pulse-width modulators
@@ -542,7 +546,7 @@ Package and install the DFU to the Fomu.
 $ icepack pwm_1_fomu.asc pwm_1_fomu.bit
 $ cp pwm_1_fomu.bit pwm_1_fomu.dfu
 $ dfu-suffix -v 1209 -p 70b1 -a pwm_1_fomu.dfu
-$ dfu-util -D pwm_0_fomu.dfu
+$ dfu-util -D pwm_1_fomu.dfu
 ```
 
 The RGB LED should now be gradually sliding through the colors of the rainbow.
@@ -554,7 +558,9 @@ However, the Fomu contains a convenient hard-block
 that generates PWM signals
 to drive the LEDs.
 
-_**TODO:** demonstrate using the PWM hard-block to recreate the rainbow demo (note the reduced resource usage)._
+### Exercises
+
+ 1. Use the PWM hard-block to recreate the rainbow demo (note the reduced resource usage).
 
 ### Next Steps
 

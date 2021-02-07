@@ -3,6 +3,8 @@
 // pulse-width modulation
 //
 
+`default_nettype none
+
 module pwm #(
   parameter N = 8                       // counter resolution
 ) (

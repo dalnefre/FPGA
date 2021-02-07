@@ -3,6 +3,8 @@
 // simulation test bench for count_3.v
 //
 
+`default_nettype none
+
 module test_bench;
 
   // dump simulation signals
@@ -23,7 +25,6 @@ module test_bench;
   // instantiate device-under-test
   localparam N = 4;
   wire [N-1:0] out;
-  wire b0, b1, b2, b3;
   reg _rst = 0;
   count #(
     .WIDTH(N)
@@ -32,6 +33,9 @@ module test_bench;
     .clock(clk),
     .count(out)
   );
+
+  // break out individual count bits
+  wire b0, b1, b2, b3;
   assign b0 = out[0];
   assign b1 = out[1];
   assign b2 = out[2];

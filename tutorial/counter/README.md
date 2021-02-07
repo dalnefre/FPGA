@@ -324,6 +324,9 @@ Notice how the `WIDTH` parameter is used in the declaration of `count`.
 We've also added a new feature to this module.
 The `_reset` input can be used to hold the counter at the `INIT` value
 until we're ready for it to start counting.
+This, and all the `input` signals, are `wire` type signals
+because `wire` is the default signal type when none is specified.
+
 The conditional expression `_reset ? count + 1'b1 : INIT`
 evaluates to the increment expression if `_reset` is `1`,
 and the `INIT` value if `_reset` is `0` (active low logic).
@@ -429,6 +432,8 @@ would toggle at a frequency of 1MHz.
 // free-running counter
 //
 
+`default_nettype none
+
 module count #(
   parameter INIT = 0,                   // initial value
   parameter WIDTH = 16                  // counter bit-width
@@ -448,9 +453,15 @@ module count #(
 endmodule
 ```
 
-We declare a new `output msb` for use as a clock pre-scaler.
-This, and all the `input` signals, are `wire` type signals
-because `wire` is the default signal type when none is specified.
+In order to prevent accidental declaration of misspelled signals,
+we've declared the default net type as `none`, rather than `wire`.
+However, `input` and `output` ports still default to `wire`.
+
+```
+`default_nettype none
+```
+
+We also declare a new `output msb` for use as a clock pre-scaler.
 The `msb` output is driven from the most-significant bit of the `count`
 by a "continuous assignment" statement, outside of the `always` block.
 
@@ -466,6 +477,8 @@ our test bench breaks out each of the `out` bits individually.
 //
 // simulation test bench for count_3.v
 //
+
+`default_nettype none
 
 module test_bench;
 
@@ -487,7 +500,6 @@ module test_bench;
   // instantiate device-under-test
   localparam N = 4;
   wire [N-1:0] out;
-  wire b0, b1, b2, b3;
   reg _rst = 0;
   count #(
     .WIDTH(N)
@@ -496,6 +508,9 @@ module test_bench;
     .clock(clk),
     .count(out)
   );
+
+  // break out individual count bits
+  wire b0, b1, b2, b3;
   assign b0 = out[0];
   assign b1 = out[1];
   assign b2 = out[2];
@@ -505,7 +520,7 @@ endmodule
 ```
 
 Signals for each of the four bits are declared `wire b0, b1, b2, b3;`
-and `assign`ed from selected bits of `out`.
+and `assign`'d from selected bits of `out`.
 The following block diagram illustrates our final design.
 
 ```
@@ -558,6 +573,8 @@ given our `count` module.
 // pulse-width modulation
 //
 
+`default_nettype none
+
 module pwm #(
   parameter N = 8                       // counter resolution
 ) (
@@ -584,6 +601,8 @@ That's all there is to it!
 //
 // simulation test bench for count_3.v + pwm_0.v
 //
+
+`default_nettype none
 
 module test_bench;
 
@@ -656,6 +675,8 @@ and inverts the pulse-width value when the phase is `1`.
 //
 // simulation test bench for count_3.v + pwm_0.v
 //
+
+`default_nettype none
 
 module test_bench;
 

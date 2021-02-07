@@ -3,6 +3,8 @@
 // top-level module for Fomu PVT device (uses count_3.v and pwm_0.v)
 //
 
+`default_nettype none
+
 `include "fomu_pvt.vh"
 
 module fomu_pvt (
