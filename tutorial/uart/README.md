@@ -1,5 +1,7 @@
 ## Serial UART
 
+### **WARNING: THIS TUTORIAL IS UNDER CONSTRUCTION**
+
 In this project we will explore [Serial Communication](https://learn.sparkfun.com/tutorials/serial-communication)
 by implementing a [Universal Asynchronous Receiver-Transmitter (UART)](https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter).
 In our [Counter Project](../counter/README.md)

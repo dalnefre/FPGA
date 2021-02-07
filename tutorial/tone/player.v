@@ -3,6 +3,8 @@
 // musical tone sequencer
 //
 
+`default_nettype none
+
 `include "pitch.vh"
 
 module tone_seq #(

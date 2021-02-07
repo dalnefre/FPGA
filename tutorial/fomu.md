@@ -28,7 +28,7 @@ YMMV.
 ### Projects
 
  1. [Counter](counter/fomu_pvt.md)
- 2. [Serial UART](uart/fomu_pvt.md) (_coming soon_)
- 3. [Tone Generator](tone/fomu_pvt.md) (_coming soon_)
+ 2. [Tone Generator](tone/fomu_pvt.md) (_coming soon_)
+ 3. [Serial UART](uart/fomu_pvt.md) (_coming soon_)
 
 ([_Back to Index_](README.md))

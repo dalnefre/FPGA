@@ -3,6 +3,8 @@
 // musical tone generator
 //
 
+`default_nettype none
+
 `include "pitch.vh"
 
 module tone_gen #(
@@ -31,7 +33,7 @@ module tone_gen #(
       freq_cnt[`D] = CLK_FREQ / 18.35405;
       freq_cnt[`Db] = CLK_FREQ / 17.32391;
       freq_cnt[`C] = CLK_FREQ / 16.35160;
-/*
+
       $display("freq_cnt[%d] = %d", `Z, freq_cnt[`Z]);
       $display("freq_cnt[%d] = %d", `B, freq_cnt[`B]);
       $display("freq_cnt[%d] = %d", `Bb, freq_cnt[`Bb]);
@@ -45,7 +47,6 @@ module tone_gen #(
       $display("freq_cnt[%d] = %d", `D, freq_cnt[`D]);
       $display("freq_cnt[%d] = %d", `Db, freq_cnt[`Db]);
       $display("freq_cnt[%d] = %d", `C, freq_cnt[`C]);
-*/
     end
 
   reg [21:0] cnt = 0;  // count register

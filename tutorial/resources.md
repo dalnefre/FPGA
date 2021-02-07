@@ -14,5 +14,6 @@ Here are some links to additional resources you may find useful.
  * https://www.seeedstudio.com/blog/2019/09/25/uart-vs-i2c-vs-spi-communication-protocols-and-uses/
  * https://www.allaboutcircuits.com/textbook/digital/
  * [2 hour crash course in FPGAs and Verilog using iCEBreaker dev board](https://github.com/esden/wtfpga)
+ * [Verilog, Formal Verification and Verilator Beginner's Tutorial](https://zipcpu.com/tutorial/)
 
 ([_Back to Index_](README.md))

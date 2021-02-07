@@ -23,7 +23,7 @@ further described in this online [User Guide](https://tinyfpga.com/bx/guide.html
 ### Projects
 
  1. [Counter](counter/tinyfpga-bx.md) (_coming soon_)
- 2. [Serial UART](uart/tinyfpga-bx.md) (_coming soon_)
- 3. [Tone Generator](tone/tinyfpga-bx.md) (_coming soon_)
+ 2. [Tone Generator](tone/tinyfpga-bx.md) (_coming soon_)
+ 3. [Serial UART](uart/tinyfpga-bx.md) (_coming soon_)
 
 ([_Back to Index_](README.md))

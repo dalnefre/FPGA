@@ -7,6 +7,8 @@
 //    player.v
 //
 
+`default_nettype none
+
 `include "fomu_pvt.vh"
 
 module fomu_pvt (

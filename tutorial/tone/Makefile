@@ -4,9 +4,11 @@
 
 PNR_OPTS = --up5k --package uwg30 --pcf ../../Fomu/pcf/fomu-pvt.pcf
 
-SIM =	pitch.sim
+SIM =	square.sim \
+	pitch.sim
 
-VCD =	pitch.vcd
+VCD =	square.vcd \
+	pitch.vcd
 
 DFU =	pitch_0_fomu.dfu \
 	pitch_1_fomu.dfu

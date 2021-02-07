@@ -3,6 +3,8 @@
 // simulation test bench for pitch.v
 //
 
+`default_nettype none
+
 `include "pitch.vh"
 
 //`define CLK_FREQ = 48_000_000

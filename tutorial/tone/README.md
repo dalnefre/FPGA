@@ -1,6 +1,41 @@
 ## Tone Generator
 
+In this project we will explore
+generating [_square-wave_](https://en.wikipedia.org/wiki/Square_wave) signals
+with arbitrary [_frequencies_](https://en.wikipedia.org/wiki/Orders_of_magnitude_(frequency)).
+In our [Counter Project](../counter/README.md)
+we learned how to count clock pulses
+and divide the clock frequency by powers-of-2.
+However, in order to generate audible tones,
+we must be able to generate arbitrary timing signals.
+Rather than use a free-running counter,
+we will create a count-down timer
+and trigger our actions when the counter reaches zero.
+
 ### **WARNING: THIS TUTORIAL IS UNDER CONSTRUCTION**
+
+### Resources
+
+ * [Orders of Magnitude — Frequency (Wikipedia)](https://en.wikipedia.org/wiki/Orders_of_magnitude_(frequency))
+ * [Orders of Magnitude — Time (Wikipedia)](https://en.wikipedia.org/wiki/Orders_of_magnitude_(time))
+ * [Piano Key Frequencies (Wikipedia)](https://en.wikipedia.org/wiki/Piano_key_frequencies)
+ * [MIDI](https://en.wikipedia.org/wiki/MIDI)
+   * [What is MIDI?](https://www.instructables.com/What-is-MIDI/)
+   * [Send and Receive MIDI With Arduino](https://www.instructables.com/Send-and-Receive-MIDI-with-Arduino/)
+   * [Lab: MIDI Output using an Arduino](https://itp.nyu.edu/physcomp/labs/labs-serial-communication/lab-midi-output-using-an-arduino/)
+   * [MIDI, an Overview](https://tigoe.github.io/SoundExamples/midi.html) (**RECOMMENDED**)
+
+### Audible Tones
+
+In this tutorial,
+we will focus on [audible tones](https://en.wikipedia.org/wiki/Piano_key_frequencies).
+The techniques we explore will be useful
+whenever we need to precisely control signal frequencies
+(e.g.: to implement [communication protocols](../uart/README.md)).
+However,
+we will apply these techniques
+to audio synthesis
+of frequencies spanning the following table:
 
 | Note    | Frequency | Comments      |
 |---------|-----------|---------------|
@@ -37,17 +72,115 @@
 |    :    |     :     |    :          |
 | C0      |   16.3516 |               |
 
+We can generate a square-wave with arbitrary frequency
+by counting positive edge transitions of our system clock.
+Let's say our system clock is running at 48Hz.
+This means the clock will have 48 positive edge transitions in 1 second.
+If we want to generate an 8Hz square-wave output,
+we must have 8 positive edge transitions per second.
+We will also have 8 negative edge transitions between the positive edges,
+for a total of 16 edge transitions per second.
+So, if we're counting positive edges of the 48Hz system clock,
+we want to toggle the output signal every 3 positive edges (48/16 = 3).
 
-### Resources
+```verilog
+// square.v
+//
+// square-wave generator
+//
 
- * [Orders of Magnitude — Frequency (Wikipedia)](https://en.wikipedia.org/wiki/Orders_of_magnitude_(frequency))
- * [Orders of Magnitude — Time (Wikipedia)](https://en.wikipedia.org/wiki/Orders_of_magnitude_(time))
- * [Piano Key Frequencies (Wikipedia)](https://en.wikipedia.org/wiki/Piano_key_frequencies)
- * [MIDI](https://en.wikipedia.org/wiki/MIDI)
-   * [What is MIDI?](https://www.instructables.com/What-is-MIDI/)
-   * [Send and Receive MIDI With Arduino](https://www.instructables.com/Send-and-Receive-MIDI-with-Arduino/)
-   * [Lab: MIDI Output using an Arduino](https://itp.nyu.edu/physcomp/labs/labs-serial-communication/lab-midi-output-using-an-arduino/)
-   * [MIDI, an Overview](https://tigoe.github.io/SoundExamples/midi.html) (**RECOMMENDED**)
+`default_nettype none
+
+module tone_gen #(
+  parameter CLK_FREQ = 48_000_000,      // clock frequency (Hz)
+  parameter OUT_FREQ = 440              // output frequency (Hz)
+) (
+  input            clk,                 // input clock (@ CLK_FREQ)
+  output           out                  // output signal (@ OUT_FREQ)
+);
+  localparam CNT = CLK_FREQ / (OUT_FREQ << 1);
+  localparam INIT = CNT - 1;
+  localparam N = $clog2(CNT);
+
+  reg state = 0;
+  reg [N-1:0] timer = INIT;
+  always @(posedge clk)
+    if (timer)
+      timer <= timer - 1'b1;
+    else
+      begin
+        timer <= INIT;
+        state <= !state;
+      end
+
+  assign out = state;
+
+endmodule
+```
+
+The `CNT` is the number of clock-cycles between output edge transitions,
+which is the input frequency divided by twice the desired output frequency
+(because we count both positive and negative output edges).
+Since we're going to toggle the output when the counter reaches zero,
+out `INIT` value is one less than `CNT`.
+The number of bits `N` required for our `timer`
+is the log-base-2 of the `CNT`.
+
+We initialize the `timer` to the maximum value `INIT`.
+On each positive edge of the `clk`,
+if the `timer` is not zero,
+we decrement the timer by one.
+If the `timer` is zero,
+we reset the `timer` to the `INIT` value,
+and toggle the `state` of the output.
+
+```verilog
+// square_tb.v
+//
+// simulation test bench for square.v
+//
+
+`default_nettype none
+
+module test_bench;
+
+  localparam CLK_FREQ = 48;
+  localparam OUT_FREQ = 8;
+
+  // dump simulation signals
+  initial
+    begin
+      $dumpfile("square.vcd");
+      $dumpvars(0, test_bench);
+      #(2 * CLK_FREQ);  // run for 1 simulated second
+      $finish;  // stop simulation
+    end
+
+  // generate chip clock
+  reg clk = 0;
+  always
+    #1 clk = !clk;
+
+  // instantiate device-under-test
+  wire out;
+  tone_gen #(
+    .CLK_FREQ(CLK_FREQ),
+    .OUT_FREQ(OUT_FREQ)
+  ) DUT (
+    .clk(clk),
+    .out(out)
+  );
+
+endmodule
+```
+
+Our test bench simply instantiates
+the square-wave `tone_gen` module,
+and drives the system clock for 1 simulated second.
+After synthesis and simulation,
+we can examine the generated traces.
+
+![square.vcd](square_vcd.png)
 
 ### Code
 
@@ -78,15 +211,17 @@
 // musical tone generator
 //
 
+`default_nettype none
+
 `include "pitch.vh"
 
 module tone_gen #(
   parameter CLK_FREQ = 48_000_000
 ) (
-  input       clk,                      // input clock (@ CLK_FREQ)
-  input [3:0] pitch,                    // pitch index
-  input [2:0] octave,                   // octave index
-  output reg  tone = 0                  // output tone (@ OUT_FREQ)
+  input            clk,                 // input clock (@ CLK_FREQ)
+  input      [3:0] pitch,               // pitch index
+  input      [2:0] octave,              // octave index
+  output reg       tone = 0             // output tone (@ OUT_FREQ)
 );
 
   // frequency table
@@ -94,30 +229,31 @@ module tone_gen #(
   initial
     begin
       freq_cnt[`Z] = 0;
-      $display("freq_cnt[%d] = %d", `Z, freq_cnt[`Z]);
       freq_cnt[`B] = CLK_FREQ / 30.86771;
-      $display("freq_cnt[%d] = %d", `B, freq_cnt[`B]);
       freq_cnt[`Bb] = CLK_FREQ / 29.13524;
-      $display("freq_cnt[%d] = %d", `Bb, freq_cnt[`Bb]);
       freq_cnt[`A] = CLK_FREQ / 27.50000;
-      $display("freq_cnt[%d] = %d", `A, freq_cnt[`A]);
       freq_cnt[`Ab] = CLK_FREQ / 25.95654;
-      $display("freq_cnt[%d] = %d", `Ab, freq_cnt[`Ab]);
       freq_cnt[`G] = CLK_FREQ / 24.49971;
-      $display("freq_cnt[%d] = %d", `G, freq_cnt[`G]);
       freq_cnt[`Gb] = CLK_FREQ / 23.12465;
-      $display("freq_cnt[%d] = %d", `Gb, freq_cnt[`Gb]);
       freq_cnt[`F] = CLK_FREQ / 21.82676;
-      $display("freq_cnt[%d] = %d", `F, freq_cnt[`F]);
       freq_cnt[`E] = CLK_FREQ / 20.60172;
-      $display("freq_cnt[%d] = %d", `E, freq_cnt[`E]);
       freq_cnt[`Eb] = CLK_FREQ / 19.44544;
-      $display("freq_cnt[%d] = %d", `Eb, freq_cnt[`Eb]);
       freq_cnt[`D] = CLK_FREQ / 18.35405;
-      $display("freq_cnt[%d] = %d", `D, freq_cnt[`D]);
       freq_cnt[`Db] = CLK_FREQ / 17.32391;
-      $display("freq_cnt[%d] = %d", `Db, freq_cnt[`Db]);
       freq_cnt[`C] = CLK_FREQ / 16.35160;
+
+      $display("freq_cnt[%d] = %d", `Z, freq_cnt[`Z]);
+      $display("freq_cnt[%d] = %d", `B, freq_cnt[`B]);
+      $display("freq_cnt[%d] = %d", `Bb, freq_cnt[`Bb]);
+      $display("freq_cnt[%d] = %d", `A, freq_cnt[`A]);
+      $display("freq_cnt[%d] = %d", `Ab, freq_cnt[`Ab]);
+      $display("freq_cnt[%d] = %d", `G, freq_cnt[`G]);
+      $display("freq_cnt[%d] = %d", `Gb, freq_cnt[`Gb]);
+      $display("freq_cnt[%d] = %d", `F, freq_cnt[`F]);
+      $display("freq_cnt[%d] = %d", `E, freq_cnt[`E]);
+      $display("freq_cnt[%d] = %d", `Eb, freq_cnt[`Eb]);
+      $display("freq_cnt[%d] = %d", `D, freq_cnt[`D]);
+      $display("freq_cnt[%d] = %d", `Db, freq_cnt[`Db]);
       $display("freq_cnt[%d] = %d", `C, freq_cnt[`C]);
     end
 
@@ -130,7 +266,7 @@ module tone_gen #(
       if (pitch)
         begin
           tone <= !tone;
-          cnt <= (freq_cnt[pitch] >> (octave + 1)) - 1;
+          cnt <= (freq_cnt[pitch] >> octave) - 1;
         end
       else  // rest
         begin

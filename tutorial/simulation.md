@@ -21,10 +21,10 @@ of Verilog syntax and semantics.
 ### Projects
 
  1. [Counter](counter/README.md)
- 2. [Serial UART](uart/README.md)
- 3. [Tone Generator](tone/README.md) (_under construction_)
- 4. [MIDI](midi/README.md) (_coming soon_)
- 5. [FIFO Buffer](fifo/README.md) (_under construction_)
+ 2. [Tone Generator](tone/README.md) (_under construction_)
+ 3. [FIFO Buffer](fifo/README.md) (_under construction_)
+ 4. [Serial UART](uart/README.md) (_under construction_)
+ 5. [MIDI](midi/README.md) (_coming soon_)
  6. [Microprocessor](cpu/README.md) (_coming soon_)
  7. [USB Device](usb/README.md) (_coming soon_)
 
