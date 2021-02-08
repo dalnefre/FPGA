@@ -11,10 +11,12 @@ VCD =	square.vcd \
 	pitch.vcd
 
 DFU =	square_fomu.dfu \
+	pitch_fomu.dfu \
 	pitch_0_fomu.dfu \
 	pitch_1_fomu.dfu
 
 TIME =	square_fomu.time \
+	pitch_fomu.time \
 	pitch_0_fomu.time \
 	pitch_1_fomu.time
 
@@ -41,6 +43,9 @@ time: $(TIME)
 
 square_fomu.json: ../lib/clk_div.v square.v square_fomu.v
 	yosys -p 'synth_ice40 -json $@' $^ >square_fomu.log
+
+pitch_fomu.json: ../lib/clk_div.v pitch.v pitch_fomu.v
+	yosys -p 'synth_ice40 -json $@' $^ >pitch_fomu.log
 
 pitch_0_fomu.json: pitch.v pitch_0_fomu.v
 	yosys -p 'synth_ice40 -json $@' $^ >pitch_0_fomu.log

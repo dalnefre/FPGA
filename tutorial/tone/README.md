@@ -86,7 +86,7 @@ module tone_gen #(
   input            clk,                 // input clock (@ CLK_FREQ)
   output           out                  // output signal (@ OUT_FREQ)
 );
-  localparam CNT = CLK_FREQ / (OUT_FREQ << 1);
+  localparam CNT = CLK_FREQ / (OUT_FREQ * 2);
   localparam INIT = CNT - 1;
   localparam N = $clog2(CNT);
 
@@ -410,6 +410,7 @@ endmodule
  2. Add support for looping note sequences.
  3. Add support for counted repeats.
  4. Implement tied notes (no gap between notes).
+ 5. Use MIDI encoding for pitch, octave, and duration.
 
 ### Next Steps
 

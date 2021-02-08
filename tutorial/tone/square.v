@@ -12,7 +12,7 @@ module tone_gen #(
   input            clk,                 // input clock (@ CLK_FREQ)
   output           out                  // output signal (@ OUT_FREQ)
 );
-  localparam CNT = CLK_FREQ / (OUT_FREQ << 1);
+  localparam CNT = CLK_FREQ / (OUT_FREQ * 2);
   localparam INIT = CNT - 1;
   localparam N = $clog2(CNT);
 

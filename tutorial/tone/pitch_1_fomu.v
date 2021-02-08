@@ -12,11 +12,11 @@
 `include "fomu_pvt.vh"
 
 module fomu_pvt (
-  input  clki,      // 48MHz oscillator input
+  input  clk_48MHz, // 48MHz oscillator input
 
-  output rgb0,      // RGB LED pin 0 (**DO NOT** drive directly)
-  output rgb1,      // RGB LED pin 1 (**DO NOT** drive directly)
-  output rgb2,      // RGB LED pin 2 (**DO NOT** drive directly)
+  output rgb_0,     // RGB LED pin 0 (**DO NOT** drive directly)
+  output rgb_1,     // RGB LED pin 1 (**DO NOT** drive directly)
+  output rgb_2,     // RGB LED pin 2 (**DO NOT** drive directly)
 
   inout  user_1,    // external pin 1
   inout  user_2,    // external pin 2
@@ -37,12 +37,15 @@ module fomu_pvt (
 
   // Connect to system clock (with buffering)
   reg clk_24MHz = 0;
-  always @(posedge clki)
+  always @(posedge clk_48MHz)
     clk_24MHz = !clk_24MHz;
+  reg clk_12MHz = 0;
+  always @(posedge clk_24MHz)
+    clk_12MHz = !clk_12MHz;
   wire clk;  // system clock
-  localparam CLK_FREQ = (`SYS_CLK_FREQ >> 1);  // divide-by-2
+  localparam CLK_FREQ = (`SYS_CLK_FREQ >> 2);
   SB_GB clk_gb (
-    .USER_SIGNAL_TO_GLOBAL_BUFFER(clk_24MHz),
+    .USER_SIGNAL_TO_GLOBAL_BUFFER(clk_12MHz),
     .GLOBAL_BUFFER_OUTPUT(clk)
   );
 
@@ -60,16 +63,10 @@ module fomu_pvt (
     .`REDPWM(LED_r),    // Red
     .`GREENPWM(LED_g),  // Green
     .`BLUEPWM(LED_b),   // Blue
-    .RGB0(rgb0),
-    .RGB1(rgb1),
-    .RGB2(rgb2)
+    .RGB0(rgb_0),
+    .RGB1(rgb_1),
+    .RGB2(rgb_2)
   );
-
-  // 28-bit counter
-  localparam NC = 28;
-  reg [NC-1:0] count;
-  always @(posedge clk)
-    count <= count + 1'b1;
 
   // Instantiate tone generator
   wire [3:0] pitch;
@@ -81,7 +78,7 @@ module fomu_pvt (
     .clk(clk),
     .pitch(pitch),
     .octave(octave),
-    .tone(spkr)
+    .out(spkr)
   );
 
   // Instantiate tone sequencer
@@ -114,6 +111,12 @@ module fomu_pvt (
   assign user_2 = 1'b1;
   assign user_3 = 1'b1;
   assign user_4 = 1'b0;  // "ground" pin
+
+  // 27-bit counter
+  localparam NC = 27;
+  reg [NC-1:0] count;
+  always @(posedge clk)
+    count <= count + 1'b1;
 
   // Connect counter bits to LED
   assign LED_r = count[NC-3];  // bit 25 (~2.8s cycle, ~1.4s on/off @ 24MHz)

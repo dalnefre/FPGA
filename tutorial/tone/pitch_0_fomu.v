@@ -11,11 +11,11 @@
 `include "fomu_pvt.vh"
 
 module fomu_pvt (
-  input  clki,      // 48MHz oscillator input
+  input  clk_48MHz, // 48MHz oscillator input
 
-  output rgb0,      // RGB LED pin 0 (**DO NOT** drive directly)
-  output rgb1,      // RGB LED pin 1 (**DO NOT** drive directly)
-  output rgb2,      // RGB LED pin 2 (**DO NOT** drive directly)
+  output rgb_0,     // RGB LED pin 0 (**DO NOT** drive directly)
+  output rgb_1,     // RGB LED pin 1 (**DO NOT** drive directly)
+  output rgb_2,     // RGB LED pin 2 (**DO NOT** drive directly)
 
   inout  user_1,    // external pin 1
   inout  user_2,    // external pin 2
@@ -37,7 +37,7 @@ module fomu_pvt (
   // Connect to system clock (with buffering)
   wire clk;  // 48MHz system clock
   SB_GB clk_gb (
-    .USER_SIGNAL_TO_GLOBAL_BUFFER(clki),
+    .USER_SIGNAL_TO_GLOBAL_BUFFER(clk_48MHz),
     .GLOBAL_BUFFER_OUTPUT(clk)
   );
 
@@ -55,9 +55,9 @@ module fomu_pvt (
     .`REDPWM(LED_r),    // Red
     .`GREENPWM(LED_g),  // Green
     .`BLUEPWM(LED_b),   // Blue
-    .RGB0(rgb0),
-    .RGB1(rgb1),
-    .RGB2(rgb2)
+    .RGB0(rgb_0),
+    .RGB1(rgb_1),
+    .RGB2(rgb_2)
   );
 
   // 28-bit counter
@@ -76,7 +76,7 @@ module fomu_pvt (
     .clk(clk),
     .pitch(pitch),
     .octave(octave),
-    .tone(spkr)
+    .out(spkr)
   );
 
   wire EN;  // enable tone
