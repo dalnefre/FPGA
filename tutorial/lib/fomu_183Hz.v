@@ -3,6 +3,7 @@
 // top-level module for Fomu PVT device (183 Hz clock)
 //
 // requires:
+//    clk_div.v
 //    top.v
 //
 
@@ -17,10 +18,10 @@ module fomu_pvt (
   output            rgb_1,              // RGB LED pin 1
   output            rgb_2,              // RGB LED pin 2
 
-  inout             touch_1,            // touchpad pin 1
-  inout             touch_2,            // touchpad pin 2
-  inout             touch_3,            // touchpad pin 3
-  inout             touch_4,            // touchpad pin 4
+  inout             user_1,             // user i/o pin 1
+  inout             user_2,             // user i/o pin 2
+  inout             user_3,             // user i/o pin 3
+  inout             user_4,             // user i/o pin 4
 
   inout             usb_dp,             // USB D+
   inout             usb_dn,             // USB D-
@@ -78,14 +79,14 @@ module fomu_pvt (
   );
 
 /*
-  // Configure touchpad pin 1
-  wire pin_1_dir = EN;
+  // Configure user pin 1
+  wire pin_1_dir = 0;  // 0=input, 1=output
   wire pin_1_in;
   wire pin_1_out;
   SB_IO #(
     .PIN_TYPE(6'b1010_01) // tri-statable output
-  ) touch_1_io (
-    .PACKAGE_PIN(touch_1),
+  ) user_1_io (
+    .PACKAGE_PIN(user_1),
     .OUTPUT_ENABLE(pin_1_dir),
     .D_IN_0(pin_1_in),
     .D_OUT_0(pin_1_out)

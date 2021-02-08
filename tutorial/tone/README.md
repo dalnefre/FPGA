@@ -37,40 +37,28 @@ we will apply these techniques
 to audio synthesis
 of frequencies spanning the following table:
 
-| Note    | Frequency | Comments      |
-|---------|-----------|---------------|
-| B8      | 7902.133  |               |
-| B8      | 7902.133  |               |
-| A#8/Bb8 | 7458.620  |               |
-| A8      | 7040.000  |               |
-| G#8/Ab8 | 6644.875  |               |
-| G8      | 6271.927  |               |
-| F#8/Gb8 | 5919.911  |               |
-| F8      | 5587.652  |               |
-| E8      | 5274.041  |               |
-| D#8/Eb8 | 4978.032  |               |
-| D8      | 4698.636  |               |
-| C#8/Db8 | 4434.922  |               |
-| C8      | 4186.009  | (88-key high) |
-|    :    |     :     |    :          |
-| B4      |  493.8833 | Ti            |
-| A4      |  440.0000 | La (A440)     |
-| G4      |  391.9954 | So            |
-| F4      |  349.2282 | Fa            |
-| E4      |  329.6276 | Mi            |
-| D4      |  293.6648 | Re            |
-| C4      |  261.6256 | Do (Middle C) |
-| B3      |  246.9417 |               |
-| A3      |  220.0000 |               |
-| G3      |  195.9977 |               |
-| F3      |  174.6141 |               |
-| E3      |  164.8138 |               |
-| D3      |  146.8324 |               |
-| C3      |  130.8128 |               |
-|    :    |     :     |    :          |
-| A0      |   27.5000 | (88-key low)  |
-|    :    |     :     |    :          |
-| C0      |   16.3516 |               |
+| Note    | Frequency | Comments         |
+|---------|-----------|------------------|
+| C8      | 4186.009  | 88-key high note |
+|    :    |     :     |    :             |
+| B4      |  493.8833 | Ti               |
+| A4      |  440.0000 | La (A440)        |
+| G4      |  391.9954 | So               |
+| F4      |  349.2282 | Fa               |
+| E4      |  329.6276 | Mi               |
+| D4      |  293.6648 | Re               |
+| C4      |  261.6256 | Do (Middle C)    |
+| B3      |  246.9417 |                  |
+| A3      |  220.0000 |                  |
+| G3      |  195.9977 |                  |
+| F3      |  174.6141 |                  |
+| E3      |  164.8138 |                  |
+| D3      |  146.8324 |                  |
+| C3      |  130.8128 |                  |
+|    :    |     :     |    :             |
+| A0      |   27.5000 | 88-key low note  |
+|    :    |     :     |    :             |
+| C0      |   16.3516 |                  |
 
 We can generate a square-wave with arbitrary frequency
 by counting positive edge transitions of our system clock.
@@ -427,4 +415,4 @@ endmodule
 
  * [Fomu Tone](fomu_pvt.md) (_coming soon_)
  * [TinyFPGA-BX Tone](tinyfpga-bx.md) (_coming soon_)
- * ([_Back to Simulation_](../simulation.md#projects))
+ * [_Back to Simulation_](../simulation.md#projects)
