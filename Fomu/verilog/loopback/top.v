@@ -103,7 +103,7 @@ module top (
   assign active = |counter;
 
   always @(posedge clk)
-    if (data)  // active low
+    if (!data)  // active low
       counter <= 10'd480;  // 10us @ 48MHz
     else if (active)
       counter <= counter - 1'b1;

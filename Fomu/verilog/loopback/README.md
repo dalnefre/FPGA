@@ -14,8 +14,22 @@ starting from the side with the notch:
   3. RX -- Received Data (w/ pull-up if not connected)
   4. PWR -- 3v3 Level (do not connect)
 
+Connections between the FPGA and Host must be cross-wired
+as a "[Null Modem](https://en.wikipedia.org/wiki/Null_modem)".
+
+    FPGA              HOST
+    -----+          +-----
+     GND |----------| GND
+         |          |
+         |          |
+      TX |---+  +---| TX
+         |    \/    |
+         |    /\    |
+      RX |---+  +---| RX
+    -----+          +-----
+
 Signals are expected to be LVCMOS levels.
-Note that an idle serial line is held high,
+Note that a serial line is held high when idle
 and transitions to low to indicate the start
 of a new character (octet).
 
