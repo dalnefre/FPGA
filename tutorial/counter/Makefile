@@ -68,3 +68,6 @@ pwm_1_fomu.json: count_3.v pwm_0.v pwm_1_fomu.v
 %.dfu: %.bit
 	cp $< $@
 	dfu-suffix -v 1209 -p 70b1 -a $@
+
+# Upload design:
+#   $ dfu-util -D count_3_fomu.dfu
