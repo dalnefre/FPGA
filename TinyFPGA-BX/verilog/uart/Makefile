@@ -2,12 +2,12 @@
 # Makefile
 #
 
-TOP	= template
-MODS	= 
+TOP	= uart
+MODS	= serial_tx.v
 
-all: $(TOP).bin
+all: $(TOP).dfu
 
-install: $(TOP).bin
+install: $(TOP).dfu
 	tinyprog --pyserial --program $<
 
 clean:
