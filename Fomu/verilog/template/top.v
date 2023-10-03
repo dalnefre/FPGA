@@ -17,6 +17,7 @@ module top (
   output            usb_dn,             // USB D-
   output            usb_dp_pu           // USB D+ pull-up
 );
+  parameter CLK_FREQ = 48_000_000;      // clock frequency (Hz)
 
   // disable Fomu USB
   assign usb_dp = 1'b0;

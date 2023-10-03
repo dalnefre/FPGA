@@ -1,8 +1,6 @@
 /*
 
-Top-Level Verilog Module -- Basic LED blinker
-
-Uncomment any pins you want to use in `pins.pcf`
+Top-Level Verilog Module -- LED blinker using pulse_cnt to break up timer logic
 
 */
 
