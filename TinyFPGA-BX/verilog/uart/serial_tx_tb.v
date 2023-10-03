@@ -30,7 +30,7 @@ module test_bench;
   // uart signals
   wire tx_wr;
   wire [7:0] tx_data;
-  wire tx_busy;  // busy signal ignored
+  wire tx_busy;
   wire uart_tx;
 
   // instantiate serial transmitter
@@ -54,6 +54,26 @@ module test_bench;
   assign tx_wr = r_tx_wr;
   */
   assign tx_wr = !tx_busy;
+
+  reg r_tx_busy;
+  initial r_tx_busy = 1'b0;
+  always @(posedge CLK)
+    r_tx_busy <= tx_busy;
+
+  reg [7:0] r_tx_data;
+  initial r_tx_data = "K";
+  reg r_tx_idx;
+  initial r_tx_idx = 1'b0;
+  always @(posedge CLK)
+    if (!r_tx_busy && tx_busy)
+      begin
+        // prepare next character
+        r_tx_data <= r_tx_idx ? "K" : "q";
+        r_tx_idx <= r_tx_idx + 1'b1;
+      end
+  assign tx_data = r_tx_data;
+  /*
   assign tx_data = "K";
+  */
 
 endmodule
