@@ -50,6 +50,7 @@ module top (
 
   // establish free-running counter
   reg [28:0] counter;
+  initial counter = 0;
   always @(posedge clk)
     counter <= counter + 1'b1;
 

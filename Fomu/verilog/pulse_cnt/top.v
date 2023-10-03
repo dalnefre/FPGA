@@ -17,6 +17,7 @@ module top (
   output            usb_dn,             // USB D-
   output            usb_dp_pu           // USB D+ pull-up
 );
+  parameter CLK_FREQ = 48_000_000;      // clock frequency (Hz)
 
   // disable Fomu USB
   assign usb_dp = 1'b0;
@@ -50,15 +51,39 @@ module top (
     .RGB2(rgb2)
   );
 
-  // establish free-running counter
-  reg [28:0] counter;
-  initial counter = 0;
-  always @(posedge clk)
-    counter <= counter + 1'b1;
+  // instantiate timer component
+  wire base;
+  timer #(
+    .CLK_FREQ(CLK_FREQ),
+    .WIDTH(10)
+  ) TIMER (
+    .i_clk(clk),
+    .o_data(base)
+  );
 
-  // drive LEDs from slower-changing counter bits
-  assign led_r = counter[27];  // ~5.6s cycle, ~2.8s on/off
-  assign led_g = counter[26];  // ~2.8s cycle, ~1.4s on/off
-  assign led_b = counter[25];  // ~1.4s cycle, ~0.7s on/off
+  // instantiate 1st pulse counting component
+  wire [9:0] cnt1;
+  pulse_cnt #(
+    .BITS(10)
+  ) COUNT1 (
+    .i_clk(clk),
+    .i_cnt(base),
+    .o_data(cnt1)
+  );
+
+  // instantiate 2nd pulse counting component
+  wire [9:0] cnt2;
+  pulse_cnt #(
+    .BITS(10)
+  ) COUNT2 (
+    .i_clk(clk),
+    .i_cnt(cnt1[9]),
+    .o_data(cnt2)
+  );
+
+  // drive LEDs from timer bits
+  assign led_r = cnt2[9];
+  assign led_g = cnt2[8];
+  assign led_b = cnt2[7];
 
 endmodule
