@@ -50,15 +50,18 @@ module top (
     .RGB2(rgb2)
   );
 
-  // establish free-running counter
-  reg [28:0] counter;
-  initial counter = 0;
-  always @(posedge clk)
-    counter <= counter + 1'b1;
+  // instantiate timer component
+  wire [2:0] bits;
+  timer #(
+    .BITS(3)
+  ) TIMER (
+    .i_clk(clk),
+    .o_data(bits)
+  );
 
-  // drive LEDs from slower-changing counter bits
-  assign led_r = counter[27];  // ~5.6s cycle, ~2.8s on/off
-  assign led_g = counter[26];  // ~2.8s cycle, ~1.4s on/off
-  assign led_b = counter[25];  // ~1.4s cycle, ~0.7s on/off
+  // drive LEDs from timer bits
+  assign led_r = bits[2];
+  assign led_g = bits[1];
+  assign led_b = bits[0];
 
 endmodule
