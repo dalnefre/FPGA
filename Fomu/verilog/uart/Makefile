@@ -3,7 +3,7 @@
 #
 
 TOP	= uart
-MODS	= countdown.v serial_tx.v
+MODS	= countdown.v serial_tx.v serial_rx.v
 
 all: $(TOP).dfu
 

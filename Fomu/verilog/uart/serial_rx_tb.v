@@ -1,6 +1,6 @@
 /*
 
-Test Bench for serial_tx.v
+Test Bench for serial_rx.v
 
 */
 
@@ -16,7 +16,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("serial_tx.vcd");
+      $dumpfile("serial_rx.vcd");
       $dumpvars(0, test_bench);
       #1600;
       $finish;
@@ -32,6 +32,9 @@ module test_bench;
   wire [7:0] tx_data;
   wire tx_busy;  // busy signal ignored
   wire uart_tx;
+  wire uart_rx;
+  wire rx_wr;
+  wire [7:0] rx_data;
 
   // instantiate serial transmitter
   serial_tx #(
@@ -45,7 +48,20 @@ module test_bench;
     .o_tx(uart_tx)
   );
 
+  // instantiate serial receiver
+  serial_rx #(
+    .CLK_FREQ(CLK_FREQ),
+    .BAUD_RATE(BAUD_RATE)
+  ) SER_RX (
+    .i_clk(clk),
+    .i_rx(uart_rx),
+    .o_wr(rx_wr),
+    .o_data(rx_data)
+  );
+
+  // connect serial_tx to serial_rx
   assign tx_wr = 1'b1;  // perpetual write-request
   assign tx_data = "K";
+  assign uart_rx = uart_tx;
 
 endmodule

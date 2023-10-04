@@ -61,18 +61,18 @@ module top (
   assign user_4 = 1'b1;                 // 3v3
 
   localparam SB_IO_TYPE_SIMPLE_OUTPUT = 6'b011000;
-  wire o_data;                          // TX
+  wire o_tx;                            // TX
   SB_IO #(
     .PIN_TYPE(SB_IO_TYPE_SIMPLE_OUTPUT)
   ) user_2_io (
     .PACKAGE_PIN(user_2),
     .OUTPUT_ENABLE(1'b1),  // FIXME: not needed?
     .OUTPUT_CLK(clk),
-    .D_OUT_0(o_data),
+    .D_OUT_0(o_tx),
   );
 
   localparam SB_IO_TYPE_SIMPLE_INPUT = 6'b000001;
-  wire i_data;                          // RX
+  wire i_rx;                            // RX
   SB_IO #(
     .PIN_TYPE(SB_IO_TYPE_SIMPLE_INPUT),
     .PULLUP(1'b1)
@@ -80,12 +80,12 @@ module top (
     .PACKAGE_PIN(user_3),
     .OUTPUT_ENABLE(1'b0),  // FIXME: not needed?
     .INPUT_CLK(clk),
-    .D_IN_0(i_data),
+    .D_IN_0(i_rx),
   );
 
   // instantiate serial transmitter
   wire tx_wr;
-  reg [7:0] tx_data;
+  wire [7:0] tx_data;
   wire tx_busy;
   wire uart_tx;
   serial_tx #(
@@ -100,9 +100,29 @@ module top (
   );
 
   // connect serial_tx
-  assign tx_wr = 1'b1;  // perpetual write-request
-  initial tx_data = "K";  // transmit unending stream of "K" characters
-  assign o_data = uart_tx;
-  assign led_r = uart_tx;  // FIXME: may need to "stretch" this signal
+  //assign tx_wr = 1'b1;  // perpetual write-request
+  //assign tx_data = "K";  // transmit unending stream of "K" characters
+  assign o_tx = uart_tx;
+  assign led_r = !uart_tx;  // FIXME: may need to "stretch" this signal
+
+  // instantiate serial receiver
+  wire uart_rx;
+  wire rx_wr;
+  wire [7:0] rx_data;
+  serial_rx #(
+    .CLK_FREQ(CLK_FREQ),
+    .BAUD_RATE(BAUD_RATE)
+  ) SER_RX (
+    .i_clk(clk),
+    .i_rx(uart_rx),
+    .o_wr(rx_wr),
+    .o_data(rx_data)
+  );
+
+  // connect serial_rx
+  assign uart_rx = i_rx;
+  assign led_g = !uart_rx;  // FIXME: may need to "stretch" this signal
+  assign tx_wr = rx_wr;  // write-request from receiver
+  assign tx_data = rx_data;  // character data from receiver
 
 endmodule

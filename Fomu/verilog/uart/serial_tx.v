@@ -37,9 +37,9 @@ module serial_tx #(
   assign baud_stb = (baud_cnt == 0);
 
   // enumerated values for state
-  parameter START   = 4'hF;
+  localparam START  = 4'hF;
   /* 0..7 are bit transmit positions */
-  parameter STOP    = 4'h8;
+  localparam STOP   = 4'h8;
 
   // bit transmission state-machine
   reg [3:0] state;
