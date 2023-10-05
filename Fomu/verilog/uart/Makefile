@@ -3,7 +3,7 @@
 #
 
 TOP	= uart
-MODS	= countdown.v serial_tx.v serial_rx.v
+MODS	= countdown.v fifo.v serial_tx.v serial_rx.v
 
 all: $(TOP).dfu
 
@@ -23,7 +23,7 @@ $(TOP).json: $(MODS) top.v
 	yosys -p 'synth_ice40 -json $@' $^ >$(TOP).log
 
 %.asc: %.json
-	nextpnr-ice40 --up5k --package uwg30 --pcf pins.pcf --json $< --asc $@
+	nextpnr-ice40 --up5k --package uwg30 --freq 48 --pcf pins.pcf --json $< --asc $@
 
 %.bit: %.asc
 	icepack $< $@

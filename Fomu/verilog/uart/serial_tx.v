@@ -2,6 +2,16 @@
 
 Serial Transmitter
 
+    +------------+
+    | serial_tx  |
+    |            |
+=8=>|i_data  o_tx|--->
+--->|i_wr        |
+<---|o_busy      |
+    |            |
+ +->|i_clk       |
+ |  +------------+
+
 */
 
 `default_nettype none
