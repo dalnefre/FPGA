@@ -36,11 +36,11 @@ module fifo #(
   assign wr = i_wr && !o_full;
   assign rd = i_rd && !o_empty;
 
-  // data buffer and pointers
+  // data buffer (memory)
   reg [N-1:0] buffer [0:BUF_SIZE-1];
-  reg [N_ADDR:0] wr_addr, rd_addr;
 
   // maintain write pointer
+  reg [N_ADDR:0] wr_addr;
   initial wr_addr = 0;
   always @(posedge i_clk)
     if (wr)
@@ -50,20 +50,28 @@ module fifo #(
       buffer[wr_addr & PTR_MASK] <= i_data;
 
   // maintain read pointer
+  reg [N_ADDR:0] rd_addr;
   initial rd_addr = 0;
   always @(posedge i_clk)
     if (rd)
       rd_addr <= rd_addr + 1'b1;
   assign o_data = buffer[rd_addr & PTR_MASK];
 
-  // queue length
-  wire [N_ADDR:0] len;
-  assign len = wr_addr - rd_addr;
+  // maintain queue length
+  reg [N_ADDR:0] len;
+  initial len = 0;
+  always @(posedge i_clk)
+    if (wr & !rd)
+      len <= len + 1'b1;
+    else if (!wr && rd)
+      len <= len - 1'b1;
   assign o_empty = (len == 0);
   assign o_full = len[N_ADDR];//(len == BUF_SIZE);
 
 /*
   // formal verification
+  always @(*)
+    assert(len == (wr_addr - rd_addr));
   always @(*)
     assert(len <= BUF_SIZE);
 */
