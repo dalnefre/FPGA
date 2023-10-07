@@ -83,6 +83,42 @@ module top (
     .D_IN_0(i_rx),
   );
 
+  // instantiate serial receiver
+  wire uart_rx;
+  wire rx_wr;
+  wire [7:0] rx_data;
+  serial_rx #(
+    .CLK_FREQ(CLK_FREQ),
+    .BAUD_RATE(BAUD_RATE)
+  ) SER_RX (
+    .i_clk(clk),
+    .i_rx(uart_rx),
+    .o_wr(rx_wr),
+    .o_data(rx_data)
+  );
+  assign uart_rx = i_rx;
+  assign led_r = !uart_rx;  // FIXME: may need to "stretch" this signal
+
+  // instantiate fifo
+  wire wr;
+  wire full;
+  wire rd;
+  wire empty;
+  fifo #(
+    .N_ADDR(3)
+  ) FIFO (
+    .i_clk(clk),
+    .i_wr(wr),
+    .i_data(rx_data),
+    .o_full(full),
+    .i_rd(rd),
+    .o_data(tx_data),
+    .o_empty(empty)
+  );
+  assign wr = !full && rx_wr;  // drop characters if fifo is full
+  assign rd = !empty && !tx_busy;
+  assign tx_wr = rd;
+
   // instantiate serial transmitter
   wire tx_wr;
   wire [7:0] tx_data;
@@ -98,31 +134,7 @@ module top (
     .o_busy(tx_busy),
     .o_tx(uart_tx)
   );
-
-  // connect serial_tx
-  //assign tx_wr = 1'b1;  // perpetual write-request
-  //assign tx_data = "K";  // transmit unending stream of "K" characters
   assign o_tx = uart_tx;
-  assign led_r = !uart_tx;  // FIXME: may need to "stretch" this signal
-
-  // instantiate serial receiver
-  wire uart_rx;
-  wire rx_wr;
-  wire [7:0] rx_data;
-  serial_rx #(
-    .CLK_FREQ(CLK_FREQ),
-    .BAUD_RATE(BAUD_RATE)
-  ) SER_RX (
-    .i_clk(clk),
-    .i_rx(uart_rx),
-    .o_wr(rx_wr),
-    .o_data(rx_data)
-  );
-
-  // connect serial_rx
-  assign uart_rx = i_rx;
-  assign led_g = !uart_rx;  // FIXME: may need to "stretch" this signal
-  assign tx_wr = rx_wr;  // write-request from receiver
-  assign tx_data = rx_data;  // character data from receiver
+  assign led_g = !uart_tx;  // FIXME: may need to "stretch" this signal
 
 endmodule
