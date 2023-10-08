@@ -1,6 +1,6 @@
 /*
 
-Test Bench for serial_rx.v
+Test Bench for serial_rx.v driven by serial_tx.v
 
 */
 
@@ -16,7 +16,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("serial_rx.vcd");
+      $dumpfile("serial_rx+tx.vcd");
       $dumpvars(0, test_bench);
       #1600;
       $finish;

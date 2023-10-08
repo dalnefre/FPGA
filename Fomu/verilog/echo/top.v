@@ -6,8 +6,8 @@ Serial UART composed of separate RX and TX modules
 
 `default_nettype none
 
-`include "serial_rx.v"
-`include "serial_tx.v"
+`include "../lib/serial_rx.v"
+`include "../lib/serial_tx.v"
 
 module top (
   input             clki,               // 48MHz oscillator input on Fomu-PVT
