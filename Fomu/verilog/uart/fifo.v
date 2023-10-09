@@ -29,7 +29,7 @@ module fifo #(
   output            o_empty             // buffer empty condition
 );
   localparam BUF_SIZE = 1 << N_ADDR;
-  localparam PTR_MASK = BUF_SIZE - 1;
+//  localparam PTR_MASK = BUF_SIZE - 1;
 
   wire wr;                              // valid write request
   wire rd;                              // valid read request
@@ -47,7 +47,7 @@ module fifo #(
       wr_addr <= wr_addr + 1'b1;
   always @(posedge i_clk)  // NOTE: RAM access in its own block
     if (wr)
-      buffer[wr_addr & PTR_MASK] <= i_data;
+      buffer[wr_addr[N_ADDR-1:0]] <= i_data;
 
   // maintain read pointer
   reg [N_ADDR:0] rd_addr;
@@ -55,7 +55,7 @@ module fifo #(
   always @(posedge i_clk)
     if (rd)
       rd_addr <= rd_addr + 1'b1;
-  assign o_data = buffer[rd_addr & PTR_MASK];
+  assign o_data = buffer[rd_addr[N_ADDR-1:0]];
 
   // maintain queue length
   reg [N_ADDR:0] len;

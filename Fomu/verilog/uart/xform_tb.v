@@ -1,12 +1,12 @@
 /*
 
-Test Bench for fifo.v
+Test Bench for xform.v
 
 */
 
 `default_nettype none
 
-`include "fifo.v"
+`include "xform.v"
 
 `timescale 10ns/1ns
 
@@ -15,7 +15,7 @@ module test_bench;
   // dump simulation signals
   initial
     begin
-      $dumpfile("fifo.vcd");
+      $dumpfile("xform.vcd");
       $dumpvars(0, test_bench);
       #1200;
       $finish;
@@ -26,30 +26,28 @@ module test_bench;
   always
     #1 clk = !clk;
 
-  // instantiate fifo
-  fifo #(
-    .N_ADDR(3)
-  ) FIFO (
+  // instantiate xform
+  xform XCASE (
     .i_clk(clk),
     .i_wr(wr),
     .i_data(c_in),
-    .o_full(full),
+    .o_bsy(bsy),
     .i_rd(rd),
     .o_data(out),
-    .o_empty(empty)
+    .o_rdy(rdy)
   );
 
-  // fifo signals
+  // xform signals
   wire wr;
-  wire full;
+  wire bsy;
   wire rd;
   wire [7:0] out;
-  wire empty;
+  wire rdy;
 
-//  assign wr = 1'b1;  // write anytime the fifo has room
-  assign wr = phase[0];  // write more slowly
-//  assign rd = 1'b1;  // read anytime the fifo has data
-  assign rd = phase==2;  // read more slowly
+  assign wr = !bsy;  // write everytime the component has room
+//  assign wr = (!bsy & phase[0]);  // write more slowly
+  assign rd = rdy;  // read everytime the component has data
+//  assign rd = (rdy & phase==2);  // read more slowly
 
   // 4-phase counter to pace read/write
   reg [1:0] phase;
@@ -59,7 +57,7 @@ module test_bench;
 
   // input writer
   reg [7:0] c_in;
-  initial c_in = 8'h80;
+  initial c_in = " ";  // = 8'h20;
   always @(posedge clk)
     if (wr)
       c_in <= c_in + 1'b1;

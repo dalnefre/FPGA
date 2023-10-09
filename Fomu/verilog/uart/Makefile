@@ -3,7 +3,7 @@
 #
 
 TOP	= uart
-MODS	= countdown.v fifo.v serial_tx.v serial_rx.v
+#TOP	= top
 
 all: $(TOP).dfu
 
@@ -13,13 +13,13 @@ install: $(TOP).dfu
 clean:
 	rm -f *.sim *.vcd *.json *.log *.asc *.bit *.dfu
 
-%.sim: $(MODS) %_tb.v
+%.sim: %_tb.v
 	iverilog -o $@ $^
 
 %.vcd: %.sim
 	./$<
 
-$(TOP).json: $(MODS) top.v
+$(TOP).json: top.v
 	yosys -p 'synth_ice40 -json $@' $^ >$(TOP).log
 
 %.asc: %.json

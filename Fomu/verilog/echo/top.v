@@ -61,7 +61,7 @@ module top (
   assign user_1 = 1'b0;                 // GND
 //  assign user_2 = 1'b0;                 // TX
 //  assign user_3 = 1'b1;                 // RX
-  assign user_4 = 1'b1;                 // 3v3
+  assign user_4 = 1'b1;                 // 3v3 (weak)
 
   localparam SB_IO_TYPE_SIMPLE_OUTPUT = 6'b011000;
   wire o_tx;                            // TX
@@ -86,6 +86,10 @@ module top (
     .D_IN_0(i_rx),
   );
 
+  // connect leds
+  assign led_r = !uart_rx;  // FIXME: may need to "stretch" this signal
+  assign led_g = !uart_tx;  // FIXME: may need to "stretch" this signal
+
   // instantiate serial transmitter
   wire tx_wr;
   wire [7:0] tx_data;
@@ -106,7 +110,6 @@ module top (
   //assign tx_wr = 1'b1;  // perpetual write-request
   //assign tx_data = "K";  // transmit unending stream of "K" characters
   assign o_tx = uart_tx;
-  assign led_r = !uart_tx;  // FIXME: may need to "stretch" this signal
 
   // instantiate serial receiver
   wire uart_rx;
@@ -124,7 +127,6 @@ module top (
 
   // connect serial_rx
   assign uart_rx = i_rx;
-  assign led_g = !uart_rx;  // FIXME: may need to "stretch" this signal
   assign tx_wr = rx_wr;  // write-request from receiver
   assign tx_data = rx_data;  // character data from receiver
 
