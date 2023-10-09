@@ -48,9 +48,7 @@ module xform #(
           : i_data;
         o_rdy <= 1'b1;
       end
-
-  always @(posedge i_clk)
-    if (rd)
+    else if (rd)
       begin
         o_bsy <= 1'b0;
         o_rdy <= 1'b0;

@@ -81,14 +81,6 @@ module uart #(
     .o_data(tx_data),
     .o_rdy(x_rdy)
   );
-  /*
   assign tx_wr = x_rdy;
-  */
-  // FIXME: this bypass-register should be equivalent to x_rdy!
-  reg r_rx_wr;
-  initial r_rx_wr = 1'b0;
-  always @(posedge i_clk)
-    r_rx_wr <= rx_wr;
-  assign tx_wr = r_rx_wr;
 
 endmodule
