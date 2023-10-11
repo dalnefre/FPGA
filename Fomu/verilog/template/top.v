@@ -8,6 +8,8 @@ Uncomment any pins you want to use in `pins.pcf`
 
 `default_nettype none
 
+`include "timer.v"
+
 module top (
   input             clki,               // 48MHz oscillator input on Fomu-PVT
   output            rgb0,               // RGB LED pin 0 (**DO NOT** drive directly)

@@ -2,8 +2,7 @@
 # Makefile
 #
 
-TOP	= loopback
-SRCS	= top.v
+TOP	= top
 
 all: $(TOP).dfu
 
@@ -13,17 +12,17 @@ install: $(TOP).dfu
 clean:
 	rm -f *.sim *.vcd *.json *.log *.asc *.bit *.dfu
 
-%.sim: %.v %_tb.v
+%.sim: %_tb.v
 	iverilog -o $@ $^
 
 %.vcd: %.sim
 	./$<
 
-$(TOP).json: $(SRCS)
+$(TOP).json: top.v
 	yosys -p 'synth_ice40 -json $@' $^ >$(TOP).log
 
 %.asc: %.json
-	nextpnr-ice40 --up5k --package uwg30 --pcf pins.pcf --json $< --asc $@
+	nextpnr-ice40 --up5k --package uwg30 --freq 48 --pcf pins.pcf --json $< --asc $@
 
 %.bit: %.asc
 	icepack $< $@

@@ -3,7 +3,6 @@
 #
 
 TOP	= uart
-#TOP	= top
 
 all: $(TOP).dfu
 

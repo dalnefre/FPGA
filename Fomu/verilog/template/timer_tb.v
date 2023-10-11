@@ -4,7 +4,11 @@ Test Bench for timer.v
 
 */
 
-`timescale 100ns/1ns
+`default_nettype none
+
+`include "timer.v"
+
+`timescale 10ns/1ns
 
 module test_bench;
 
@@ -17,7 +21,7 @@ module test_bench;
       $finish;
     end
 
-  // generate chip clock
+  // generate chip clock (50MHz simulation time)
   reg clk = 0;
   always
     #1 clk = !clk;
