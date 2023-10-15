@@ -1,6 +1,6 @@
 /*
 
-Synchronous FIFO Component
+Fall-Thru FIFO Component
 
     +---------------+
     | fifo          |
@@ -16,7 +16,7 @@ Synchronous FIFO Component
 
 `default_nettype none
 
-module fifo #(
+module fifothru #(
   parameter N = 8,                      // data bus bit width
   parameter N_ADDR = 4                  // address bit width
 ) (
@@ -56,21 +56,14 @@ module fifo #(
       rd_addr <= rd_addr + 1'b1;
   assign o_data = buffer[rd_addr[N_ADDR-1:0]];
 
-  // maintain queue length
-  reg [N_ADDR:0] len;
-  initial len = 0;
-  always @(posedge i_clk)
-    if (wr & !rd)
-      len <= len + 1'b1;
-    else if (!wr && rd)
-      len <= len - 1'b1;
+  // queue length
+  wire [N_ADDR:0] len;
+  assign len = wr_addr - rd_addr;
   assign o_empty = (len == 0);
   assign o_full = len[N_ADDR];//(len == BUF_SIZE);
 
 /*
   // formal verification
-  always @(*)
-    assert(len == (wr_addr - rd_addr));
   always @(*)
     assert(len <= BUF_SIZE);
 */
