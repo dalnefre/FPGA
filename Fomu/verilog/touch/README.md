@@ -16,14 +16,22 @@ the touch signals will report high (1)
 when there is no contact.
 The touch signal will report low (0)
 when a touch pad is shorted to ground
-by some conductive material
-such as a finger or external button.
+(like the center pads)
+by some conductive material.
 
 The touch signals are used
 to drive the RGB LED.
 Red for left-only.
 Green for right-only.
 Blue for both right and left.
+
+### Clock Synchronizer
+
+The raw touch signals are naturally "bouncy".
+Like any external signal,
+they need to be synchronized
+with the local clock-domain
+to avoid [metastability](https://en.wikipedia.org/wiki/Metastability_(electronics)) issues.
 
 ### LED Frequency Limiter
 
