@@ -2,7 +2,9 @@
 # Makefile
 #
 
-ALL =	serial_tx.vcd \
+ALL =	led_freq.vcd \
+	alloc.vcd \
+	serial_tx.vcd \
 	serial_rx.vcd \
 	serial_rx+tx.vcd
 

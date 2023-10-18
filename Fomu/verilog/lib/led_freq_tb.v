@@ -8,7 +8,7 @@ Test Bench for led_freq.v
 
 `include "led_freq.v"
 
-`timescale 1us/10ns
+`timescale 10ns/1ns
 
 module test_bench;
 
@@ -21,12 +21,10 @@ module test_bench;
       $finish;
     end
 
-  // generate chip clock (500KHz simulation time)
+  // generate chip clock (50MHz simulation time)
   reg clk = 0;
   always
     #1 clk = !clk;
-
-//  parameter CLK_FREQ = 500_000;         // clock frequency (Hz)
 
   // request changes every 13 clocks
   reg led_req;  // requested LED level
