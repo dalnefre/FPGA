@@ -30,12 +30,16 @@ module test_bench;
   wire [15:0] alloc_addr;
   wire alloc_rdy;
   wire free_done;
-  alloc ALLOC (
+  alloc #(
+    .ADDR_SZ(4)
+  ) ALLOC (
     .i_clk(clk),
-    .i_alloc(alloc_stb),
+    .i_wr(1'b0),
     .i_data(UNDEF),
+    .i_alloc(alloc_stb),
     .o_addr(alloc_addr),
     .o_ready(alloc_rdy),
+    .i_rd(1'b0),
     .i_free(free_stb),
     .i_addr(free_addr),
     .o_done(free_done)
