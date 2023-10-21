@@ -7,6 +7,7 @@ Fomu "touch-pad" Button Demo
 `default_nettype none
 
 `include "../lib/clk_sync.v"
+`include "../lib/clk_div.v"
 `include "../lib/led_freq.v"
 
 module top (
@@ -114,20 +115,30 @@ module top (
   assign led_g = btn_2;
   assign led_b = btn_3;
 */
+  // instantiate clock divider
+  wire led_stb;
+  clk_div CLK_DIV (
+    .i_clk(clk),
+//    .o_clk(led_clk),
+    .o_stb(led_stb)
+  );
   // instantiate LED frequency limiters
   led_freq FREQ_R (
     .i_clk(clk),
     .i_led(btn_1),
+    .i_stb(led_stb),
     .o_led(led_r)
   );
   led_freq FREQ_G (
     .i_clk(clk),
     .i_led(btn_2),
+    .i_stb(led_stb),
     .o_led(led_g)
   );
   led_freq FREQ_B (
     .i_clk(clk),
     .i_led(btn_3),
+    .i_stb(led_stb),
     .o_led(led_b)
   );
 
