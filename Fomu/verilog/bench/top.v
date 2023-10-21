@@ -6,7 +6,7 @@ Physical Test Bench
 
 `default_nettype none
 
-`include "../lib/alloc.v"
+`include "alloc.v"
 
 module top (
   input             clki,               // 48MHz oscillator input on Fomu-PVT
@@ -70,7 +70,6 @@ module top (
   // allocation port
   wire alloc_stb;  // allocation request
   assign alloc_stb = seq[0];
-  wire alloc_rdy;
   wire [15:0] alloc_addr;
 
   // free port
@@ -88,15 +87,13 @@ module top (
     .ADDR_SZ(4)
   ) ALLOC (
     .i_clk(clk),
-    .i_wr(1'b0),
-    .i_data(UNDEF),
     .i_alloc(alloc_stb),
+    .i_data(UNDEF),
     .o_addr(alloc_addr),
-    .o_ready(alloc_rdy),
-    .i_rd(1'b0),
     .i_free(free_stb),
     .i_addr(free_addr),
-    .o_done(free_done),
+    .i_rd(1'b0),
+    .i_wr(1'b0),
     .o_err(error)
   );
 
