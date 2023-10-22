@@ -1,6 +1,6 @@
 /*
 
-iCE40 Dual-Ported Block Ram
+iCE40 Dual-Ported Block RAM
 (derived from FPGA-TN-02002-1-7-Memory-Usage-Guide-for-iCE40-Devices.pdf)
 
     +-----------------+

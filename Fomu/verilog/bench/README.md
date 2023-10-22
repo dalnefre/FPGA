@@ -15,26 +15,9 @@ Linked-Memory Allocator.
 It manages group of memory locations,
 implementing a dynamic memory API.
 
-#### Function Table
+### `bram.v` module
 
-This table describes the functional effect
-of different input-signal combinations.
-
- Input Signals       | mem read  | mem write | o_data    | o_addr    |
----------------------|-----------|-----------|-----------|-----------|
-~alloc ~free ~rd ~wr |           |           |           |           |
-~alloc ~free ~rd  wr |           | i_addr    |           |           |
-~alloc ~free  rd ~wr |           |           |           |           |
-~alloc ~free  rd  wr |           |           |           |           |
-~alloc  free ~rd ~wr |           | i_addr    |           | `#?`      |
-~alloc  free ~rd  wr |           |           |           |           |
-~alloc  free  rd ~wr |           |           |           |           |
-~alloc  free  rd  wr |           |           |           |           |
- alloc ~free ~rd ~wr |           | top/next  |           | top/next  |
- alloc ~free ~rd  wr |           |           |           |           |
- alloc ~free  rd ~wr |           |           |           |           |
- alloc ~free  rd  wr |           |           |           |           |
- alloc  free ~rd ~wr |           | i_addr    |           | i_addr    |
- alloc  free ~rd  wr |           |           |           |           |
- alloc  free  rd ~wr |           |           |           |           |
- alloc  free  rd  wr |           |           |           |           |
+The `bram.v` module infers a
+4kb dual-ported RAM
+as specified by the
+iCE40-up5k Memory Usage Guide.

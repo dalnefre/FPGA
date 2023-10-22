@@ -20,9 +20,9 @@ This component manages a dynamically-allocated memory heap.
 It has two ports, with two functions each, and an error signal.
 Only one of the two ports may be used in any given cycle.
 All results are available on the next clock-cycle.
-Request are pipelined and may be issued on every cycle.
+Requests are pipelined and may be issued on every cycle.
 
-This first port manages heap-allocation pointers.
+The first port manages heap-allocation pointers.
 An "alloc" request reserves a new address
 and stores an initial data value there.
 A "free" request returns memory to the heap.
@@ -108,7 +108,7 @@ module alloc #(
     reg [DATA_SZ-1:0] mem_free;
     initial mem_free = ZERO;  // NOTE: encoded as a fixnum
 
-    always @(posedge i_clk)
+    always @(posedge i_clk) begin
         if (o_err) begin
             o_err <= 1'b1;
         end else if (ptr_op) begin
@@ -147,6 +147,7 @@ module alloc #(
             // conflicting requests
             o_err <= 1'b1;
         end
+    end
 
     // dynamically managed memory
     reg [DATA_SZ-1:0] ram_cell [0:MEM_MAX-1];
