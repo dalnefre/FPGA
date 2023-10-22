@@ -30,7 +30,7 @@ module bram #(
 
     input                       i_rclk,                         // read clock
     input         [ADDR_SZ-1:0] i_raddr,                        // read address
-    output reg    [DATA_SZ-1:0] o_rdata,                        // data read
+    output reg    [DATA_SZ-1:0] o_rdata                         // data read
 );
 
     // inferred block ram

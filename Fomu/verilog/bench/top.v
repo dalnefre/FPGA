@@ -65,6 +65,7 @@ module top (
     else
       seq <= 4'b0000;
 
+/*
   // FIXME: move definitions to an include file?
   localparam UNDEF  = 16'h0000;         // undefined value
 
@@ -97,13 +98,14 @@ module top (
     .i_wr(1'b0),
     .o_err(error)
   );
+*/
 
   // instantiate bram
   reg wr_en;
-  reg [15:0] waddr;
-  reg [7:0] wdata;
-  reg [15:0] raddr;
-  wire [7:0] rdata;
+  reg [7:0] waddr;
+  reg [15:0] wdata;
+  reg [7:0] raddr;
+  wire [15:0] rdata;
   bram BRAM (
     .i_wclk(clk),
     .i_wr_en(wr_en),
@@ -120,7 +122,7 @@ module top (
   initial wdata = 5;
   initial raddr = 0;
   always @(posedge clk) begin
-    wr_en <= 1'b0;
+    wr_en <= 1'b0;  // default
     case (seq[3:2])
       2'b00 : begin
         raddr <= waddr;
