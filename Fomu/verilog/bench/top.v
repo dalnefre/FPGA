@@ -130,10 +130,10 @@ module top (
         .ADDR_SZ(4)
     ) ALLOC (
         .i_clk(clk),
-        .i_alloc(1'b0),
+        .i_alloc(alloc_stb),
         .i_data(UNDEF),
         .o_addr(alloc_addr),
-        .i_free(1'b0),
+        .i_free(free_stb),
         .i_addr(free_addr),
         .i_wr(wr_en),
         .i_waddr(waddr),
@@ -152,13 +152,13 @@ module top (
     initial raddr = 0;
     always @(posedge clk) begin
         wr_en <= 1'b0;  // default
+        rd_en <= 1'b0;  // default
         case (seq[3:2])
             2'b00 : begin
                 raddr <= waddr;
                 rd_en <= 1'b1;
             end
             2'b01 : begin
-                rd_en <= 1'b0;
                 wr_en <= 1'b1;
             end
             2'b10 : begin
