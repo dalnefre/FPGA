@@ -7,6 +7,7 @@ Physical Test Bench
 `default_nettype none
 
 `include "alloc.v"
+`include "bram.v"
 
 module top (
   input             clki,               // 48MHz oscillator input on Fomu-PVT
@@ -97,9 +98,55 @@ module top (
     .o_err(error)
   );
 
+  // instantiate bram
+  reg wr_en;
+  reg [15:0] waddr;
+  reg [7:0] wdata;
+  reg [15:0] raddr;
+  wire [7:0] rdata;
+  bram BRAM (
+    .i_wclk(clk),
+    .i_wr_en(wr_en),
+    .i_waddr(waddr),
+    .i_wdata(wdata),
+    .i_rclk(clk),
+    .i_raddr(raddr),
+    .o_rdata(rdata)
+  );
+
+  // exercise bram
+  initial wr_en = 1'b0;
+  initial waddr = 7;
+  initial wdata = 5;
+  initial raddr = 0;
+  always @(posedge clk) begin
+    wr_en <= 1'b0;
+    case (seq[3:2])
+      2'b00 : begin
+        raddr <= waddr;
+      end
+      2'b01 : begin
+        wr_en <= 1'b1;
+      end
+      2'b10 : begin
+        waddr <= waddr + 3;
+      end
+      2'b11 : begin
+        wdata <= wdata + 13;
+      end
+      default : begin
+      end
+    endcase
+  end
+
   // drive LEDs
+  assign led_r = seq[3];
+  assign led_g = (rdata == wdata);
+  assign led_b = waddr[0];
+/*
   assign led_r = error;
   assign led_g = |alloc_addr[7:0];
   assign led_b = free_done;
+*/
 
 endmodule
