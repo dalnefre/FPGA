@@ -7,7 +7,7 @@ Physical Test Bench
 `default_nettype none
 
 `include "alloc.v"
-`include "bram.v"
+//`include "bram.v"
 
 module top (
     input                       clki,                           // 48MHz oscillator input on Fomu-PVT
@@ -65,7 +65,6 @@ module top (
         else
             seq <= 4'b0000;
 
-/*
     // FIXME: move definitions to an include file?
     localparam UNDEF            = 16'h0000;                     // undefined value
 
@@ -83,6 +82,7 @@ module top (
     // error condition
     wire error;
 
+/*
     // instantiate allocator
     wire free_done;
     alloc #(
@@ -98,7 +98,6 @@ module top (
         .i_wr(1'b0),
         .o_err(error)
     );
-*/
 
     // instantiate bram
     reg wr_en;
@@ -118,19 +117,48 @@ module top (
         .i_raddr(raddr),
         .o_rdata(rdata)
     );
+*/
+
+    // instantiate allocator as ram
+    reg wr_en;
+    reg [7:0] waddr;
+    reg [15:0] wdata;
+    reg rd_en;
+    reg [7:0] raddr;
+    wire [15:0] rdata;
+    alloc #(
+        .ADDR_SZ(4)
+    ) ALLOC (
+        .i_clk(clk),
+        .i_alloc(1'b0),
+        .i_data(UNDEF),
+        .o_addr(alloc_addr),
+        .i_free(1'b0),
+        .i_addr(free_addr),
+        .i_wr(wr_en),
+        .i_waddr(waddr),
+        .i_wdata(wdata),
+        .i_rd(rd_en),
+        .i_raddr(raddr),
+        .o_rdata(rdata),
+        .o_err(error)
+    );
 
     // exercise bram
     initial wr_en = 1'b0;
     initial waddr = 7;
     initial wdata = 5;
+    initial rd_en = 1'b0;
     initial raddr = 0;
     always @(posedge clk) begin
         wr_en <= 1'b0;  // default
         case (seq[3:2])
             2'b00 : begin
                 raddr <= waddr;
+                rd_en <= 1'b1;
             end
             2'b01 : begin
+                rd_en <= 1'b0;
                 wr_en <= 1'b1;
             end
             2'b10 : begin

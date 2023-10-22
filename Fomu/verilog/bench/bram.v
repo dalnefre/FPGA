@@ -34,7 +34,7 @@ module bram #(
 );
 
     // inferred block ram
-    reg [DATA_SZ-1:0] mem [MEM_MAX-1:0];
+    reg [DATA_SZ-1:0] mem [0:MEM_MAX-1];
 
     // write access
     always @(posedge i_wclk) begin

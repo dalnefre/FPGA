@@ -39,6 +39,8 @@ the error signal is raised and the component halts.
 
 `default_nettype none
 
+//`include "bram.v"
+
 module alloc #(
     // WARNING: hard-coded contants assume `DATA_SZ` = 16
     parameter DATA_SZ           = 16,                           // number of bits per memory word
@@ -80,7 +82,7 @@ module alloc #(
     localparam ZERO             = 16'h8000;                     // fixnum +0
 
     initial o_addr = UNDEF;
-    initial o_rdata = UNDEF;
+    //initial o_rdata = UNDEF;  // initialization prevents block-ram inference
     initial o_err = 1'b0;
 
     wire ptr_op;                // an operation for the pointer management port
@@ -109,8 +111,11 @@ module alloc #(
     initial mem_free = ZERO;  // NOTE: encoded as a fixnum
 
     always @(posedge i_clk) begin
+        o_addr <= UNDEF;  // default
+        //o_rdata <= UNDEF;  // default prevents block-ram inference
         if (o_err) begin
             o_err <= 1'b1;
+/*
         end else if (ptr_op) begin
             if (i_alloc && i_free) begin
                 ram_cell[i_addr[ADDR_SZ-1:0]] <= i_data;  // assign passed-thru memory
@@ -134,15 +139,18 @@ module alloc #(
                 mem_next <= i_addr;
                 mem_free <= mem_free + 1'b1;
             end
+*/
         end else if (mem_op) begin
             if (i_wr) begin
                 ram_cell[i_waddr[ADDR_SZ-1:0]] <= i_wdata;  // write memory
             end
             if (i_rd) begin
                 o_rdata <= ram_cell[i_raddr[ADDR_SZ-1:0]];  // read memory
+            end else begin
+                o_addr <= ram_cell[mem_next[ADDR_SZ-1:0]];  // read mutliplexed (FAKE!)
             end
         end else if (no_op) begin
-            o_err <= 1'b0;
+            // nothing to do...
         end else begin
             // conflicting requests
             o_err <= 1'b1;
@@ -152,25 +160,20 @@ module alloc #(
     // dynamically managed memory
     reg [DATA_SZ-1:0] ram_cell [0:MEM_MAX-1];
 /*
-    // instantiate BRAM primitive
-    wire [DATA_SZ-1:0] ram_rdata;
-    wire [ADDR_SZ-1:0] ram_raddr;
-    wire ram_re;
-    wire [DATA_SZ-1:0] ram_wdata;
-    wire [ADDR_SZ-1:0] ram_waddr;
-    wire ram_we;
-    SB_RAM256x16 ram_cell (
-        .RDATA(ram_rdata),
-        .RADDR(ram_raddr),
-        .RCLK(i_clk),
-        .RCLKE(1'b1),
-        .RE(ram_re),
-        .WDATA(ram_wdata),
-        .WADDR(ram_waddr),
-        .WCLK(i_clk),
-        .WCLKE(1'b1),
-        .WE(ram_we),
-        .MASK(16'hFFFF)
+    // instantiate bram
+    reg wr_en;
+    reg [7:0] waddr;
+    reg [15:0] wdata;
+    reg [7:0] raddr;
+    wire [15:0] rdata;
+    bram BRAM (
+        .i_wclk(clk),
+        .i_wr_en(wr_en),
+        .i_waddr(waddr),
+        .i_wdata(wdata),
+        .i_rclk(clk),
+        .i_raddr(raddr),
+        .o_rdata(rdata)
     );
 */
 
