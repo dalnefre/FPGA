@@ -103,20 +103,15 @@ module alloc #(
     // next memory cell on free-list
     reg [DATA_SZ-1:0] mem_next;
     initial mem_next = NIL;
-//    wire free_f;                // cells are available on the free-list
-//    assign free_f = mem_next[14];  // check MUT_TAG
-    reg free_f;                // cells are available on the free-list
-    initial free_f = 1'b0;
+    wire [ADDR_SZ-1:0] next_addr;
+    assign next_addr = mem_next[ADDR_SZ-1:0];
 
     // count of cells on free-list (always non-negative)
-    reg [DATA_SZ-1:0] mem_free;
-    initial mem_free = ZERO;  // NOTE: encoded as a fixnum
-
-    // multiplexed data read from bram
-    wire [DATA_SZ-1:0] o_data;
-    assign o_data = mem_op
-        ? ram_cell[i_raddr[ADDR_SZ-1:0]]
-        : ram_cell[mem_next[ADDR_SZ-1:0]];
+    reg [ADDR_SZ-1:0] mem_free;
+    initial mem_free = 0;
+    wire free_f;                // cells are available on the free-list
+//    assign free_f = (mem_free == 0);
+    assign free_f = mem_next[14];  // check MUT_TAG
 
     always @(posedge i_clk) begin
         o_addr <= UNDEF;  // default
@@ -127,17 +122,7 @@ module alloc #(
             if (i_alloc && i_free) begin
                 ram_cell[i_addr[ADDR_SZ-1:0]] <= i_data;  // assign passed-thru memory
                 o_addr <= i_addr;
-            end else if (i_alloc && free_f) begin
-                ram_cell[mem_next[ADDR_SZ-1:0]] <= i_data;  // assign free-list memory
-                o_addr <= mem_next;
-/*
-*/
-//                mem_next <= ram_cell[mem_next[ADDR_SZ-1:0]];
-                mem_next <= o_data;  // <--- WARNING! THIS IS THE LINE THAT PREVENTS BRAM INFERENCE
-//                free_f <= mem_next[14];  // check MUT_TAG
-                free_f <= o_data[14];  // check MUT_TAG
-                mem_free <= mem_free - 1'b1;
-            end else if (i_alloc) begin
+            end else if (i_alloc && !free_f) begin
                 ram_cell[mem_top[ADDR_SZ-1:0]] <= i_data;  // assign expanded memory
                 o_addr <= mem_top;
                 if (next_top[ADDR_SZ]) begin  // overflow check
@@ -145,31 +130,27 @@ module alloc #(
                 end else begin
                     mem_top <= { mem_top[DATA_SZ-1:ADDR_SZ+1], next_top };
                 end
+            end else if (i_alloc && free_f) begin
+                ram_cell[next_addr] <= i_data;  // assign free-list memory
+                o_addr <= mem_next;
+//                mem_next <= ram_cell[next_addr];  // WARNING: THIS PREVENTS BRAM INFERENCE!
+                mem_free <= mem_free - 1'b1;
             end else if (i_free) begin
                 ram_cell[i_addr[ADDR_SZ-1:0]] <= mem_next;  // link free'd memory into free-list
                 o_addr <= UNDEF;
                 mem_next <= i_addr;
-//                free_f <= i_addr[14];  // check MUT_TAG
-                free_f <= 1'b1;  // always...
                 mem_free <= mem_free + 1'b1;
             end
         end else if (mem_op) begin
             if (i_wr) begin
                 ram_cell[i_waddr[ADDR_SZ-1:0]] <= i_wdata;  // write memory
             end
-/*
             if (i_rd) begin
                 o_rdata <= ram_cell[i_raddr[ADDR_SZ-1:0]];  // read memory
             end
-*/
-            if (i_rd) begin
-                o_rdata <= o_data;
 /*
-            end else begin
-                o_addr <= o_data;
-//                mem_next <= o_data;
+            o_rdata <= i_wdata;  // WARNING: PASS-THRU HACK!
 */
-            end
         end else if (no_op) begin
             // nothing to do...
         end else begin
