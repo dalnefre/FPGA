@@ -99,7 +99,7 @@ module top (
         .o_err(error)
     );
 
-    // instantiate bram
+    // instantiate BRAM
     reg wr_en;
     reg [7:0] waddr;
     reg [15:0] wdata;
@@ -119,7 +119,7 @@ module top (
     );
 */
 
-    // instantiate allocator as ram
+    // instantiate allocator with ram access
     reg wr_en;
     reg [7:0] waddr;
     reg [15:0] wdata;
@@ -144,7 +144,7 @@ module top (
         .o_err(error)
     );
 
-    // exercise bram
+    // exercise BRAM
     initial wr_en = 1'b0;
     initial waddr = 7;
     initial wdata = 5;

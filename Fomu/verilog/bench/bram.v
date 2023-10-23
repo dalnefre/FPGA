@@ -6,7 +6,7 @@ iCE40 Dual-Ported Block RAM
     +-----------------+
     | bram (4kb)      |
     |                 |
-    |          i_wr_en|<---
+--->|i_rd_en   i_wr_en|<---
 =A=>|i_raddr   i_waddr|<=A=
 <=D=|o_rdata   i_wdata|<=D=
     |                 |
@@ -29,6 +29,7 @@ module bram #(
     input         [DATA_SZ-1:0] i_wdata,                        // data written
 
     input                       i_rclk,                         // read clock
+    input                       i_rd_en,                        // read request
     input         [ADDR_SZ-1:0] i_raddr,                        // read address
     output reg    [DATA_SZ-1:0] o_rdata                         // data read
 );
@@ -45,7 +46,9 @@ module bram #(
 
     // read access
     always @(posedge i_rclk) begin
-        o_rdata <= mem[i_raddr];
+        if (i_rd_en) begin
+            o_rdata <= mem[i_raddr];
+        end
     end
 
 endmodule

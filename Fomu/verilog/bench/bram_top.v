@@ -6,7 +6,7 @@ Physical Test Bench
 
 `default_nettype none
 
-`include "bram_256x16.v"
+`include "bram256x16.v"
 
 module top (
     input                       clki,                           // 48MHz oscillator input on Fomu-PVT
@@ -62,11 +62,12 @@ module top (
     wire rd_en;
     assign rd_en = ~seq[29];
 
+    // instantiate BRAM
     reg [7:0] waddr;
     reg [15:0] wdata;
     reg [7:0] raddr;
     wire [15:0] rdata;
-    bram_256x16 bram (
+    bram BRAM (
         .i_wclk(clk),
         .i_wr_en(wr_en),
         .i_waddr(waddr),
@@ -77,7 +78,7 @@ module top (
         .o_rdata(rdata),
     );
 
-    // exercise bram
+    // exercise BRAM
     initial wr_en = 1'b0;
     initial waddr = 7;
     initial wdata = 5;

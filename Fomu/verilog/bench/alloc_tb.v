@@ -93,9 +93,10 @@ module test_bench;
         free_stb = 1'b1;
         free_addr = 16'h5002;
         #2
-        alloc_stb = 1'b0;
         free_stb = 1'b0;
         free_addr = UNDEF;
+        #2
+        alloc_stb = 1'b0;
     end
 
 endmodule

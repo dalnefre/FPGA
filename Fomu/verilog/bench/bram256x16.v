@@ -19,16 +19,16 @@ See FPGA-TN-02002-1-7-Memory-Usage-Guide-for-iCE40-Devices.pdf.
 
 `default_nettype none
 
-module bram_256x16 (
-    input           i_wclk,         // write clock
-    input           i_wr_en,        // write request
-    input   [7:0]   i_waddr,        // write address
-    input   [15:0]  i_wdata,        // data written
+module bram (
+    input                       i_wclk,                         // write clock
+    input                       i_wr_en,                        // write request
+    input                 [7:0] i_waddr,                        // write address
+    input                [15:0] i_wdata,                        // data written
 
-    input           i_rclk,         // read clock
-    input           i_rd_en,        // read request
-    input   [7:0]   i_raddr,        // read address
-    output  [15:0]  o_rdata         // data read
+    input                       i_rclk,                         // read clock
+    input                       i_rd_en,                        // read request
+    input                 [7:0] i_raddr,                        // read address
+    output               [15:0] o_rdata                         // data read
 );
     SB_RAM40_4K #(
         .WRITE_MODE(0),     // 256x16

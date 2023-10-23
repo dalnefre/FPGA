@@ -26,10 +26,11 @@ module test_bench;
         #1 clk = !clk;
     end
 
-    // instantiate bram
+    // instantiate BRAM
     reg wr_en;
     reg [7:0] waddr;
     reg [15:0] wdata;
+    reg rd_en;
     reg [7:0] raddr;
     wire [15:0] rdata;
     bram BRAM (
@@ -38,6 +39,7 @@ module test_bench;
         .i_waddr(waddr),
         .i_wdata(wdata),
         .i_rclk(clk),
+        .i_rd_en(rd_en),
         .i_raddr(raddr),
         .o_rdata(rdata)
     );
@@ -49,16 +51,19 @@ module test_bench;
         seq <= seq + 1'b1;
     end
 
-    // exercise bram
+    // exercise BRAM
     initial wr_en = 1'b0;
     initial waddr = 7;
     initial wdata = 5;
+    initial rd_en = 1'b0;
     initial raddr = 0;
     always @(posedge clk) begin
         wr_en <= 1'b0;  // default
+        rd_en <= 1'b0;  // default
         case (seq[3:2])
             2'b00 : begin
                 raddr <= waddr;
+                rd_en <= 1'b1;
             end
             2'b01 : begin
                 wr_en <= 1'b1;

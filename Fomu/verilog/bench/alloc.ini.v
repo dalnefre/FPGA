@@ -81,9 +81,12 @@ module alloc #(
     localparam UNIT             = 16'h0004;                     // inert result
     localparam ZERO             = 16'h8000;                     // fixnum +0
 
+    reg [5:0] init_cnt;  // initialization delay
+    initial init_cnt = 60;  // 60-clocks until memory is ready to use
+
     initial o_addr = UNDEF;
     //initial o_rdata = UNDEF;  // initialization prevents block-ram inference
-    initial o_err = 1'b0;
+    initial o_err = 1'b1;  // hold in error state until initialization reset
 
     wire ptr_op;                // an operation for the pointer management port
     assign ptr_op = ((i_alloc || i_free) && !(i_rd || i_wr));
@@ -96,39 +99,37 @@ module alloc #(
 
     // top of available memory
     reg [DATA_SZ-1:0] mem_top;
-    initial mem_top = (MUT_TAG | VLT_TAG);
+//    initial mem_top = (MUT_TAG | VLT_TAG);
     wire [ADDR_SZ:0] next_top;  // NOTE: extra bit for overflow check
     assign next_top = { 1'b0, mem_top[ADDR_SZ-1:0] } + 1'b1;
 
     // next memory cell on free-list
     reg [DATA_SZ-1:0] mem_next;
-    initial mem_next = NIL;
+//    initial mem_next = NIL;
     wire [ADDR_SZ-1:0] next_addr;
     assign next_addr = mem_next[ADDR_SZ-1:0];
 
     // count of cells on free-list (always non-negative)
     reg [ADDR_SZ-1:0] mem_free;
-    initial mem_free = 0;
+//    initial mem_free = 0;
     wire free_f;                // cells are available on the free-list
 //    assign free_f = (mem_free == 0);
     assign free_f = mem_next[14];  // check MUT_TAG
 
-    // positive-edge memory cycle
     always @(posedge i_clk) begin
         o_addr <= UNDEF;  // default
         //o_rdata <= UNDEF;  // default prevents block-ram inference
         if (o_err) begin
-            o_err <= 1'b1;
-        end else if (mem_op) begin
-            if (i_wr) begin
-                ram_cell[i_waddr[ADDR_SZ-1:0]] <= i_wdata;  // write memory
+//            o_err <= 1'b1;
+            if (init_cnt > 0) begin
+                init_cnt <= init_cnt - 1'b1;
+            end else begin
+                // soft reset
+                mem_top <= (MUT_TAG | VLT_TAG);
+                mem_next <= NIL;
+                mem_free <= 0;
+                o_err <= 1'b0;
             end
-            if (i_rd) begin
-                o_rdata <= n_rdata;  // previously read memory
-            end
-/*
-            o_rdata <= i_wdata;  // WARNING: PASS-THRU HACK!
-*/
         end else if (ptr_op) begin
             if (i_alloc && i_free) begin
                 ram_cell[i_addr[ADDR_SZ-1:0]] <= i_data;  // assign passed-thru memory
@@ -144,7 +145,7 @@ module alloc #(
             end else if (i_alloc && free_f) begin
                 ram_cell[next_addr] <= i_data;  // assign free-list memory
                 o_addr <= mem_next;
-                mem_next <= n_rdata;  // previously read memory
+//                mem_next <= ram_cell[next_addr];  // WARNING: THIS PREVENTS BRAM INFERENCE!
                 mem_free <= mem_free - 1'b1;
             end else if (i_free) begin
                 ram_cell[i_addr[ADDR_SZ-1:0]] <= mem_next;  // link free'd memory into free-list
@@ -152,25 +153,21 @@ module alloc #(
                 mem_next <= i_addr;
                 mem_free <= mem_free + 1'b1;
             end
+        end else if (mem_op) begin
+            if (i_wr) begin
+                ram_cell[i_waddr[ADDR_SZ-1:0]] <= i_wdata;  // write memory
+            end
+            if (i_rd) begin
+                o_rdata <= ram_cell[i_raddr[ADDR_SZ-1:0]];  // read memory
+            end
+/*
+            o_rdata <= i_wdata;  // WARNING: PASS-THRU HACK!
+*/
         end else if (no_op) begin
             // nothing to do...
         end else begin
             // conflicting requests
             o_err <= 1'b1;
-        end
-    end
-
-    // negative-edge memory cycle
-    reg [DATA_SZ-1:0] n_rdata;
-    always @(negedge i_clk) begin
-        if (o_err) begin
-            n_rdata <= UNDEF;
-        end else if (mem_op) begin
-            n_rdata <= ram_cell[i_raddr[ADDR_SZ-1:0]];
-        end else if (ptr_op && free_f) begin
-            n_rdata <= ram_cell[next_addr];
-        end else begin
-            n_rdata <= NIL;
         end
     end
 

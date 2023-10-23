@@ -10,7 +10,7 @@ install: $(TOP).dfu
 	dfu-util -D $<
 
 clean:
-	rm -f *.sim *.vcd *.json *.log *.asc *.bit *.dfu
+	rm -f *.sim *.vcd *.json *.log *.asc *.bit *.dfu abc.history
 
 %.sim: %_tb.v
 	iverilog -o $@ $^
@@ -19,6 +19,9 @@ clean:
 	./$<
 
 $(TOP).json: top.v
+	yosys -p 'synth_ice40 -json $@' $^ >$(TOP).log
+
+%_$(TOP).json: %_top.v
 	yosys -p 'synth_ice40 -json $@' $^ >$(TOP).log
 
 %.asc: %.json

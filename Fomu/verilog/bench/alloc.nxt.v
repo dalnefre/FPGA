@@ -102,7 +102,7 @@ module alloc #(
 
     // next memory cell on free-list
     reg [DATA_SZ-1:0] mem_next;
-    initial mem_next = NIL;
+//    initial mem_next = NIL;
     wire [ADDR_SZ-1:0] next_addr;
     assign next_addr = mem_next[ADDR_SZ-1:0];
 
@@ -113,22 +113,11 @@ module alloc #(
 //    assign free_f = (mem_free == 0);
     assign free_f = mem_next[14];  // check MUT_TAG
 
-    // positive-edge memory cycle
     always @(posedge i_clk) begin
         o_addr <= UNDEF;  // default
         //o_rdata <= UNDEF;  // default prevents block-ram inference
         if (o_err) begin
             o_err <= 1'b1;
-        end else if (mem_op) begin
-            if (i_wr) begin
-                ram_cell[i_waddr[ADDR_SZ-1:0]] <= i_wdata;  // write memory
-            end
-            if (i_rd) begin
-                o_rdata <= n_rdata;  // previously read memory
-            end
-/*
-            o_rdata <= i_wdata;  // WARNING: PASS-THRU HACK!
-*/
         end else if (ptr_op) begin
             if (i_alloc && i_free) begin
                 ram_cell[i_addr[ADDR_SZ-1:0]] <= i_data;  // assign passed-thru memory
@@ -144,7 +133,7 @@ module alloc #(
             end else if (i_alloc && free_f) begin
                 ram_cell[next_addr] <= i_data;  // assign free-list memory
                 o_addr <= mem_next;
-                mem_next <= n_rdata;  // previously read memory
+                mem_next <= ram_cell[next_addr];  // WARNING: THIS PREVENTS BRAM INFERENCE!
                 mem_free <= mem_free - 1'b1;
             end else if (i_free) begin
                 ram_cell[i_addr[ADDR_SZ-1:0]] <= mem_next;  // link free'd memory into free-list
@@ -152,25 +141,21 @@ module alloc #(
                 mem_next <= i_addr;
                 mem_free <= mem_free + 1'b1;
             end
+        end else if (mem_op) begin
+            if (i_wr) begin
+                ram_cell[i_waddr[ADDR_SZ-1:0]] <= i_wdata;  // write memory
+            end
+            if (i_rd) begin
+                o_rdata <= ram_cell[i_raddr[ADDR_SZ-1:0]];  // read memory
+            end
+/*
+            o_rdata <= i_wdata;  // WARNING: PASS-THRU HACK!
+*/
         end else if (no_op) begin
             // nothing to do...
         end else begin
             // conflicting requests
             o_err <= 1'b1;
-        end
-    end
-
-    // negative-edge memory cycle
-    reg [DATA_SZ-1:0] n_rdata;
-    always @(negedge i_clk) begin
-        if (o_err) begin
-            n_rdata <= UNDEF;
-        end else if (mem_op) begin
-            n_rdata <= ram_cell[i_raddr[ADDR_SZ-1:0]];
-        end else if (ptr_op && free_f) begin
-            n_rdata <= ram_cell[next_addr];
-        end else begin
-            n_rdata <= NIL;
         end
     end
 
