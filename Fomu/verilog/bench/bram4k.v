@@ -34,21 +34,18 @@ module bram #(
     output reg    [DATA_SZ-1:0] o_rdata                         // data read
 );
 
-    // inferred block ram
-    reg [DATA_SZ-1:0] mem [0:MEM_MAX-1];
-
-    // write access
-    always @(posedge i_clk) begin
-        if (i_wr_en) begin
-            mem[i_waddr] <= i_wdata;
-        end
-    end
-
-    // read access
-    always @(negedge i_clk) begin
-        if (i_rd_en) begin
-            o_rdata <= mem[i_raddr];
-        end
-    end
+    SB_RAM40_4KNR BRAM (
+        .WCLKE(1'b1),
+        .WCLK(i_clk),
+        .WE(i_wr_en),
+        .WADDR(i_waddr),
+        .WDATA(i_wdata),
+        .MASK(0),
+        .RCLKE(1'b1),
+//        .RCLK(i_clk),  // not present on 4KNR?
+        .RE(i_rd_en),
+        .RADDR(i_raddr),
+        .RDATA(o_rdata)
+    );
 
 endmodule

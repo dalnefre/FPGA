@@ -30,7 +30,9 @@ module bram (
     input                 [7:0] i_raddr,                        // read address
     output               [15:0] o_rdata                         // data read
 );
+
 `ifdef __ICARUS__
+
     reg [15:0] mem_sim [0:255];
     // Attempting to read unwritten memory produces undefined. Undefined shows
     // up red in GTK Wave, which is probably a good thing. If we wanted to
@@ -51,7 +53,9 @@ module bram (
             mem_sim[i_waddr] <= i_wdata;
         end
     end
+
 `else
+
     SB_RAM40_4K #(
         .WRITE_MODE(0),     // 256x16
         .READ_MODE(0)       // 256x16
@@ -68,5 +72,7 @@ module bram (
         .MASK(0),
         .WDATA(i_wdata)
     );
+
 `endif
+
 endmodule

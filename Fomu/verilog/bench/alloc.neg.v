@@ -103,6 +103,8 @@ module alloc #(
     // next memory cell on free-list
     reg [DATA_SZ-1:0] mem_next;
     initial mem_next = NIL;
+    wire [ADDR_SZ-1:0] next_addr;
+    assign next_addr = mem_next[ADDR_SZ-1:0];
 
     // count of cells on free-list (always non-negative)
     reg [ADDR_SZ-1:0] mem_free;
@@ -124,6 +126,9 @@ module alloc #(
             if (i_rd) begin
                 o_rdata <= n_rdata;  // previously read memory
             end
+/*
+            o_rdata <= i_wdata;  // WARNING: PASS-THRU HACK!
+*/
         end else if (ptr_op) begin
             if (i_alloc && i_free) begin
                 ram_cell[i_addr[ADDR_SZ-1:0]] <= i_data;  // assign passed-thru memory
@@ -137,7 +142,7 @@ module alloc #(
                     mem_top <= { mem_top[DATA_SZ-1:ADDR_SZ+1], next_top };
                 end
             end else if (i_alloc && free_f) begin
-                ram_cell[mem_next[ADDR_SZ-1:0]] <= i_data;  // assign free-list memory
+                ram_cell[next_addr] <= i_data;  // assign free-list memory
                 o_addr <= mem_next;
                 mem_next <= n_rdata;  // previously read memory
                 mem_free <= mem_free - 1'b1;
@@ -163,7 +168,7 @@ module alloc #(
         end else if (mem_op) begin
             n_rdata <= ram_cell[i_raddr[ADDR_SZ-1:0]];
         end else if (ptr_op && free_f) begin
-            n_rdata <= ram_cell[mem_next[ADDR_SZ-1:0]];
+            n_rdata <= ram_cell[next_addr];
         end else begin
             n_rdata <= NIL;
         end
