@@ -30,6 +30,7 @@ module bram (
     input                 [7:0] i_raddr,                        // read address
     output               [15:0] o_rdata                         // data read
 );
+`ifdef SB_RAM40_4K
     SB_RAM40_4K #(
         .WRITE_MODE(0),     // 256x16
         .READ_MODE(0)       // 256x16
@@ -46,4 +47,26 @@ module bram (
         .MASK(0),
         .WDATA(i_wdata)
     );
+`else
+    reg [15:0] mem_sim [0:255];
+    // Attempting to read unwritten memory produces undefined. Undefined shows
+    // up red in GTK Wave, which is probably a good thing. If we wanted to
+    // simulate hardware more closely, we could initialize mem_sim to zero with
+    // the following initial block:
+    // integer i;
+    // initial begin
+    //   for (i = 0; i <= 255; i = i + 1)
+    //     mem_sim[i] = 0;
+    // end
+    assign o_rdata = (
+        i_rd_en
+        ? mem_sim[i_raddr]
+        : 0
+    );
+    always @(posedge i_wclk) begin
+        if (i_wr_en) begin
+            mem_sim[i_waddr] <= i_wdata;
+        end
+    end
+`endif
 endmodule
