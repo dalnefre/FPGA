@@ -6,7 +6,8 @@ Test Bench for bram.v
 
 `default_nettype none
 
-`include "bram.v"
+// `include "bram.v"
+`include "bram256x16.v"
 
 `timescale 10ns/1ns
 
@@ -62,17 +63,17 @@ module test_bench;
         rd_en <= 1'b0;  // default
         case (seq[3:2])
             2'b00 : begin
-                raddr <= waddr;
                 rd_en <= 1'b1;
             end
             2'b01 : begin
                 wr_en <= 1'b1;
+                raddr <= waddr;
             end
             2'b10 : begin
                 waddr <= waddr + 3;
             end
             2'b11 : begin
-                wdata <= wdata + 13;
+                wdata <= wdata + 5;
             end
             default : begin
             end
