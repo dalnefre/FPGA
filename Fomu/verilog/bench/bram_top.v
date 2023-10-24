@@ -52,21 +52,33 @@ module top (
     );
 
     // sequence counter
-    reg [29:0] seq;
+    reg [3:0] seq;
     initial seq = 0;
     always @(posedge clk)
         seq <= seq + 1'b1;
 
-    wire wr_en;
-    assign wr_en = seq[29];
-    wire rd_en;
-    assign rd_en = ~seq[29];
-
     // instantiate BRAM
+    reg wr_en;
     reg [7:0] waddr;
     reg [15:0] wdata;
+    reg rd_en;
     reg [7:0] raddr;
     wire [15:0] rdata;
+/*
+    SB_RAM40_4K BRAM (
+        .RDATA(rdata),
+        .RCLK(clk),
+        .RCLKE(1'b1),
+        .RE(rd_en),
+        .RADDR(raddr),
+        .WCLK(clk),
+        .WCLKE(1'b1),
+        .WE(wr_en),
+        .WADDR(waddr),
+        .MASK(0),
+        .WDATA(wdata)
+    );
+*/
     bram BRAM (
         .i_wclk(clk),
         .i_wr_en(wr_en),
@@ -85,15 +97,21 @@ module top (
     initial rd_en = 1'b0;
     initial raddr = 0;
     always @(posedge clk) begin
-        case (seq[29:28])
+        wr_en <= 1'b0;  // default
+        rd_en <= 1'b0;  // default
+        case (seq[3:2])
             2'b00 : begin
-                raddr <= waddr;
+                rd_en <= 1'b1;
             end
             2'b01 : begin
-                waddr <= waddr + 5;
+                wr_en <= 1'b1;
+                raddr <= waddr;
             end
             2'b10 : begin
-                wdata <= wdata + 13;
+                waddr <= waddr + 3;
+            end
+            2'b11 : begin
+                wdata <= wdata + 5;
             end
             default : begin
             end
@@ -101,7 +119,7 @@ module top (
     end
 
     // drive LEDs
-    assign led_r = seq[29];
+    assign led_r = rd_en;
     assign led_g = (rdata == wdata);
     assign led_b = waddr[0];
 /*
