@@ -6,8 +6,7 @@ Physical Test Bench
 
 `default_nettype none
 
-`include "alloc.v"
-//`include "bram.v"
+`include "alloc_test.v"
 
 module top (
     input                       clki,                           // 48MHz oscillator input on Fomu-PVT
@@ -52,134 +51,18 @@ module top (
         .RGB2(rgb2)
     );
 
-    // sequence counter
-    reg [23:0] cnt;
-    initial cnt = 0;
-    always @(posedge clk)
-        cnt <= cnt + 1'b1;
-    reg [3:0] seq;
-    initial seq = 0;
-    always @(posedge clk)
-        if (&cnt[19:0])  // all 1's
-            seq <= cnt[23:20];
-        else
-            seq <= 4'b0000;
-
-    // FIXME: move definitions to an include file?
-    localparam UNDEF            = 16'h0000;                     // undefined value
-
-    // allocation port
-    wire alloc_stb;  // allocation request
-    assign alloc_stb = seq[0];
-    wire [15:0] alloc_addr;
-
-    // free port
-    wire free_stb;  // free request
-    assign free_stb = seq[2];
-    reg [15:0] free_addr;
-    initial free_addr = 16'h5001;
-
-    // error condition
-    wire error;
-
-/*
-    // instantiate allocator
-    wire free_done;
-    alloc #(
-        .ADDR_SZ(4)
-    ) ALLOC (
+    wire running;
+    wire pass;
+    alloc_test TEST (
         .i_clk(clk),
-        .i_alloc(alloc_stb),
-        .i_data(UNDEF),
-        .o_addr(alloc_addr),
-        .i_free(free_stb),
-        .i_addr(free_addr),
-        .i_rd(1'b0),
-        .i_wr(1'b0),
-        .o_err(error)
+        .i_en(1'b1),
+        .o_running(running),
+        .o_pass(pass)
     );
-
-    // instantiate BRAM
-    reg wr_en;
-    reg [7:0] waddr;
-    reg [15:0] wdata;
-    reg [7:0] raddr;
-    wire [15:0] rdata;
-    bram #(
-        .DATA_SZ(13),
-        .ADDR_SZ(5)
-    ) BRAM (
-        .i_wclk(clk),
-        .i_wr_en(wr_en),
-        .i_waddr(waddr),
-        .i_wdata(wdata),
-        .i_rclk(clk),
-        .i_raddr(raddr),
-        .o_rdata(rdata)
-    );
-*/
-
-    // instantiate allocator with ram access
-    reg wr_en;
-    reg [7:0] waddr;
-    reg [15:0] wdata;
-    reg rd_en;
-    reg [7:0] raddr;
-    wire [15:0] rdata;
-    alloc #(
-        .ADDR_SZ(4)
-    ) ALLOC (
-        .i_clk(clk),
-        .i_alloc(alloc_stb),
-        .i_data(UNDEF),
-        .o_addr(alloc_addr),
-        .i_free(free_stb),
-        .i_addr(free_addr),
-        .i_wr(wr_en),
-        .i_waddr(waddr),
-        .i_wdata(wdata),
-        .i_rd(rd_en),
-        .i_raddr(raddr),
-        .o_rdata(rdata),
-        .o_err(error)
-    );
-
-    // exercise BRAM
-    initial wr_en = 1'b0;
-    initial waddr = 7;
-    initial wdata = 5;
-    initial rd_en = 1'b0;
-    initial raddr = 0;
-    always @(posedge clk) begin
-        wr_en <= 1'b0;  // default
-        rd_en <= 1'b0;  // default
-        case (seq[3:2])
-            2'b00 : begin
-                raddr <= waddr;
-                rd_en <= 1'b1;
-            end
-            2'b01 : begin
-                wr_en <= 1'b1;
-            end
-            2'b10 : begin
-                waddr <= waddr + 3;
-            end
-            2'b11 : begin
-                wdata <= wdata + 13;
-            end
-            default : begin
-            end
-        endcase
-    end
 
     // drive LEDs
-    assign led_r = seq[3];
-    assign led_g = rdata[0]; //(rdata == wdata);
-    assign led_b = waddr[0];
-/*
-    assign led_r = error;
-    assign led_g = |alloc_addr[7:0];
-    assign led_b = free_done;
-*/
+    assign led_r = !running && !pass;
+    assign led_g = !running && pass;
+    assign led_b = running;
 
 endmodule
