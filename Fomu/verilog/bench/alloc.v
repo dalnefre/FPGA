@@ -40,6 +40,7 @@ the error signal is raised and the component halts.
 `default_nettype none
 
 //`include "bram.v"
+`include "bram4k.v"
 
 module alloc #(
     // WARNING: hard-coded contants assume `DATA_SZ` = 16
@@ -82,7 +83,7 @@ module alloc #(
     localparam ZERO             = 16'h8000;                     // fixnum +0
 
     initial o_addr = UNDEF;
-    //initial o_rdata = UNDEF;  // initialization prevents block-ram inference
+    initial o_rdata = UNDEF;
     initial o_err = 1'b0;
 
     wire ptr_op;                // an operation for the pointer management port
@@ -111,39 +112,30 @@ module alloc #(
 //    assign free_f = (mem_free == 0);
     assign free_f = mem_next[14];  // check MUT_TAG
 
-    // positive-edge memory cycle
     always @(posedge i_clk) begin
         o_addr <= UNDEF;  // default
-        //o_rdata <= UNDEF;  // default prevents block-ram inference
+        o_rdata <= UNDEF;  // default prevents block-ram inference
         if (o_err) begin
-            o_err <= 1'b1;
+            // halt in error state...
         end else if (mem_op) begin
-            if (i_wr) begin
-                ram_cell[i_waddr[ADDR_SZ-1:0]] <= i_wdata;  // write memory
-            end
             if (i_rd) begin
-                o_rdata <= n_rdata;  // previously read memory
+                o_rdata <= rdata;  // previously read memory
             end
         end else if (ptr_op) begin
-            if (i_alloc && i_free) begin
-                ram_cell[i_addr[ADDR_SZ-1:0]] <= i_data;  // assign passed-thru memory
+            if (i_alloc && i_free) begin  // assign passed-thru memory
                 o_addr <= i_addr;
-            end else if (i_alloc && !free_f) begin
-                ram_cell[mem_top[ADDR_SZ-1:0]] <= i_data;  // assign expanded memory
+            end else if (i_alloc && !free_f) begin  // assign expanded memory
                 o_addr <= mem_top;
                 if (next_top[ADDR_SZ]) begin  // overflow check
                     o_err <= 1'b1;  // out-of-memory condition!
                 end else begin
                     mem_top <= { mem_top[DATA_SZ-1:ADDR_SZ+1], next_top };
                 end
-            end else if (i_alloc && free_f) begin
-                ram_cell[mem_next[ADDR_SZ-1:0]] <= i_data;  // assign free-list memory
+            end else if (i_alloc && free_f) begin  // assign free-list memory
                 o_addr <= mem_next;
-                mem_next <= n_rdata;  // previously read memory
+                mem_next <= rdata;  // previously read memory
                 mem_free <= mem_free - 1'b1;
-            end else if (i_free) begin
-                ram_cell[i_addr[ADDR_SZ-1:0]] <= mem_next;  // link free'd memory into free-list
-                o_addr <= UNDEF;
+            end else if (i_free) begin  // link free'd memory into free-list
                 mem_next <= i_addr;
                 mem_free <= mem_free + 1'b1;
             end
@@ -155,38 +147,51 @@ module alloc #(
         end
     end
 
-    // negative-edge memory cycle
-    reg [DATA_SZ-1:0] n_rdata;
-    always @(negedge i_clk) begin
-        if (o_err) begin
-            n_rdata <= UNDEF;
-        end else if (mem_op) begin
-            n_rdata <= ram_cell[i_raddr[ADDR_SZ-1:0]];
-        end else if (ptr_op && free_f) begin
-            n_rdata <= ram_cell[mem_next[ADDR_SZ-1:0]];
-        end else begin
-            n_rdata <= NIL;
-        end
-    end
+    assign wr_en = !o_err && ((mem_op && i_wr) || ptr_op);
+    assign waddr = (
+        mem_op
+        ? i_waddr[ADDR_SZ-1:0]
+        : (
+            i_free
+            ? i_addr[ADDR_SZ-1:0]
+            : (
+                free_f
+                ? mem_next[ADDR_SZ-1:0]
+                : mem_top[ADDR_SZ-1:0]
+            )
+        )
+    );
+    assign wdata = (
+        mem_op
+        ? i_wdata
+        : (
+            (!i_alloc && i_free)
+            ? mem_next
+            : i_data
+        )
+    );
+    assign rd_en = !o_err && ((mem_op && i_rd) || (ptr_op && free_f));
+    assign raddr = (
+        mem_op
+        ? i_raddr[ADDR_SZ-1:0]
+        : mem_next[ADDR_SZ-1:0]
+    );
 
-    // dynamically managed memory
-    reg [DATA_SZ-1:0] ram_cell [0:MEM_MAX-1];
-/*
     // instantiate bram
-    reg wr_en;
-    reg [7:0] waddr;
-    reg [15:0] wdata;
-    reg [7:0] raddr;
+    wire wr_en;
+    wire [7:0] waddr;
+    wire [15:0] wdata;
+    wire rd_en;
+    wire [7:0] raddr;
     wire [15:0] rdata;
     bram BRAM (
-        .i_wclk(clk),
+        .i_clk(i_clk),
         .i_wr_en(wr_en),
         .i_waddr(waddr),
         .i_wdata(wdata),
-        .i_rclk(clk),
+        .i_rd_en(rd_en),
         .i_raddr(raddr),
         .o_rdata(rdata)
     );
-*/
 
 endmodule

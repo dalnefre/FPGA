@@ -174,7 +174,7 @@ module top (
 
     // drive LEDs
     assign led_r = seq[3];
-    assign led_g = (rdata == wdata);
+    assign led_g = rdata[0]; //(rdata == wdata);
     assign led_b = waddr[0];
 /*
     assign led_r = error;
