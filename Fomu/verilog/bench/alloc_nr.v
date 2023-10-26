@@ -6,8 +6,8 @@ Linked-Memory Allocator
     | alloc         |
     |               |
 --->|i_alloc    i_wr|<---
-=N=>|i_data  i_wdata|<=N=
-<=N=|o_addr  i_waddr|<=N=
+=N=>|i_data  i_waddr|<=N=
+<=N=|o_addr  i_wdata|<=N=
     |               |
 --->|i_free     i_rd|<---
 =N=>|i_addr  i_raddr|<=N=
@@ -39,7 +39,11 @@ the error signal is raised and the component halts.
 
 `default_nettype none
 
-//`include "bram.v"
+`ifdef __ICARUS__
+`include "bram_nr.v"
+`else
+`include "bram4k_nr.v"
+`endif
 
 module alloc #(
     // WARNING: hard-coded contants assume `DATA_SZ` = 16
@@ -81,12 +85,9 @@ module alloc #(
     localparam UNIT             = 16'h0004;                     // inert result
     localparam ZERO             = 16'h8000;                     // fixnum +0
 
-    reg [5:0] init_cnt;  // initialization delay
-    initial init_cnt = 60;  // 60-clocks until memory is ready to use
-
     initial o_addr = UNDEF;
-    //initial o_rdata = UNDEF;  // initialization prevents block-ram inference
-    initial o_err = 1'b1;  // hold in error state until initialization reset
+    initial o_rdata = UNDEF;
+    initial o_err = 1'b0;
 
     wire ptr_op;                // an operation for the pointer management port
     assign ptr_op = ((i_alloc || i_free) && !(i_rd || i_wr));
@@ -99,70 +100,48 @@ module alloc #(
 
     // top of available memory
     reg [DATA_SZ-1:0] mem_top;
-//    initial mem_top = (MUT_TAG | VLT_TAG);
+    initial mem_top = (MUT_TAG | VLT_TAG);
     wire [ADDR_SZ:0] next_top;  // NOTE: extra bit for overflow check
     assign next_top = { 1'b0, mem_top[ADDR_SZ-1:0] } + 1'b1;
 
     // next memory cell on free-list
     reg [DATA_SZ-1:0] mem_next;
-//    initial mem_next = NIL;
-    wire [ADDR_SZ-1:0] next_addr;
-    assign next_addr = mem_next[ADDR_SZ-1:0];
+    initial mem_next = NIL;
 
     // count of cells on free-list (always non-negative)
     reg [ADDR_SZ-1:0] mem_free;
-//    initial mem_free = 0;
+    initial mem_free = 0;
     wire free_f;                // cells are available on the free-list
 //    assign free_f = (mem_free == 0);
     assign free_f = mem_next[14];  // check MUT_TAG
 
     always @(posedge i_clk) begin
         o_addr <= UNDEF;  // default
-        //o_rdata <= UNDEF;  // default prevents block-ram inference
+        o_rdata <= UNDEF;  // default prevents block-ram inference
         if (o_err) begin
-//            o_err <= 1'b1;
-            if (init_cnt > 0) begin
-                init_cnt <= init_cnt - 1'b1;
-            end else begin
-                // soft reset
-                mem_top <= (MUT_TAG | VLT_TAG);
-                mem_next <= NIL;
-                mem_free <= 0;
-                o_err <= 1'b0;
+            // halt in error state...
+        end else if (mem_op) begin
+            if (i_rd) begin
+                o_rdata <= rdata;  // previously read memory
             end
         end else if (ptr_op) begin
-            if (i_alloc && i_free) begin
-                ram_cell[i_addr[ADDR_SZ-1:0]] <= i_data;  // assign passed-thru memory
+            if (i_alloc && i_free) begin  // assign passed-thru memory
                 o_addr <= i_addr;
-            end else if (i_alloc && !free_f) begin
-                ram_cell[mem_top[ADDR_SZ-1:0]] <= i_data;  // assign expanded memory
+            end else if (i_alloc && !free_f) begin  // assign expanded memory
                 o_addr <= mem_top;
                 if (next_top[ADDR_SZ]) begin  // overflow check
                     o_err <= 1'b1;  // out-of-memory condition!
                 end else begin
                     mem_top <= { mem_top[DATA_SZ-1:ADDR_SZ+1], next_top };
                 end
-            end else if (i_alloc && free_f) begin
-                ram_cell[next_addr] <= i_data;  // assign free-list memory
+            end else if (i_alloc && free_f) begin  // assign free-list memory
                 o_addr <= mem_next;
-//                mem_next <= ram_cell[next_addr];  // WARNING: THIS PREVENTS BRAM INFERENCE!
+                mem_next <= rdata;  // previously read memory
                 mem_free <= mem_free - 1'b1;
-            end else if (i_free) begin
-                ram_cell[i_addr[ADDR_SZ-1:0]] <= mem_next;  // link free'd memory into free-list
-                o_addr <= UNDEF;
+            end else if (i_free) begin  // link free'd memory into free-list
                 mem_next <= i_addr;
                 mem_free <= mem_free + 1'b1;
             end
-        end else if (mem_op) begin
-            if (i_wr) begin
-                ram_cell[i_waddr[ADDR_SZ-1:0]] <= i_wdata;  // write memory
-            end
-            if (i_rd) begin
-                o_rdata <= ram_cell[i_raddr[ADDR_SZ-1:0]];  // read memory
-            end
-/*
-            o_rdata <= i_wdata;  // WARNING: PASS-THRU HACK!
-*/
         end else if (no_op) begin
             // nothing to do...
         end else begin
@@ -171,24 +150,51 @@ module alloc #(
         end
     end
 
-    // dynamically managed memory
-    reg [DATA_SZ-1:0] ram_cell [0:MEM_MAX-1];
-/*
+    assign wr_en = !o_err && ((mem_op && i_wr) || ptr_op);
+    assign waddr = (
+        mem_op
+        ? i_waddr[ADDR_SZ-1:0]
+        : (
+            i_free
+            ? i_addr[ADDR_SZ-1:0]
+            : (
+                free_f
+                ? mem_next[ADDR_SZ-1:0]
+                : mem_top[ADDR_SZ-1:0]
+            )
+        )
+    );
+    assign wdata = (
+        mem_op
+        ? i_wdata
+        : (
+            (!i_alloc && i_free)
+            ? mem_next
+            : i_data
+        )
+    );
+    assign rd_en = !o_err && ((mem_op && i_rd) || (ptr_op && free_f));
+    assign raddr = (
+        mem_op
+        ? i_raddr[ADDR_SZ-1:0]
+        : mem_next[ADDR_SZ-1:0]
+    );
+
     // instantiate bram
-    reg wr_en;
-    reg [7:0] waddr;
-    reg [15:0] wdata;
-    reg [7:0] raddr;
+    wire wr_en;
+    wire [7:0] waddr;
+    wire [15:0] wdata;
+    wire rd_en;
+    wire [7:0] raddr;
     wire [15:0] rdata;
     bram BRAM (
-        .i_wclk(clk),
+        .i_clk(i_clk),
         .i_wr_en(wr_en),
         .i_waddr(waddr),
         .i_wdata(wdata),
-        .i_rclk(clk),
+        .i_rd_en(rd_en),
         .i_raddr(raddr),
         .o_rdata(rdata)
     );
-*/
 
 endmodule
