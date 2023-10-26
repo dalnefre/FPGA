@@ -7,7 +7,6 @@ Test Bench for bram.v
 `default_nettype none
 
 `include "bram.v"
-//`include "bram256x16.v"
 
 `timescale 10ns/1ns
 

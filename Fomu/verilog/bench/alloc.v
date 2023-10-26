@@ -6,8 +6,8 @@ Linked-Memory Allocator
     | alloc         |
     |               |
 --->|i_alloc    i_wr|<---
-=N=>|i_data  i_wdata|<=N=
-<=N=|o_addr  i_waddr|<=N=
+=N=>|i_data  i_waddr|<=N=
+<=N=|o_addr  i_wdata|<=N=
     |               |
 --->|i_free     i_rd|<---
 =N=>|i_addr  i_raddr|<=N=

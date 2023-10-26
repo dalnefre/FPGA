@@ -6,8 +6,8 @@ Physical Test Bench
 
 `default_nettype none
 
-`include "bram.v"
-//`include "bram4k.v"
+//`include "bram.v"
+`include "bram4k.v"
 
 module top (
     input                       clki,                           // 48MHz oscillator input on Fomu-PVT
