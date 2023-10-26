@@ -39,8 +39,11 @@ the error signal is raised and the component halts.
 
 `default_nettype none
 
-//`include "bram.v"
+`ifdef __ICARUS__
+`include "bram.v"
+`else
 `include "bram4k.v"
+`endif
 
 module alloc #(
     // WARNING: hard-coded contants assume `DATA_SZ` = 16

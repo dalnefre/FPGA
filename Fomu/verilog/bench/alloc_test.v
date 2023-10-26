@@ -5,8 +5,10 @@ Test component for the Linked-Memory Allocator
     +---------------+
     | alloc_test    |
     |               |
---->|i_en     o_pass|--->
-    |      o_running|--->
+--->|i_en  o_running|--->
+    |        o_debug|--->
+    |       o_passed|--->
+    |        o_error|--->
     |               |
  +->|i_clk          |
  |  +---------------+
@@ -21,13 +23,20 @@ high. Once o_running goes low, the value of o_pass indicates success or failure.
 `include "alloc.v"
 
 module alloc_test (
-    input       i_clk,      // system clock
-    input       i_en,       // testing enabled
-    output      o_running,  // test in progress
-    output reg  o_pass      // test result
+    input                       i_clk,                          // system clock
+    input                       i_en,                           // testing enabled
+    output                      o_running,
+    output reg           [15:0] o_debug,
+    output                      o_passed,
+    output                      o_error
 );
-    localparam ADDR_SZ = 8;
+    localparam ADDR_SZ = 4;//8;  // must be at least 3
     localparam NIL = 16'h0001;
+
+    assign o_running = !halted;
+    initial o_debug = 0;  // UNDEF
+    assign o_passed = halted && seq[1];
+    assign o_error = halted && seq[0];
 
 // Whilst 'i_en' is high, the sequence counter increments every clock cycle
 // until the test is concluded.
@@ -38,7 +47,7 @@ module alloc_test (
 //  00... Memory is being allocated.
 //  01... Memory is being read.
 //  10... The test has concluded.
-//  11... The allocator reported an error.
+//  11... The test rig has halted.
 
     reg [ADDR_SZ+1:0] seq;
     initial seq = 0;
@@ -48,8 +57,8 @@ module alloc_test (
     assign reading = i_en && !seq[ADDR_SZ+1] && seq[ADDR_SZ];
     wire done;
     assign done = seq[ADDR_SZ+1] && !seq[ADDR_SZ];
-    wire errored;
-    assign errored = seq[ADDR_SZ+1] && seq[ADDR_SZ];
+    wire halted;
+    assign halted = seq[ADDR_SZ+1] && seq[ADDR_SZ];
 
 // The 'addr_rdy' and 'rdata_rdy' registers are high in cycles immediately
 // following an allocation or read operation.
@@ -71,8 +80,6 @@ module alloc_test (
 // The test fails if the allocator reports an error at any time. It succeeds if
 // the linked list was the expected length and terminated in NIL.
 
-    initial o_pass = 0;
-    assign o_running = !seq[ADDR_SZ+1];
     wire        err;
     wire [15:0] addr;
     wire [15:0] rdata;
@@ -103,14 +110,12 @@ module alloc_test (
     );
     always @(posedge i_clk) begin
         if (err) begin
-            seq <= (16'b11 << ADDR_SZ);
-        end else if (!errored) begin
-            if (done && rdata == NIL) begin
-                o_pass <= 1;
-            end
-            if (i_en && !done) begin
-                seq <= seq + 1'b1;
-            end
+            seq <= (16'b11 << ADDR_SZ) | 3'b001;
+        end else if (done) begin
+            seq <= (16'b11 << ADDR_SZ) | ((rdata == NIL) ? 3'b010 : 3'b000);
+            o_debug <= rdata;
+        end else if (allocating || reading) begin
+            seq <= seq + 1'b1;
         end
     end
 endmodule

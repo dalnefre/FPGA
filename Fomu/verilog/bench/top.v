@@ -51,18 +51,30 @@ module top (
         .RGB2(rgb2)
     );
 
+    reg [7:0] waiting;
+    initial waiting = 63;  // wait for memory to "settle"?
+    always @(posedge clk) begin
+        if (waiting) begin
+            waiting <= waiting - 1'b1;
+        end
+    end
+
     wire running;
-    wire pass;
+    wire [15:0] debug;
+    wire passed;
+    wire error;
     alloc_test TEST (
         .i_clk(clk),
-        .i_en(1'b1),
+        .i_en(!waiting),
         .o_running(running),
-        .o_pass(pass)
+        .o_debug(debug),
+        .o_passed(passed),
+        .o_error(error)
     );
 
     // drive LEDs
-    assign led_r = !running && !pass;
-    assign led_g = !running && pass;
-    assign led_b = running;
+    assign led_r = error;
+    assign led_g = passed;
+    assign led_b = !running;
 
 endmodule
