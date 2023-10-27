@@ -27,6 +27,7 @@ module test_bench;
         #1 clk = !clk;
     end
 
+    // start-up delay
     reg [7:0] waiting;
     initial waiting = 3;  // wait for memory to "settle"?
     always @(posedge clk) begin

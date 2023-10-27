@@ -34,7 +34,7 @@ module bram #(
     output reg    [DATA_SZ-1:0] o_rdata                         // data read
 );
 
-    SB_RAM40_4KNR BRAM (
+    SB_RAM40_4K BRAM (
         .WCLKE(1'b1),
         .WCLK(i_clk),
         .WE(i_wr_en),
@@ -42,7 +42,7 @@ module bram #(
         .WDATA(i_wdata),
         .MASK(0),
         .RCLKE(1'b1),
-//        .RCLK(i_clk),  // not present on 4KNR?
+        .RCLK(i_clk),
         .RE(i_rd_en),
         .RADDR(i_raddr),
         .RDATA(o_rdata)

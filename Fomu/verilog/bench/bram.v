@@ -45,7 +45,7 @@ module bram #(
     end
 
     // read access
-    always @(negedge i_clk) begin
+    always @(posedge i_clk) begin
         if (i_rd_en) begin
             o_rdata <= mem[i_raddr];
         end else begin
