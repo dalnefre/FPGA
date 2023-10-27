@@ -6,8 +6,8 @@ Physical Test Bench
 
 `default_nettype none
 
-//`include "alloc_test.v"
-`include "fixture.v"
+`include "alloc_test.v"
+// `include "fixture.v"
 
 module top (
     input                       clki,                           // 48MHz oscillator input on Fomu-PVT

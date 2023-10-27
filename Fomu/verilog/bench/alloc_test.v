@@ -20,7 +20,7 @@ high. Once o_running goes low, the value of o_pass indicates success or failure.
 */
 
 `default_nettype none
-`include "alloc.v"
+`include "alloc.james.v"
 
 module alloc_test (
     input                       i_clk,                          // system clock
@@ -31,42 +31,40 @@ module alloc_test (
     output                      o_error
 );
     localparam ADDR_SZ = 4;//8;  // must be at least 3
+    localparam UNDEF = 16'h0000;
     localparam NIL = 16'h0001;
 
-    assign o_running = !halted;
-    initial o_debug = 0;  // UNDEF
-    assign o_passed = halted && seq[1];
-    assign o_error = halted && seq[0];
-
-// Whilst 'i_en' is high, the sequence counter increments every clock cycle
+// Whilst 'i_en' is high, the sequence counter increments each clock cycle
 // until the test is concluded.
 
 // Bits [ADDR_SZ-1:0] correspond to a cell count.
-// Bits [ADDR_SZ] and [ADDR_SZ+1] indicate the current phase of operation:
+// Bits [ADDR_SZ+1] and [ADDR_SZ] indicate the current phase of operation:
 
 //  00... Memory is being allocated.
 //  01... Memory is being read.
-//  10... The test has concluded.
-//  11... The test rig has halted.
+//  10... The test has finished and a report is being generated.
+//  11... The test rig has halted. The report is encoded in the low bits.
 
-    reg [ADDR_SZ+1:0] seq;
-    initial seq = 0;
-    wire allocating;
-    assign allocating = i_en && !seq[ADDR_SZ+1] && !seq[ADDR_SZ];
-    wire reading;
-    assign reading = i_en && !seq[ADDR_SZ+1] && seq[ADDR_SZ];
-    wire done;
-    assign done = seq[ADDR_SZ+1] && !seq[ADDR_SZ];
-    wire halted;
-    assign halted = seq[ADDR_SZ+1] && seq[ADDR_SZ];
+// The reports bits are as follows:
+
+//  seq[0]  err
+//  seq[1]  pass
+
+    reg [ADDR_SZ+1:0] seq = 0;
+    wire allocating = !seq[ADDR_SZ+1] && !seq[ADDR_SZ] && i_en;
+    wire reading =    !seq[ADDR_SZ+1] &&  seq[ADDR_SZ] && i_en;
+    wire done =        seq[ADDR_SZ+1] && !seq[ADDR_SZ];
+    wire halted =      seq[ADDR_SZ+1] &&  seq[ADDR_SZ];
+    assign o_running = !halted;
+    initial o_debug = UNDEF;
+    assign o_passed = halted && seq[1];
+    assign o_error = halted && seq[0];
 
 // The 'addr_rdy' and 'rdata_rdy' registers are high in cycles immediately
 // following an allocation or read operation.
 
-    reg addr_rdy;
-    initial addr_rdy = 0;
-    reg rdata_rdy;
-    initial rdata_rdy = 0;
+    reg addr_rdy = 0;
+    reg rdata_rdy = 0;
     always @(posedge i_clk) begin
         addr_rdy <= allocating;
         rdata_rdy <= reading;
@@ -110,11 +108,16 @@ module alloc_test (
     );
     always @(posedge i_clk) begin
         if (err) begin
-            seq <= (16'b11 << ADDR_SZ) | 3'b001;
+            seq <= (3 << ADDR_SZ) | 2'b01; // halt with error
         end else if (done) begin
-            seq <= (16'b11 << ADDR_SZ) | ((rdata == NIL) ? 3'b010 : 3'b000);
+            seq <= (3 << ADDR_SZ) | (
+                (rdata == NIL)
+                ? 2'b10 // pass with no error
+                : 2'b00 // fail with no error
+            );
             o_debug <= rdata;
         end else if (allocating || reading) begin
+            // FIXME: are rdata/addr lost if i_en goes low?
             seq <= seq + 1'b1;
         end
     end
