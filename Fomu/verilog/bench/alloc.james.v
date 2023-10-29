@@ -66,7 +66,7 @@ module alloc #(
 
     input                       i_rd,                           // read request
     input         [DATA_SZ-1:0] i_raddr,                        // read address
-    output reg    [DATA_SZ-1:0] o_rdata,                        // data read
+    output        [DATA_SZ-1:0] o_rdata,                        // data read
 
     output reg                  o_err                           // error condition
 );
@@ -86,16 +86,16 @@ module alloc #(
     localparam ZERO             = 16'h8000;                     // fixnum +0
 
     initial o_addr = UNDEF;
-    initial o_rdata = UNDEF;
     initial o_err = 1'b0;
+    assign o_rdata = rdata;
 
-    wire mem_op = i_alloc || i_free;
-    wire ptr_op = i_rd || i_wr;
-    wire bad_op = mem_op && ptr_op;
-    wire read_op = i_rd && !mem_op;
-    wire write_op = i_wr && !mem_op;
-    wire alloc_op = i_alloc && !ptr_op;
-    wire free_op = i_free && !ptr_op;
+    wire ptr_op = i_alloc || i_free;
+    wire mem_op = i_rd || i_wr;
+    wire bad_op = ptr_op && mem_op;
+    wire read_op = i_rd && !ptr_op;
+    wire write_op = i_wr && !ptr_op;
+    wire alloc_op = i_alloc && !mem_op;
+    wire free_op = i_free && !mem_op;
 
     // top of available memory
     reg [DATA_SZ-1:0] mem_top = (MUT_TAG | VLT_TAG);
@@ -103,14 +103,21 @@ module alloc #(
     wire [ADDR_SZ:0] next_top = {1'b0, mem_top[ADDR_SZ-1:0]} + 1'b1;
     wire mem_full = next_top[ADDR_SZ];
 
+    // are we retrieving mem_next from memory?
+    reg rnext = 0;
     // next memory cell on free-list
     reg [DATA_SZ-1:0] mem_next = NIL;
+    wire [DATA_SZ-1:0] mem_next_curr = (
+        rnext
+        ? rdata
+        : mem_next
+    );
 
     // count of cells on free-list (always non-negative)
     reg [ADDR_SZ-1:0] mem_free = 0;
     // cells are available on the free-list
-    wire free_f = mem_next[14];  // check MUT_TAG;
-//    wire free_f = (mem_free == 0);
+    // wire free_f = mem_next_curr[14];  // check MUT_TAG;
+    wire free_f = (mem_free == 0);
 
     // raise the memory ceiling?
     wire raise_top = alloc_op && !free_op && !free_f;
@@ -121,9 +128,6 @@ module alloc #(
 
     // receives the data arriving on the negative clock edge
     wire [DATA_SZ-1:0] rdata;
-
-    // are we retrieving mem_next from memory?
-    reg rnext = 0;
 
     // FIXME: tighter error handling?
 
@@ -137,7 +141,7 @@ module alloc #(
                 alloc_op
                 ? (
                     free_f
-                    ? mem_next[ADDR_SZ-1:0]
+                    ? mem_next_curr[ADDR_SZ-1:0]
                     : mem_top[ADDR_SZ-1:0]
                 )
                 : i_waddr[ADDR_SZ-1:0]
@@ -148,14 +152,14 @@ module alloc #(
             ? i_data
             : (
                 free_op
-                ? mem_next
+                ? mem_next_curr
                 : i_wdata
             )
         ),
         .i_rd_en(read_op || pop_free_op),
         .i_raddr(
             pop_free_op
-            ? mem_next[ADDR_SZ-1:0]
+            ? mem_next_curr[ADDR_SZ-1:0]
             : i_raddr[ADDR_SZ-1:0]
         ),
         .o_rdata(rdata)
@@ -163,11 +167,11 @@ module alloc #(
 
     always @(posedge i_clk) begin
         // check for error conditions
-        if (o_err || bad_op || (raise_top && mem_full)) begin
-            o_err <= 1; // sticky
+        if (bad_op || (raise_top && mem_full)) begin
+            o_err <= 1;
         end else begin
             // erase any data read during the previous clock
-            o_rdata <= UNDEF;
+            // o_rdata <= UNDEF; // FIXME
             // register the allocated address
             o_addr <= (
                 alloc_op
@@ -176,7 +180,7 @@ module alloc #(
                     ? i_addr
                     : (
                         free_f
-                        ? mem_next
+                        ? mem_next_curr
                         : mem_top
                     )
                 )
@@ -199,15 +203,6 @@ module alloc #(
             if (free_op && !alloc_op) begin
                 mem_next <= i_addr;
             end
-        end
-    end
-
-    // on the negedge, register data arriving from memory
-    always @(negedge i_clk) begin
-        if (rnext) begin
-            mem_next <= rdata;
-        end else begin
-            o_rdata <= rdata;
         end
     end
 endmodule

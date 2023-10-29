@@ -30,53 +30,100 @@ module alloc_test (
     output                      o_passed,
     output                      o_error
 );
-    localparam ADDR_SZ = 4;//8;  // must be at least 3
+    localparam ADDR_SZ = 7;//8;  // must be at least 2
     localparam UNDEF = 16'h0000;
     localparam NIL = 16'h0001;
 
-// Whilst 'i_en' is high, the sequence counter increments each clock cycle
-// until the test is concluded.
+// Whilst 'i_en' is high, the state vector increments each clock cycle until the
+// test is concluded.
 
-// Bits [ADDR_SZ-1:0] correspond to a cell count.
-// Bits [ADDR_SZ+1] and [ADDR_SZ] indicate the current phase of operation:
-
-//  00... Memory is being allocated.
-//  01... Memory is being read.
-//  10... The test has finished and a report is being generated.
-//  11... The test rig has halted. The report is encoded in the low bits.
-
-// The reports bits are as follows:
-
-//  seq[0]  err
-//  seq[1]  pass
-
-    reg [ADDR_SZ+1:0] seq = 0;
-    wire allocating = !seq[ADDR_SZ+1] && !seq[ADDR_SZ] && i_en;
-    wire reading =    !seq[ADDR_SZ+1] &&  seq[ADDR_SZ] && i_en;
-    wire done =        seq[ADDR_SZ+1] && !seq[ADDR_SZ];
-    wire halted =      seq[ADDR_SZ+1] &&  seq[ADDR_SZ];
-    assign o_running = !halted;
+    reg [ADDR_SZ+4:0] state = 0;
     initial o_debug = UNDEF;
-    assign o_passed = halted && seq[1];
-    assign o_error = halted && seq[0];
 
-// The 'addr_rdy' and 'rdata_rdy' registers are high in cycles immediately
-// following an allocation or read operation.
+// state[ADDR_SZ+4]
+//      Indicates that the test has concluded, with a report encoded in the low
+//      bits:
+
+//          state[0] Indicates the test passed.
+//          state[1] Indicates the allocator raised an error signal.
+
+    wire done = state[ADDR_SZ+4];
+    assign o_running = !done;
+    assign o_passed = done && state[0];
+    assign o_error = done && state[1];
+
+// state[ADDR_SZ+3]
+//      Indicates that the test has just finished and a report is being
+//      generated.
+
+    wire check = state[ADDR_SZ+3];
+
+// state[ADDR_SZ+2]
+//      0) First run. Allocations raise the top of memory.
+//      1) Second run. Allocations are made from the free list.
+
+    wire rerun = state[ADDR_SZ+2];
+
+// state[ADDR_SZ+1]
+//      0) Build up phase. A linked list is allocated and reversed in place.
+//          state[ADDR_SZ]
+//               0) Allocate a cell.
+//               1) Reverse an element using a simultaneous read+write.
+
+//      1) Tear down phase. The linked list is followed and freed.
+//          state[0]
+//              0) Read a cell.
+//              1) Free that cell.
+
+    wire incrementing = i_en && !done && !check;
+    wire build_up = incrementing && !state[ADDR_SZ+1];
+    wire allocate = incrementing &&  build_up && !state[ADDR_SZ];
+    wire reverse =  incrementing &&  build_up &&  state[ADDR_SZ];
+    wire read =     incrementing && !build_up && !state[0];
+    wire free =     incrementing && !build_up &&  state[0];
+
+// state[ADDR_SZ-1:0]   (during build up)
+// state[ADDR_SZ:1]     (during tear down)
+//      A cell count, between 0 and the maximum length of the linked list. Note
+//      that the width of this vector does not change between the build up and
+//      tear down phases.
 
     reg addr_rdy = 0;
+    reg addr_prev_rdy = 0;
     reg rdata_rdy = 0;
+    reg rdata_prev_rdy = 0;
+    reg [15:0] addr_prev = UNDEF;
+    reg [15:0] rdata_prev = UNDEF;
+    reg [15:0] rdata_prev_prev = UNDEF;
     always @(posedge i_clk) begin
-        addr_rdy <= allocating;
-        rdata_rdy <= reading;
+        if (i_en) begin
+            addr_rdy <= allocate;
+            addr_prev_rdy <= addr_rdy;
+            rdata_rdy <= read || reverse;
+            rdata_prev_rdy <= rdata_rdy;
+            addr_prev <= addr;
+            rdata_prev <= rdata;
+            rdata_prev_prev <= rdata_prev;
+        end
     end
 
-// During phase 1, cells are continually allocated to form a linked list ending
-// with NIL. At the moment the linked list completely fills memory, phase 2
-// begins. The linked list is then followed to its terminal value, which should
-// be NIL.
+// There are 3 distinct phases for each test run:
 
-// The test fails if the allocator reports an error at any time. It succeeds if
-// the linked list was the expected length and terminated in NIL.
+//  PHASE 1
+//      Cells are continually allocated to form a linked list ending with NIL.
+//      The number of cells allocated is 2^ADDR_SZ.
+
+//  PHASE 2
+//      The linked list is reversed in situ using simultaneous read and write
+//      operations.
+
+//  PHASE 3
+//      The reversed list is followed with each cell being freed after it is
+//      read. Note that phase 3 takes twice as long as either phase 1 or phase
+//      2, because concurrent read and free requests are not supported.
+
+// The test fails if the allocator reports an error at any time. It succeeds
+// only if the linked list was the expected length and terminated in NIL.
 
     wire        err;
     wire [15:0] addr;
@@ -85,40 +132,66 @@ module alloc_test (
         .ADDR_SZ(8)
     ) ALLOC (
         .i_clk(i_clk),
-        .i_alloc(allocating),
+        .i_alloc(allocate),
         .i_data(
             addr_rdy
             ? addr
             : NIL
         ),
         .o_addr(addr),
-        .i_free(1'b0),
-        .i_addr(16'b0),
-        .i_wr(1'b0),
-        .i_waddr(16'b0),
-        .i_wdata(16'b0),
-        .i_rd(reading),
-        .i_raddr(
+        .i_free(free),
+        .i_addr(
+            free
+            ? rdata_prev_prev
+            : UNDEF
+        ),
+        .i_wr(reverse),
+        .i_waddr(
             rdata_rdy
             ? rdata
             : addr
+        ),
+        .i_wdata(
+            rdata_prev_rdy
+            ? rdata_prev
+            : (
+                (addr_prev_rdy && !addr_rdy)
+                ? addr_prev
+                : NIL
+            )
+        ),
+        .i_rd(reverse || read),
+        .i_raddr(
+            read
+            ? rdata_prev
+            : (
+                reverse
+                ? (
+                    rdata_rdy
+                    ? rdata
+                    : addr
+                )
+                : UNDEF
+            )
         ),
         .o_rdata(rdata),
         .o_err(err)
     );
     always @(posedge i_clk) begin
-        if (err) begin
-            seq <= (3 << ADDR_SZ) | 2'b01; // halt with error
-        end else if (done) begin
-            seq <= (3 << ADDR_SZ) | (
-                (rdata == NIL)
-                ? 2'b10 // pass with no error
-                : 2'b00 // fail with no error
-            );
-            o_debug <= rdata;
-        end else if (allocating || reading) begin
-            // FIXME: are rdata/addr lost if i_en goes low?
-            seq <= seq + 1'b1;
+        if (i_en) begin
+            if (err) begin
+                state <= (1 << (ADDR_SZ+4)) | 2'b10; // halt with error
+            end else if (check) begin
+                state <= (1 << (ADDR_SZ+4)) | (
+                    (rdata_prev == NIL)
+                    ? 2'b01 // pass with no error
+                    : 2'b00 // fail with no error
+                );
+                o_debug <= rdata;
+            end else if (!done && !check) begin
+                // FIXME: are rdata/addr lost if i_en goes low?
+                state <= state + 1'b1;
+            end
         end
     end
 endmodule
