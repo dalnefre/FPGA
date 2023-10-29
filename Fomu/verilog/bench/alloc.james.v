@@ -99,25 +99,12 @@ module alloc #(
 
     // top of available memory
     reg [DATA_SZ-1:0] mem_top = (MUT_TAG | VLT_TAG);
-    // NOTE: extra bit for overflow check
-    wire [ADDR_SZ:0] next_top = {1'b0, mem_top[ADDR_SZ-1:0]} + 1'b1;
-    wire mem_full = next_top[ADDR_SZ];
-
-    // are we retrieving mem_next from memory?
-    reg rnext = 0;
-    // next memory cell on free-list
-    reg [DATA_SZ-1:0] mem_next = NIL;
-    wire [DATA_SZ-1:0] mem_next_curr = (
-        rnext
-        ? rdata
-        : mem_next
-    );
+    wire mem_full = mem_top[ADDR_SZ];
 
     // count of cells on free-list (always non-negative)
-    reg [ADDR_SZ-1:0] mem_free = 0;
+    reg [ADDR_SZ:0] mem_free = 0;
     // cells are available on the free-list
-    // wire free_f = mem_next_curr[14];  // check MUT_TAG;
-    wire free_f = (mem_free == 0);
+    wire free_f = (mem_free != 0);
 
     // raise the memory ceiling?
     wire raise_top = alloc_op && !free_op && !free_f;
@@ -128,6 +115,15 @@ module alloc #(
 
     // receives the data arriving on the negative clock edge
     wire [DATA_SZ-1:0] rdata;
+
+    // next memory cell on free-list
+    reg [DATA_SZ-1:0] mem_next_reg = NIL;
+    reg pop_rdy = 0;
+    wire [DATA_SZ-1:0] mem_next = (
+        pop_rdy
+        ? rdata
+        : mem_next_reg
+    );
 
     // FIXME: tighter error handling?
 
@@ -141,7 +137,7 @@ module alloc #(
                 alloc_op
                 ? (
                     free_f
-                    ? mem_next_curr[ADDR_SZ-1:0]
+                    ? mem_next[ADDR_SZ-1:0]
                     : mem_top[ADDR_SZ-1:0]
                 )
                 : i_waddr[ADDR_SZ-1:0]
@@ -152,14 +148,14 @@ module alloc #(
             ? i_data
             : (
                 free_op
-                ? mem_next_curr
+                ? mem_next
                 : i_wdata
             )
         ),
         .i_rd_en(read_op || pop_free_op),
         .i_raddr(
             pop_free_op
-            ? mem_next_curr[ADDR_SZ-1:0]
+            ? mem_next[ADDR_SZ-1:0]
             : i_raddr[ADDR_SZ-1:0]
         ),
         .o_rdata(rdata)
@@ -170,8 +166,6 @@ module alloc #(
         if (bad_op || (raise_top && mem_full)) begin
             o_err <= 1;
         end else begin
-            // erase any data read during the previous clock
-            // o_rdata <= UNDEF; // FIXME
             // register the allocated address
             o_addr <= (
                 alloc_op
@@ -180,15 +174,17 @@ module alloc #(
                     ? i_addr
                     : (
                         free_f
-                        ? mem_next_curr
+                        ? mem_next
                         : mem_top
                     )
                 )
                 : UNDEF
             );
-            // registered so that inputs need not be maintained thru the negedge
-            // FIXME: or can we rely on the input signals being stable for the whole cycle?
-            rnext <= pop_free_op;
+            // update head of free list
+            pop_rdy <= pop_free_op;
+            if (pop_rdy) begin
+                mem_next_reg <= rdata;
+            end
             // maintain free list counter
             if (pop_free_op) begin
                 mem_free <= mem_free - 1'b1;
@@ -197,11 +193,11 @@ module alloc #(
             end
             // increment memory top marker
             if (raise_top && !mem_full) begin
-                mem_top <= {mem_top[DATA_SZ-1:ADDR_SZ+1], next_top};
+                mem_top <= mem_top + 1;
             end
             // if a cell is freed, add it to the free list
             if (free_op && !alloc_op) begin
-                mem_next <= i_addr;
+                mem_next_reg <= i_addr;
             end
         end
     end

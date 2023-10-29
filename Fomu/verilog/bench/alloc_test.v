@@ -13,9 +13,34 @@ Test component for the Linked-Memory Allocator
  +->|i_clk          |
  |  +---------------+
 
-This component runs some tests on alloc.v, producing a pass or fail result.
-Activity is paused whilst i_en is low. During operation, o_running remains
+This component tests alloc.v, producing a pass or fail result.
+
+Activity is paused until i_en goes low. During operation, o_running remains
 high. Once o_running goes low, the value of o_pass indicates success or failure.
+
+The four kinds of allocator requests are tested, including ALLOCATE, FREE, READ,
+and WRITE. Simultaneous READ and WRITE requests are tested, but not ALLOCATE
+and FREE requests.
+
+Additionally, the memory is completely filled and emptied twice.
+
+Each of the two test runs has three distinct phases:
+
+ PHASE 1
+     Cells are continually allocated to form a linked list ending with NIL.
+     The number of cells allocated is 2^ADDR_SZ.
+
+ PHASE 2
+     The linked list is reversed in situ by use of simultaneous read and write
+     requests.
+
+ PHASE 3
+     The reversed list is traversed, with each cell being freed after it is
+     read. Note that phase 3 takes twice as long as either phase 1 or phase
+     2, because concurrent read and free requests are not permitted.
+
+The test fails if the allocator reports an error at any time. It succeeds
+only if the linked list was the expected length and terminated in NIL.
 
 */
 
@@ -30,7 +55,7 @@ module alloc_test (
     output                      o_passed,
     output                      o_error
 );
-    localparam ADDR_SZ = 7;//8;  // must be at least 2
+    localparam ADDR_SZ = 8;  // must be at least 2
     localparam UNDEF = 16'h0000;
     localparam NIL = 16'h0001;
 
@@ -62,8 +87,6 @@ module alloc_test (
 //      0) First run. Allocations raise the top of memory.
 //      1) Second run. Allocations are made from the free list.
 
-    wire rerun = state[ADDR_SZ+2];
-
 // state[ADDR_SZ+1]
 //      0) Build up phase. A linked list is allocated and reversed in place.
 //          state[ADDR_SZ]
@@ -84,9 +107,9 @@ module alloc_test (
 
 // state[ADDR_SZ-1:0]   (during build up)
 // state[ADDR_SZ:1]     (during tear down)
-//      A cell count, between 0 and the maximum length of the linked list. Note
-//      that the width of this vector does not change between the build up and
-//      tear down phases.
+//      Counts the cells in the linked list. Note that the location of this
+//      vector shifts one bit to the left during the tear down phase, but does
+//      not change size.
 
     reg addr_rdy = 0;
     reg addr_prev_rdy = 0;
@@ -98,33 +121,14 @@ module alloc_test (
     always @(posedge i_clk) begin
         if (i_en) begin
             addr_rdy <= allocate;
-            addr_prev_rdy <= addr_rdy;
             rdata_rdy <= read || reverse;
-            rdata_prev_rdy <= rdata_rdy;
             addr_prev <= addr;
+            addr_prev_rdy <= addr_rdy;
             rdata_prev <= rdata;
+            rdata_prev_rdy <= rdata_rdy;
             rdata_prev_prev <= rdata_prev;
         end
     end
-
-// There are 3 distinct phases for each test run:
-
-//  PHASE 1
-//      Cells are continually allocated to form a linked list ending with NIL.
-//      The number of cells allocated is 2^ADDR_SZ.
-
-//  PHASE 2
-//      The linked list is reversed in situ using simultaneous read and write
-//      operations.
-
-//  PHASE 3
-//      The reversed list is followed with each cell being freed after it is
-//      read. Note that phase 3 takes twice as long as either phase 1 or phase
-//      2, because concurrent read and free requests are not supported.
-
-// The test fails if the allocator reports an error at any time. It succeeds
-// only if the linked list was the expected length and terminated in NIL.
-
     wire        err;
     wire [15:0] addr;
     wire [15:0] rdata;
