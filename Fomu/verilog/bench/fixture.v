@@ -82,17 +82,21 @@ module alloc_test (
         .o_err(err)
     );
 
-    assign alloc = (state == 10);
+    assign alloc = ((state == 8) || (state == 10));
     assign free = (state == 20);
     assign wr_en = ((state == 2) || (state == 3));
-    assign rd_en = ((state == 4) || (state == 5));
+    assign rd_en = ((state == 4) || (state == 5) || (state == 8));
     assign waddr =
         ((state == 2) || (state == 4))
         ? (RAM_BASE | 42)
         : (
             ((state == 3) || (state == 5))
             ? (RAM_BASE | 144)
-            : UNDEF
+            : (
+                (state == 8)
+                ? (RAM_BASE | 13)
+                : UNDEF
+            )
         );
     assign wdata =
         (state == 2)
@@ -100,15 +104,17 @@ module alloc_test (
         : (
             (state == 3)
             ? (ZERO | 1337)
-            : UNDEF
+            : (
+                (state == 8)
+                ? (ZERO | 21)
+                : UNDEF
+            )
         );
 
     always @(posedge i_clk) begin
-        if (err) begin
-            o_error <= 1'b1;
-            state <= 0;
-        end else if (o_running) begin
-            state <= state + 1'b1;  // default: advance to next state
+        if (o_running) begin
+            o_error <= err;
+            state <= err ? 0 : state + 1'b1;  // default: advance to next state or fail
             case (state)
                 1: begin
                     // start state
@@ -137,9 +143,17 @@ module alloc_test (
                         state <= 0;
                     end
                 end
+                8: begin
+                    // read/alloc conflict
+                    // rdata <= ram[13];
+                    // raddr <= alloc(21);
+                end
                 9: begin
                     // successful completion
-                    o_passed <= 1'b1;
+                    if (err) begin
+                        o_passed <= 1'b1;
+                        o_error <= 1'b0;
+                    end
                     state <= 0;
                 end
             endcase

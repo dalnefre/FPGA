@@ -94,11 +94,33 @@ module alloc #(
         prev_op <= curr_op;
     end
 
+    // consolidated conditions
+    wire al_en =                // valid allocation request
+        ((curr_op == 4'b1000) && !full_f)
+        || ((curr_op == 4'b1100) && free_f);
+    wire fr_en =                // valid free request
+        (curr_op == 4'b0100)
+        || (curr_op == 4'b1100);
+    wire rd_en =                // valid read request
+        (curr_op == 4'b0010)
+        || (curr_op == 4'b0011);
+    wire wr_en =                // valid write request
+        (curr_op == 4'b0001)
+        || (curr_op == 4'b0011);
+    wire err_en =               // erroneous request
+        !((curr_op == 4'b0000)
+        || al_en || fr_en || rd_en || wr_en);
+
+    // operation caused an error (no effect)
+    initial o_err = 1'b0;
+    always @(posedge i_clk) begin
+        o_err <= err_en;
+    end
+
     assign o_addr = rdata;
     assign o_rdata = rdata;
 //    initial o_addr = UNDEF; <--- not a reg
 //    initial o_rdata = UNDEF; <--- not a reg
-    initial o_err = 1'b0;
 
     // an operation for the pointer management port
     wire ptr_op = ((i_alloc || i_free) && !(i_rd || i_wr));
@@ -113,6 +135,7 @@ module alloc #(
     reg [DATA_SZ-1:0] mem_top = (MUT_TAG | VLT_TAG);
     // next value for mem_top (NOTE: extra bit for overflow check)
     wire [ADDR_SZ:0] next_top = { 1'b0, mem_top[ADDR_SZ-1:0] } + 1'b1;
+    wire full_f = next_top[ADDR_SZ];
 
     // next memory cell on free-list
     reg [DATA_SZ-1:0] mem_next = NIL;
@@ -124,24 +147,12 @@ module alloc #(
     wire free_f = mem_next[14];  // check MUT_TAG
 
     always @(posedge i_clk) begin
-//        o_addr <= UNDEF;  // default
-//        o_rdata <= UNDEF;  // default prevents block-ram inference
-        if (o_err) begin
-            // halt in error state...
-        end else if (mem_op) begin
-            if (i_rd) begin
-//                o_rdata <= rdata;  // previously read memory
-            end
-        end else if (ptr_op) begin
+        if (ptr_op) begin
             if (i_alloc && i_free) begin  // assign passed-thru memory
 //                o_addr <= i_addr;
             end else if (i_alloc && !free_f) begin  // assign expanded memory
 //                o_addr <= mem_top;
-                if (next_top[ADDR_SZ]) begin  // overflow check
-                    o_err <= 1'b1;  // out-of-memory condition!
-                end else begin
-                    mem_top <= { mem_top[DATA_SZ-1:ADDR_SZ+1], next_top };
-                end
+                mem_top <= { mem_top[DATA_SZ-1:ADDR_SZ+1], next_top };
             end else if (i_alloc && free_f) begin  // assign free-list memory
 //                o_addr <= mem_next;
                 mem_next <= rdata;  // previously read memory
@@ -150,15 +161,9 @@ module alloc #(
                 mem_next <= i_addr;
                 mem_free <= mem_free + 1'b1;
             end
-        end else if (no_op) begin
-            // nothing to do...
-        end else begin
-            // conflicting requests
-            o_err <= 1'b1;
         end
     end
 
-    wire wr_en = !o_err && ((mem_op && i_wr) || ptr_op);
     wire [7:0] waddr = (
         mem_op
         ? i_waddr[ADDR_SZ-1:0]
@@ -181,7 +186,6 @@ module alloc #(
             : i_data
         )
     );
-    wire rd_en = !o_err && ((mem_op && i_rd) || (ptr_op && free_f));
     wire [7:0] raddr = (
         mem_op
         ? i_raddr[ADDR_SZ-1:0]
