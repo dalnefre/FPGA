@@ -51,66 +51,105 @@ module alloc_test (
     initial state = 1;
 
     // inputs
-    wire alloc;
-    wire free;
+    wire al_en;
+    wire [15:0] adata;
+    wire fr_en;
+    wire [15:0] faddr;
     wire wr_en;
     wire [15:0] waddr;
     wire [15:0] wdata;
     wire rd_en;
-    // outputs
     wire [15:0] raddr;
+    // outputs
+    wire [15:0] aaddr;
     wire [15:0] rdata;
     wire err;
     alloc ALLOC (
         .i_clk(i_clk),
 
-        .i_alloc(alloc),
-        .i_data(wdata),
-        .o_addr(raddr),
+        .i_alloc(al_en),
+        .i_data(adata),
+        .o_addr(aaddr),
 
-        .i_free(free),
-        .i_addr(waddr),
+        .i_free(fr_en),
+        .i_addr(faddr),
 
         .i_wr(wr_en),
         .i_waddr(waddr),
         .i_wdata(wdata),
 
         .i_rd(rd_en),
-        .i_raddr(waddr),
+        .i_raddr(raddr),
         .o_rdata(rdata),
 
         .o_err(err)
     );
 
-    assign alloc = ((state == 8)
+    assign al_en = ((state == 8)
         || (state == 10) || (state == 11) || (state == 12)
         || (state == 17) || (state == 18) || (state == 19));
-    assign free = ((state == 15) || (state == 16) || (state == 18));
-    assign wr_en = ((state == 2) || (state == 3));
-    assign rd_en = ((state == 4) || (state == 5) || (state == 8));
-    assign waddr =
-        ((state == 2) || (state == 4))
-        ? (BASE | 42)
+    assign adata =
+        (state == 8)
+        ? (ZERO | 21)
         : (
-            ((state == 3) || (state == 5))
-            ? (BASE | 144)
+            (state == 10)
+            ? (ZERO | 256)
             : (
-                (state == 8)
-                ? (BASE | 13)
+                (state == 11)
+                ? (ZERO | 257)
                 : (
-                    (state == 15)
-                    ? (BASE | 2)
+                    (state == 12)
+                    ? (ZERO | 258)
                     : (
-                        (state == 16)
-                        ? (BASE | 1)
+                        (state == 17)
+                        ? (ZERO | 259)
                         : (
                             (state == 18)
-                            ? (BASE | 0)
-                            : UNDEF
+                            ? (ZERO | 260)
+                            : (
+                                (state == 19)
+                                ? (ZERO | 261)
+                                : UNDEF
+                            )
                         )
                     )
                 )
             )
+        );
+    assign fr_en = ((state == 15) || (state == 16) || (state == 18));
+    assign faddr =
+        (state == 15)
+        ? (BASE | 2)
+        : (
+            (state == 16)
+            ? (BASE | 1)
+            : (
+                (state == 18)
+                ? (BASE | 0)
+                : UNDEF
+            )
+        );
+    assign rd_en = ((state == 4) || (state == 5) || (state == 8));
+    assign raddr =
+        (state == 4)
+        ? (BASE | 42)
+        : (
+            (state == 5)
+            ? (BASE | 144)
+            : (
+                (state == 8)
+                ? (BASE | 13)
+                : UNDEF
+            )
+        );
+    assign wr_en = ((state == 2) || (state == 3));
+    assign waddr =
+        (state == 2)
+        ? (BASE | 42)
+        : (
+            (state == 3)
+            ? (BASE | 144)
+            : UNDEF
         );
     assign wdata =
         (state == 2)
@@ -118,35 +157,7 @@ module alloc_test (
         : (
             (state == 3)
             ? (ZERO | 1337)
-            : (
-                (state == 8)
-                ? (ZERO | 21)
-                : (
-                    (state == 10)
-                    ? (ZERO | 256)
-                    : (
-                        (state == 11)
-                        ? (ZERO | 257)
-                        : (
-                            (state == 12)
-                            ? (ZERO | 258)
-                            : (
-                                (state == 17)
-                                ? (ZERO | 259)
-                                : (
-                                    (state == 18)
-                                    ? (ZERO | 260)
-                                    : (
-                                        (state == 19)
-                                        ? (ZERO | 261)
-                                        : UNDEF
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
+            : UNDEF
         );
 
     always @(posedge i_clk) begin
@@ -184,7 +195,7 @@ module alloc_test (
                 8: begin
                     // read/alloc conflict
                     // rdata <= ram[13];
-                    // raddr <= alloc(21);
+                    // aaddr <= alloc(21);
                 end
                 9: begin
                     // assert(err)
@@ -196,28 +207,28 @@ module alloc_test (
                     end
                 end
                 10: begin
-                    // raddr <= alloc(256);
+                    // aaddr <= alloc(256);
                 end
                 11: begin
-                    // assert(raddr == ^5..0)
-                    if (raddr != (BASE | 0)) begin
-                        o_debug <= raddr;
+                    // assert(aaddr == ^5..0)
+                    if (aaddr != (BASE | 0)) begin
+                        o_debug <= aaddr;
                         state <= 0;
                     end
-                    // raddr <= alloc(257);
+                    // aaddr <= alloc(257);
                 end
                 12: begin
-                    // assert(raddr == ^5..1)
-                    if (raddr != (BASE | 1)) begin
-                        o_debug <= raddr;
+                    // assert(aaddr == ^5..1)
+                    if (aaddr != (BASE | 1)) begin
+                        o_debug <= aaddr;
                         state <= 0;
                     end
-                    // raddr <= alloc(258);
+                    // aaddr <= alloc(258);
                 end
                 13: begin
-                    // assert(raddr == ^5..2)
-                    if (raddr != (BASE | 2)) begin
-                        o_debug <= raddr;
+                    // assert(aaddr == ^5..2)
+                    if (aaddr != (BASE | 2)) begin
+                        o_debug <= aaddr;
                         state <= 0;
                     end
                 end
@@ -228,29 +239,29 @@ module alloc_test (
                     // free(^5..1);
                 end
                 17: begin
-                    // raddr <= alloc(259);
+                    // aaddr <= alloc(259);
                 end
                 18: begin
-                    // assert(raddr == ^5..1)
-                    if (raddr != (BASE | 1)) begin
-                        o_debug <= raddr;
+                    // assert(aaddr == ^5..1)
+                    if (aaddr != (BASE | 1)) begin
+                        o_debug <= aaddr;
                         state <= 0;
                     end
                     // free(^5..0);
-                    // raddr <= alloc(260);
+                    // aaddr <= alloc(260);
                 end
                 19: begin
-                    // assert(raddr == ^5..0)
-                    if (raddr != (BASE | 0)) begin
-                        o_debug <= raddr;
+                    // assert(aaddr == ^5..0)
+                    if (aaddr != (BASE | 0)) begin
+                        o_debug <= aaddr;
                         state <= 0;
                     end
-                    // raddr <= alloc(261);
+                    // aaddr <= alloc(261);
                 end
                 20: begin
-                    // assert(raddr == ^5..2)
-                    if (raddr != (BASE | 2)) begin
-                        o_debug <= raddr;
+                    // assert(aaddr == ^5..2)
+                    if (aaddr != (BASE | 2)) begin
+                        o_debug <= aaddr;
                         state <= 0;
                     end
                 end
