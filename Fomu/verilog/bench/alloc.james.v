@@ -113,7 +113,7 @@ module alloc #(
     wire pop_free_op = alloc_op && !free_op && free_f;
     wire push_free_op = free_op && !alloc_op;
 
-    // receives the data arriving on the negative clock edge
+    // the data read from BRAM
     wire [DATA_SZ-1:0] rdata;
 
     // next memory cell on free-list
@@ -124,8 +124,6 @@ module alloc #(
         ? rdata
         : mem_next_reg
     );
-
-    // FIXME: tighter error handling?
 
     bram BRAM (
         .i_clk(i_clk),
@@ -180,24 +178,23 @@ module alloc #(
                 )
                 : UNDEF
             );
-            // update head of free list
-            pop_rdy <= pop_free_op;
+            // increment memory top marker
+            if (raise_top && !mem_full) begin
+                mem_top <= mem_top + 1;
+            end
+            // maintain the free list
             if (pop_rdy) begin
-                mem_next_reg <= rdata;
+                mem_next_reg <= rdata; // pop
+            end
+            pop_rdy <= pop_free_op;
+            if (push_free_op) begin
+                mem_next_reg <= i_addr; // push
             end
             // maintain free list counter
             if (pop_free_op) begin
                 mem_free <= mem_free - 1'b1;
             end else if (push_free_op) begin
                 mem_free <= mem_free + 1'b1;
-            end
-            // increment memory top marker
-            if (raise_top && !mem_full) begin
-                mem_top <= mem_top + 1;
-            end
-            // if a cell is freed, add it to the free list
-            if (free_op && !alloc_op) begin
-                mem_next_reg <= i_addr;
             end
         end
     end
