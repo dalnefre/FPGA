@@ -98,8 +98,9 @@ module alloc #(
     wire free_op = i_free && !mem_op;
 
     // top of available memory
-    reg [DATA_SZ-1:0] mem_top = (MUT_TAG | VLT_TAG);
-    wire mem_full = mem_top[ADDR_SZ];
+    reg [DATA_SZ-1:0] mem_top = (MUT_TAG | VLT_TAG) | (MEM_MAX - 2);  // start nearly full...
+    // no more memory available (hard limit)
+    wire full_f = mem_top[ADDR_SZ];
 
     // count of cells on free-list (always non-negative)
     reg [ADDR_SZ:0] mem_free = 0;
@@ -161,8 +162,9 @@ module alloc #(
 
     always @(posedge i_clk) begin
         // check for error conditions
-        if (bad_op || (raise_top && mem_full)) begin
+        if (bad_op || (raise_top && full_f)) begin
             o_err <= 1;
+            o_addr <= UNDEF;
         end else begin
             o_err <= 0;  // strobe, not sticky...
             // register the allocated address
@@ -180,7 +182,7 @@ module alloc #(
                 : UNDEF
             );
             // increment memory top marker
-            if (raise_top && !mem_full) begin
+            if (raise_top) begin
                 mem_top <= mem_top + 1;
             end
             // maintain the free list

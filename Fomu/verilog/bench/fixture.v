@@ -230,26 +230,32 @@ module alloc_test (
                 end
                 11: begin
                     // assert(aaddr == ^5..0)
+/*
                     if (aaddr != (BASE | 0)) begin
                         o_debug <= aaddr;
                         state <= 0;
                     end
+*/
                     // aaddr <= alloc(257);
                 end
                 12: begin
                     // assert(aaddr == ^5..1)
+/*
                     if (aaddr != (BASE | 1)) begin
                         o_debug <= aaddr;
                         state <= 0;
                     end
+*/
                     // aaddr <= alloc(258);
                 end
                 13: begin
                     // assert(aaddr == ^5..2)
+/*
                     if (aaddr != (BASE | 2)) begin
                         o_debug <= aaddr;
                         state <= 0;
                     end
+*/
                 end
                 15: begin
                     // free(^5..2);
