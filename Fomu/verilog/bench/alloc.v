@@ -55,7 +55,7 @@ module alloc #(
 
     input                       i_alloc,                        // allocation request
     input         [DATA_SZ-1:0] i_data,                         // initial data
-    output        [DATA_SZ-1:0] o_addr,                         // allocated address
+    output reg    [DATA_SZ-1:0] o_addr,                         // allocated address
 
     input                       i_free,                         // free request
     input         [DATA_SZ-1:0] i_addr,                         // free address
@@ -96,8 +96,8 @@ module alloc #(
 
     // consolidated conditions
     wire al_en =                // valid allocation request
-        ((curr_op == 4'b1000) && !full_f)
-        || ((curr_op == 4'b1100) && free_f);
+        ((curr_op == 4'b1000) && (free_f || !full_f))
+        || (curr_op == 4'b1100);
     wire fr_en =                // valid free request
         (curr_op == 4'b0100)
         || (curr_op == 4'b1100);
@@ -117,10 +117,9 @@ module alloc #(
         o_err <= err_en;
     end
 
-    assign o_addr = rdata;
+    initial o_addr = UNDEF;
+//    initial o_rdata = UNDEF; <--- not a register
     assign o_rdata = rdata;
-//    initial o_addr = UNDEF; <--- not a reg
-//    initial o_rdata = UNDEF; <--- not a reg
 
     // an operation for the pointer management port
     wire ptr_op = ((i_alloc || i_free) && !(i_rd || i_wr));
@@ -149,13 +148,13 @@ module alloc #(
     always @(posedge i_clk) begin
         if (ptr_op) begin
             if (i_alloc && i_free) begin  // assign passed-thru memory
-//                o_addr <= i_addr;
+                o_addr <= i_addr;
             end else if (i_alloc && !free_f) begin  // assign expanded memory
-//                o_addr <= mem_top;
+                o_addr <= mem_top;
                 mem_top <= { mem_top[DATA_SZ-1:ADDR_SZ+1], next_top };
             end else if (i_alloc && free_f) begin  // assign free-list memory
-//                o_addr <= mem_next;
-                mem_next <= rdata;  // previously read memory
+                o_addr <= mem_next;
+                mem_next <= o_rdata;  // previously read memory
                 mem_free <= mem_free - 1'b1;
             end else if (i_free) begin  // link free'd memory into free-list
                 mem_next <= i_addr;
@@ -193,6 +192,7 @@ module alloc #(
     );
 
     // instantiate bram
+    wire [15:0] rdata;
     bram BRAM (
         .i_clk(i_clk),
         .i_wr_en(wr_en),
@@ -202,6 +202,5 @@ module alloc #(
         .i_raddr(raddr),
         .o_rdata(rdata)
     );
-    wire [15:0] rdata;
 
 endmodule

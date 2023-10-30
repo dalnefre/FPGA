@@ -39,7 +39,7 @@ module alloc_test (
     localparam FALSE            = 16'h0003;                     // boolean false
     localparam UNIT             = 16'h0004;                     // inert result
     localparam ZERO             = 16'h8000;                     // fixnum +0
-    localparam RAM_BASE         = 16'h5000;                     // offset 0 into RAM
+    localparam BASE             = 16'h5000;                     // offset 0 into RAM
 
     assign o_running = i_en && (state != 0);
 
@@ -82,20 +82,34 @@ module alloc_test (
         .o_err(err)
     );
 
-    assign alloc = ((state == 8) || (state == 10));
-    assign free = (state == 20);
+    assign alloc = ((state == 8)
+        || (state == 10) || (state == 11) || (state == 12)
+        || (state == 17) || (state == 18) || (state == 19));
+    assign free = ((state == 15) || (state == 16) || (state == 18));
     assign wr_en = ((state == 2) || (state == 3));
     assign rd_en = ((state == 4) || (state == 5) || (state == 8));
     assign waddr =
         ((state == 2) || (state == 4))
-        ? (RAM_BASE | 42)
+        ? (BASE | 42)
         : (
             ((state == 3) || (state == 5))
-            ? (RAM_BASE | 144)
+            ? (BASE | 144)
             : (
                 (state == 8)
-                ? (RAM_BASE | 13)
-                : UNDEF
+                ? (BASE | 13)
+                : (
+                    (state == 15)
+                    ? (BASE | 2)
+                    : (
+                        (state == 16)
+                        ? (BASE | 1)
+                        : (
+                            (state == 18)
+                            ? (BASE | 0)
+                            : UNDEF
+                        )
+                    )
+                )
             )
         );
     assign wdata =
@@ -107,7 +121,31 @@ module alloc_test (
             : (
                 (state == 8)
                 ? (ZERO | 21)
-                : UNDEF
+                : (
+                    (state == 10)
+                    ? (ZERO | 256)
+                    : (
+                        (state == 11)
+                        ? (ZERO | 257)
+                        : (
+                            (state == 12)
+                            ? (ZERO | 258)
+                            : (
+                                (state == 17)
+                                ? (ZERO | 259)
+                                : (
+                                    (state == 18)
+                                    ? (ZERO | 260)
+                                    : (
+                                        (state == 19)
+                                        ? (ZERO | 261)
+                                        : UNDEF
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
 
@@ -149,11 +187,76 @@ module alloc_test (
                     // raddr <= alloc(21);
                 end
                 9: begin
-                    // successful completion
+                    // assert(err)
                     if (err) begin
-                        o_passed <= 1'b1;
                         o_error <= 1'b0;
+                        state <= 10;
+                    end else begin
+                        state <= 0;
                     end
+                end
+                10: begin
+                    // raddr <= alloc(256);
+                end
+                11: begin
+                    // assert(raddr == ^5..0)
+                    if (raddr != (BASE | 0)) begin
+                        o_debug <= raddr;
+                        state <= 0;
+                    end
+                    // raddr <= alloc(257);
+                end
+                12: begin
+                    // assert(raddr == ^5..1)
+                    if (raddr != (BASE | 1)) begin
+                        o_debug <= raddr;
+                        state <= 0;
+                    end
+                    // raddr <= alloc(258);
+                end
+                13: begin
+                    // assert(raddr == ^5..2)
+                    if (raddr != (BASE | 2)) begin
+                        o_debug <= raddr;
+                        state <= 0;
+                    end
+                end
+                15: begin
+                    // free(^5..2);
+                end
+                16: begin
+                    // free(^5..1);
+                end
+                17: begin
+                    // raddr <= alloc(259);
+                end
+                18: begin
+                    // assert(raddr == ^5..1)
+                    if (raddr != (BASE | 1)) begin
+                        o_debug <= raddr;
+                        state <= 0;
+                    end
+                    // free(^5..0);
+                    // raddr <= alloc(260);
+                end
+                19: begin
+                    // assert(raddr == ^5..0)
+                    if (raddr != (BASE | 0)) begin
+                        o_debug <= raddr;
+                        state <= 0;
+                    end
+                    // raddr <= alloc(261);
+                end
+                20: begin
+                    // assert(raddr == ^5..2)
+                    if (raddr != (BASE | 2)) begin
+                        o_debug <= raddr;
+                        state <= 0;
+                    end
+                end
+                25: begin
+                    // successful completion
+                    o_passed <= 1'b1;
                     state <= 0;
                 end
             endcase
