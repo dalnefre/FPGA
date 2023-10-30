@@ -65,6 +65,7 @@ if the traversed linked list was the expected length and terminated in NIL.
 */
 
 `default_nettype none
+
 `include "alloc.james.v"
 
 module alloc_test (

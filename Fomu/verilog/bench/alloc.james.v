@@ -164,6 +164,7 @@ module alloc #(
         if (bad_op || (raise_top && mem_full)) begin
             o_err <= 1;
         end else begin
+            o_err <= 0;  // strobe, not sticky...
             // register the allocated address
             o_addr <= (
                 alloc_op

@@ -22,7 +22,8 @@ If the allocator signals o_err, then o_error is held high (sticky).
 
 `default_nettype none
 
-`include "alloc.v"
+//`include "alloc.v"
+`include "alloc.james.v"
 
 module alloc_test (
     input                       i_clk,                          // system clock
@@ -129,9 +130,9 @@ module alloc_test (
                 : UNDEF
             )
         );
-    assign rd_en = ((state == 4) || (state == 5) || (state == 8));
+    assign rd_en = ((state == 4) || (state == 5) || (state == 7) || (state == 8));
     assign raddr =
-        (state == 4)
+        ((state == 4) || (state == 7))
         ? (BASE | 42)
         : (
             (state == 5)
@@ -142,14 +143,18 @@ module alloc_test (
                 : UNDEF
             )
         );
-    assign wr_en = ((state == 2) || (state == 3));
+    assign wr_en = ((state == 2) || (state == 3) || (state == 7));
     assign waddr =
         (state == 2)
         ? (BASE | 42)
         : (
             (state == 3)
             ? (BASE | 144)
-            : UNDEF
+            : (
+                (state == 7)
+                ? (BASE | 34)
+                : UNDEF
+            )
         );
     assign wdata =
         (state == 2)
@@ -157,7 +162,11 @@ module alloc_test (
         : (
             (state == 3)
             ? (ZERO | 1337)
-            : UNDEF
+            : (
+                (state == 7)
+                ? (ZERO | 55)
+                : UNDEF
+            )
         );
 
     always @(posedge i_clk) begin
@@ -192,7 +201,17 @@ module alloc_test (
                         state <= 0;
                     end
                 end
+                7: begin
+                    // simultaneous read/write
+                    // rdata <= ram[42];
+                    // ram[34] <= 55
+                end
                 8: begin
+                    // assert(rdata == 420)
+                    if (rdata != (ZERO | 420)) begin
+                        o_debug <= rdata;
+                        state <= 0;
+                    end
                     // read/alloc conflict
                     // rdata <= ram[13];
                     // aaddr <= alloc(21);

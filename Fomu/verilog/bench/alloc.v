@@ -146,6 +146,7 @@ module alloc #(
     wire free_f = mem_next[14];  // check MUT_TAG
 
     always @(posedge i_clk) begin
+        o_addr <= UNDEF;  // default
         if (ptr_op) begin
             if (i_alloc && i_free) begin  // assign passed-thru memory
                 o_addr <= i_addr;
