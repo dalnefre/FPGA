@@ -98,7 +98,7 @@ module alloc #(
     wire free_op = i_free && !mem_op;
 
     // top of available memory
-    reg [DATA_SZ-1:0] mem_top = (MUT_TAG | VLT_TAG) | (MEM_MAX - 2);  // start nearly full...
+    reg [DATA_SZ-1:0] mem_top = (MUT_TAG | VLT_TAG);
     // no more memory available (hard limit)
     wire full_f = mem_top[ADDR_SZ];
 
