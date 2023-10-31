@@ -84,10 +84,7 @@ module alloc_test (
     output                      o_error
 );
 `ifdef ALLOC_TEST_MUX
-    localparam SUB_ADDR_SZ = 8; // must be at least 1
-    localparam BLK_ADDR_SZ = 3; // must be at least 1
-    localparam NR_BLKS = 1<<BLK_ADDR_SZ;
-    localparam ADDR_SZ = SUB_ADDR_SZ + BLK_ADDR_SZ;
+    localparam ADDR_SZ = 12;  // must be at least 2
 `else
     localparam ADDR_SZ = 8;  // must be at least 2
 `endif
@@ -164,12 +161,10 @@ module alloc_test (
     wire [15:0] rdata;
 `ifdef ALLOC_TEST_MUX
     alloc_mux #(
-        .SUB_ADDR_SZ(SUB_ADDR_SZ),
-        .NR_BLKS(NR_BLKS)
 `else
     alloc #(
-        .ADDR_SZ(ADDR_SZ)
 `endif
+        .ADDR_SZ(ADDR_SZ)
     ) ALLOC (
         .i_clk(i_clk),
         .i_al(allocate),

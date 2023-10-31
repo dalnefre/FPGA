@@ -14,8 +14,7 @@ is implied by the NR_BLKS parameter.
 `include "alloc.james.v"
 
 module alloc_mux #(
-    parameter NR_BLKS = 1,                          // number of memory blocks to use (max 8)
-    parameter SUB_ADDR_SZ = 8                       // address size of cells within each block
+    parameter ADDR_SZ = 9                           // number of bits per address (max 12)
 ) (
     input                           i_clk,          // domain clock
 
@@ -37,13 +36,15 @@ module alloc_mux #(
 
     output                          o_err           // error condition
 );
-    localparam BLK_ADDR_SZ = $clog2(NR_BLKS);       // address size of blocks
-    localparam ADDR_SZ = BLK_ADDR_SZ + SUB_ADDR_SZ; // address size of cells across all blocks
+    localparam SUB_ADDR_SZ = 8;                     // address size within each block
+    localparam BLK_ADDR_SZ = ADDR_SZ - SUB_ADDR_SZ; // address size of blocks themselves
+    localparam NR_BLKS = 1<<BLK_ADDR_SZ;            // number of memory blocks to use
     localparam DATA_SZ = 16;                        // cell size
 
 // Collect the allocators' single-bit outputs into vectors.
 
     wire [NR_BLKS-1:0] err;
+    assign o_err = |err;
     wire [NR_BLKS-1:0] full;
     // assign o_full = &full; // FIXME: is this faster than using alloc_blk_nr?
 
@@ -59,6 +60,14 @@ module alloc_mux #(
         (NR_BLKS > 5 && !full[5]) ? 5 :
         (NR_BLKS > 6 && !full[6]) ? 6 :
         (NR_BLKS > 7 && !full[7]) ? 7 :
+        (NR_BLKS > 8 && !full[8]) ? 8 :
+        (NR_BLKS > 9 && !full[9]) ? 9 :
+        (NR_BLKS > 10 && !full[10]) ? 10 :
+        (NR_BLKS > 11 && !full[11]) ? 11 :
+        (NR_BLKS > 12 && !full[12]) ? 12 :
+        (NR_BLKS > 13 && !full[13]) ? 13 :
+        (NR_BLKS > 14 && !full[14]) ? 14 :
+        (NR_BLKS > 15 && !full[15]) ? 15 :
         NR_BLKS
     );
     assign o_full = alloc_blk_nr[BLK_ADDR_SZ];
@@ -68,23 +77,6 @@ module alloc_mux #(
     wire [BLK_ADDR_SZ-1:0] free_blk_nr = i_addr[ADDR_SZ-1:SUB_ADDR_SZ];
     wire [BLK_ADDR_SZ-1:0] wr_blk_nr = i_waddr[ADDR_SZ-1:SUB_ADDR_SZ];
     wire [BLK_ADDR_SZ-1:0] rd_blk_nr = i_raddr[ADDR_SZ-1:SUB_ADDR_SZ];
-
-// The error strobe. In addition to errors reported by the allocators, there is
-// also the possibility that the provided address designates a non-existant
-// block.
-
-    // FIXME: is this comparison slow? If we forced NR_BLKS to be a power of
-    // 2, we would never have to check.
-    wire range_err = (
-        (i_free && (free_blk_nr >= NR_BLKS))
-        || (i_wr && (wr_blk_nr >= NR_BLKS))
-        || (i_rd && (rd_blk_nr >= NR_BLKS))
-    );
-    reg r_range_err = 0;
-    always @(posedge i_clk) begin
-        r_range_err <= range_err;
-    end
-    assign o_err = |err || r_range_err;
 
 // Construct the allocated address, incorporating into it the block number.
 
