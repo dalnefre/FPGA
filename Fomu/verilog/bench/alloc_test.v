@@ -66,7 +66,14 @@ if the traversed linked list was the expected length and terminated in NIL.
 
 `default_nettype none
 
+// `define ALLOC_TEST_MUX
+
+`ifdef ALLOC_TEST_MUX
+`include "alloc_mux.v"
+`else
 `include "alloc.james.v"
+// `include "alloc.v"
+`endif
 
 module alloc_test (
     input                       i_clk,                          // system clock
@@ -76,7 +83,14 @@ module alloc_test (
     output                      o_passed,
     output                      o_error
 );
+`ifdef ALLOC_TEST_MUX
+    localparam SUB_ADDR_SZ = 8; // must be at least 1
+    localparam BLK_ADDR_SZ = 3; // must be at least 1
+    localparam NR_BLKS = 1<<BLK_ADDR_SZ;
+    localparam ADDR_SZ = SUB_ADDR_SZ + BLK_ADDR_SZ;
+`else
     localparam ADDR_SZ = 8;  // must be at least 2
+`endif
     localparam UNDEF = 16'h0000;
     localparam NIL = 16'h0001;
 
@@ -148,8 +162,14 @@ module alloc_test (
     wire        err;
     wire [15:0] addr;
     wire [15:0] rdata;
+`ifdef ALLOC_TEST_MUX
+    alloc_mux #(
+        .SUB_ADDR_SZ(SUB_ADDR_SZ),
+        .NR_BLKS(NR_BLKS)
+`else
     alloc #(
-        .ADDR_SZ(8)
+        .ADDR_SZ(ADDR_SZ)
+`endif
     ) ALLOC (
         .i_clk(i_clk),
         .i_al(allocate),
