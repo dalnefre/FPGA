@@ -111,20 +111,21 @@ module alloc #(
     wire raise_top = alloc_op && !free_op && !free_f;
 
     // whether a cell is being pushed onto or popped from the free list
-    wire pop_free_op = alloc_op && !free_op && free_f;
-    wire push_free_op = free_op && !alloc_op;
+    wire pop_free = alloc_op && !free_op && free_f;
+    wire push_free = free_op && !alloc_op;
 
     // the data read from BRAM
     wire [DATA_SZ-1:0] rdata;
 
     // next memory cell on free-list
-    reg [DATA_SZ-1:0] mem_next_reg = NIL;
-    reg pop_rdy = 0;
+    reg [DATA_SZ-1:0] r_mem_next = NIL;
     wire [DATA_SZ-1:0] mem_next = (
-        pop_rdy
+        r_pop_freed
         ? rdata
-        : mem_next_reg
+        : r_mem_next
     );
+    // previous operation was pop_free
+    reg r_pop_freed = 1'b0;
 
     bram BRAM (
         .i_clk(i_clk),
@@ -151,9 +152,9 @@ module alloc #(
                 : i_wdata
             )
         ),
-        .i_rd_en(read_op || pop_free_op),
+        .i_rd_en(read_op || pop_free),
         .i_raddr(
-            pop_free_op
+            pop_free
             ? mem_next[ADDR_SZ-1:0]
             : i_raddr[ADDR_SZ-1:0]
         ),
@@ -186,17 +187,17 @@ module alloc #(
                 mem_top <= mem_top + 1;
             end
             // maintain the free list
-            if (pop_rdy) begin
-                mem_next_reg <= rdata; // pop
+            if (r_pop_freed) begin
+                r_mem_next <= rdata; // pop
             end
-            pop_rdy <= pop_free_op;
-            if (push_free_op) begin
-                mem_next_reg <= i_addr; // push
+            r_pop_freed <= pop_free;
+            if (push_free) begin
+                r_mem_next <= i_addr; // push
             end
             // maintain free list counter
-            if (pop_free_op) begin
+            if (pop_free) begin
                 mem_free <= mem_free - 1'b1;
-            end else if (push_free_op) begin
+            end else if (push_free) begin
                 mem_free <= mem_free + 1'b1;
             end
         end
