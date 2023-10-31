@@ -56,6 +56,7 @@ module alloc #(
     input                       i_al,                           // allocation request
     input         [DATA_SZ-1:0] i_adata,                        // initial data
     output reg    [DATA_SZ-1:0] o_aaddr,                        // allocated address
+    output                      o_full,                         // space exhausted
 
     input                       i_fr,                           // free request
     input         [DATA_SZ-1:0] i_faddr,                        // free address
@@ -102,10 +103,11 @@ module alloc #(
     // no more memory available (hard limit)
     wire full_f = mem_top[ADDR_SZ];
 
-    // count of cells on free-list (always non-negative)
-    reg [ADDR_SZ:0] mem_free = 0;
+    // count of cells on free-list (negative if empty)
+    reg [ADDR_SZ:0] mem_free = -1;
     // cells are available on the free-list
-    wire free_f = (mem_free != 0);
+    wire free_f = !mem_free[ADDR_SZ];
+    assign o_full = full_f && !free_f;
 
     // raise the memory ceiling?
     wire raise_top = alloc_op && !free_op && !free_f;
