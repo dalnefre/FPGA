@@ -152,15 +152,15 @@ module alloc_test (
         .ADDR_SZ(8)
     ) ALLOC (
         .i_clk(i_clk),
-        .i_alloc(allocate),
-        .i_data(
+        .i_al(allocate),
+        .i_adata(
             addr_rdy
             ? addr
             : NIL
         ),
-        .o_addr(addr),
-        .i_free(free),
-        .i_addr(
+        .o_aaddr(addr),
+        .i_fr(free),
+        .i_faddr(
             free
             ? rdata_prev_prev
             : UNDEF

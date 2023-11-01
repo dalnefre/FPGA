@@ -96,7 +96,7 @@ module alloc_test (
         al_mem[5] = {1'b0, UNDEF};
         al_mem[6] = {1'b0, UNDEF};
         al_mem[7] = {1'b0, UNDEF};
-        al_mem[8] = {1'b1, (ZERO | 16'd21)};
+        al_mem[8] = {1'b0, UNDEF};
         al_mem[9] = {1'b0, UNDEF};
         al_mem[10] = {1'b1, (ZERO | 16'd256)};
         al_mem[11] = {1'b1, (ZERO | 16'd257)};
@@ -172,7 +172,7 @@ module alloc_test (
         rd_mem[5] = {1'b1, (BASE | 16'd144)};
         rd_mem[6] = {1'b0, UNDEF};
         rd_mem[7] = {1'b1, (BASE | 16'd42)};
-        rd_mem[8] = {1'b1, (BASE | 16'd13)};
+        rd_mem[8] = {1'b1, (BASE | 16'd144)};
         rd_mem[9] = {1'b0, UNDEF};
         rd_mem[10] = {1'b0, UNDEF};
         rd_mem[11] = {1'b0, UNDEF};
@@ -210,7 +210,7 @@ module alloc_test (
         wr_mem[5] = {1'b0, UNDEF, UNDEF};
         wr_mem[6] = {1'b0, UNDEF, UNDEF};
         wr_mem[7] = {1'b1, (BASE | 16'd34), (ZERO | 16'd55)};
-        wr_mem[8] = {1'b0, UNDEF, UNDEF};
+        wr_mem[8] = {1'b1, (BASE | 16'd144), (ZERO | 16'd360)};
         wr_mem[9] = {1'b0, UNDEF, UNDEF};
         wr_mem[10] = {1'b0, UNDEF, UNDEF};
         wr_mem[11] = {1'b0, UNDEF, UNDEF};
@@ -283,18 +283,14 @@ module alloc_test (
                         state <= 0;
                     end
                     // read/alloc conflict
-                    // rdata <= ram[13];
-                    // aaddr <= alloc(21);
+                    // rdata <= ram[144];
+                    // ram[144] <= 360;
                 end
                 9: begin
-                    // assert(err)
-                    if (err) begin
-                        o_error <= 1'b0;
-                        state <= 10;
-/*
-                    end else begin
+                    // assert(rdata == 1337)
+                    if (rdata != (ZERO | 1337)) begin
+                        o_debug <= rdata;
                         state <= 0;
-*/
                     end
                 end
                 10: begin
@@ -313,6 +309,10 @@ module alloc_test (
                     if (aaddr != (BASE | 1)) begin
                         o_debug <= aaddr;
                         state <= 0;
+/*
+                    end else begin
+                        state <= 22;  // SKIP TO THE END...
+*/
                     end
                     // aaddr <= alloc(258);
                 end
