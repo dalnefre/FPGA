@@ -22,8 +22,8 @@ If the allocator signals o_err, then o_error is held high (sticky).
 
 `default_nettype none
 
-//`include "alloc.v"
-`include "alloc.james.v"
+`include "alloc.v"
+//`include "alloc.james.v"
 
 module alloc_test (
     input                       i_clk,                          // system clock
@@ -48,7 +48,7 @@ module alloc_test (
     initial o_passed = 1'b0;
     initial o_error = 1'b0;
 
-    reg [7:0] state;  // 8-bit state-machine
+    reg [4:0] state;  // 5-bit state-machine
     initial state = 1;
 
     // inputs
@@ -86,88 +86,158 @@ module alloc_test (
         .o_err(err)
     );
 
-    assign al_en = ((state == 8)
-        || (state == 10) || (state == 11) || (state == 12)
-        || (state == 17) || (state == 18) || (state == 19));
-    assign adata =
-        (state == 8)
-        ? (ZERO | 21)
-        : (
-            (state == 10)
-            ? (ZERO | 256)
-            : (
-                (state == 11)
-                ? (ZERO | 257)
-                : (
-                    (state == 12)
-                    ? (ZERO | 258)
-                    : (
-                        (state == 17)
-                        ? (ZERO | 259)
-                        : (
-                            (state == 18)
-                            ? (ZERO | 260)
-                            : (
-                                (state == 19)
-                                ? (ZERO | 261)
-                                : UNDEF
-                            )
-                        )
-                    )
-                )
-            )
-        );
-    assign fr_en = ((state == 15) || (state == 16) || (state == 18));
-    assign faddr =
-        (state == 15)
-        ? (BASE | 2)
-        : (
-            (state == 16)
-            ? (BASE | 1)
-            : (
-                (state == 18)
-                ? (BASE | 0)
-                : UNDEF
-            )
-        );
-    assign rd_en = ((state == 4) || (state == 5) || (state == 7) || (state == 8));
-    assign raddr =
-        ((state == 4) || (state == 7))
-        ? (BASE | 42)
-        : (
-            (state == 5)
-            ? (BASE | 144)
-            : (
-                (state == 8)
-                ? (BASE | 13)
-                : UNDEF
-            )
-        );
-    assign wr_en = ((state == 2) || (state == 3) || (state == 7));
-    assign waddr =
-        (state == 2)
-        ? (BASE | 42)
-        : (
-            (state == 3)
-            ? (BASE | 144)
-            : (
-                (state == 7)
-                ? (BASE | 34)
-                : UNDEF
-            )
-        );
-    assign wdata =
-        (state == 2)
-        ? (ZERO | 420)
-        : (
-            (state == 3)
-            ? (ZERO | 1337)
-            : (
-                (state == 7)
-                ? (ZERO | 55)
-                : UNDEF
-            )
-        );
+    reg [16:0] al_mem [0:31];
+    initial begin
+        al_mem[0] = {1'b0, UNDEF};
+        al_mem[1] = {1'b0, UNDEF};
+        al_mem[2] = {1'b0, UNDEF};
+        al_mem[3] = {1'b0, UNDEF};
+        al_mem[4] = {1'b0, UNDEF};
+        al_mem[5] = {1'b0, UNDEF};
+        al_mem[6] = {1'b0, UNDEF};
+        al_mem[7] = {1'b0, UNDEF};
+        al_mem[8] = {1'b1, (ZERO | 16'd21)};
+        al_mem[9] = {1'b0, UNDEF};
+        al_mem[10] = {1'b1, (ZERO | 16'd256)};
+        al_mem[11] = {1'b1, (ZERO | 16'd257)};
+        al_mem[12] = {1'b1, (ZERO | 16'd258)};
+        al_mem[13] = {1'b0, UNDEF};
+        al_mem[14] = {1'b0, UNDEF};
+        al_mem[15] = {1'b0, UNDEF};
+        al_mem[16] = {1'b0, UNDEF};
+        al_mem[17] = {1'b1, (ZERO | 16'd259)};
+        al_mem[18] = {1'b1, (ZERO | 16'd260)};
+        al_mem[19] = {1'b1, (ZERO | 16'd261)};
+        al_mem[20] = {1'b0, UNDEF};
+        al_mem[21] = {1'b0, UNDEF};
+        al_mem[22] = {1'b0, UNDEF};
+        al_mem[23] = {1'b0, UNDEF};
+        al_mem[24] = {1'b0, UNDEF};
+        al_mem[25] = {1'b0, UNDEF};
+        al_mem[26] = {1'b0, UNDEF};
+        al_mem[27] = {1'b0, UNDEF};
+        al_mem[28] = {1'b0, UNDEF};
+        al_mem[29] = {1'b0, UNDEF};
+        al_mem[30] = {1'b0, UNDEF};
+        al_mem[31] = {1'b0, UNDEF};
+    end
+    assign al_en = al_mem[state][16];
+    assign adata = al_mem[state][15:0];
+
+    reg [16:0] fr_mem [0:31];
+    initial begin
+        fr_mem[0] = {1'b0, UNDEF};
+        fr_mem[1] = {1'b0, UNDEF};
+        fr_mem[2] = {1'b0, UNDEF};
+        fr_mem[3] = {1'b0, UNDEF};
+        fr_mem[4] = {1'b0, UNDEF};
+        fr_mem[5] = {1'b0, UNDEF};
+        fr_mem[6] = {1'b0, UNDEF};
+        fr_mem[7] = {1'b0, UNDEF};
+        fr_mem[8] = {1'b0, UNDEF};
+        fr_mem[9] = {1'b0, UNDEF};
+        fr_mem[10] = {1'b0, UNDEF};
+        fr_mem[11] = {1'b0, UNDEF};
+        fr_mem[12] = {1'b0, UNDEF};
+        fr_mem[13] = {1'b0, UNDEF};
+        fr_mem[14] = {1'b0, UNDEF};
+        fr_mem[15] = {1'b1, (BASE | 16'd2)};
+        fr_mem[16] = {1'b1, (BASE | 16'd1)};
+        fr_mem[17] = {1'b0, UNDEF};
+        fr_mem[18] = {1'b1, (BASE | 16'd0)};
+        fr_mem[19] = {1'b0, UNDEF};
+        fr_mem[20] = {1'b0, UNDEF};
+        fr_mem[21] = {1'b0, UNDEF};
+        fr_mem[22] = {1'b0, UNDEF};
+        fr_mem[23] = {1'b0, UNDEF};
+        fr_mem[24] = {1'b0, UNDEF};
+        fr_mem[25] = {1'b0, UNDEF};
+        fr_mem[26] = {1'b0, UNDEF};
+        fr_mem[27] = {1'b0, UNDEF};
+        fr_mem[28] = {1'b0, UNDEF};
+        fr_mem[29] = {1'b0, UNDEF};
+        fr_mem[30] = {1'b0, UNDEF};
+        fr_mem[31] = {1'b0, UNDEF};
+    end
+    assign fr_en = fr_mem[state][16];
+    assign faddr = fr_mem[state][15:0];
+
+    reg [16:0] rd_mem [0:31];
+    initial begin
+        rd_mem[0] = {1'b0, UNDEF};
+        rd_mem[1] = {1'b0, UNDEF};
+        rd_mem[2] = {1'b0, UNDEF};
+        rd_mem[3] = {1'b0, UNDEF};
+        rd_mem[4] = {1'b1, (BASE | 16'd42)};
+        rd_mem[5] = {1'b1, (BASE | 16'd144)};
+        rd_mem[6] = {1'b0, UNDEF};
+        rd_mem[7] = {1'b1, (BASE | 16'd42)};
+        rd_mem[8] = {1'b1, (BASE | 16'd13)};
+        rd_mem[9] = {1'b0, UNDEF};
+        rd_mem[10] = {1'b0, UNDEF};
+        rd_mem[11] = {1'b0, UNDEF};
+        rd_mem[12] = {1'b0, UNDEF};
+        rd_mem[13] = {1'b0, UNDEF};
+        rd_mem[14] = {1'b0, UNDEF};
+        rd_mem[15] = {1'b0, UNDEF};
+        rd_mem[16] = {1'b0, UNDEF};
+        rd_mem[17] = {1'b0, UNDEF};
+        rd_mem[18] = {1'b0, UNDEF};
+        rd_mem[19] = {1'b0, UNDEF};
+        rd_mem[20] = {1'b0, UNDEF};
+        rd_mem[21] = {1'b0, UNDEF};
+        rd_mem[22] = {1'b0, UNDEF};
+        rd_mem[23] = {1'b0, UNDEF};
+        rd_mem[24] = {1'b0, UNDEF};
+        rd_mem[25] = {1'b0, UNDEF};
+        rd_mem[26] = {1'b0, UNDEF};
+        rd_mem[27] = {1'b0, UNDEF};
+        rd_mem[28] = {1'b0, UNDEF};
+        rd_mem[29] = {1'b0, UNDEF};
+        rd_mem[30] = {1'b0, UNDEF};
+        rd_mem[31] = {1'b0, UNDEF};
+    end
+    assign rd_en = rd_mem[state][16];
+    assign raddr = rd_mem[state][15:0];
+
+    reg [32:0] wr_mem [0:31];
+    initial begin
+        wr_mem[0] = {1'b0, UNDEF, UNDEF};
+        wr_mem[1] = {1'b0, UNDEF, UNDEF};
+        wr_mem[2] = {1'b1, (BASE | 16'd42), (ZERO | 16'd420)};
+        wr_mem[3] = {1'b1, (BASE | 16'd144), (ZERO | 16'd1337)};
+        wr_mem[4] = {1'b0, UNDEF, UNDEF};
+        wr_mem[5] = {1'b0, UNDEF, UNDEF};
+        wr_mem[6] = {1'b0, UNDEF, UNDEF};
+        wr_mem[7] = {1'b1, (BASE | 16'd34), (ZERO | 16'd55)};
+        wr_mem[8] = {1'b0, UNDEF, UNDEF};
+        wr_mem[9] = {1'b0, UNDEF, UNDEF};
+        wr_mem[10] = {1'b0, UNDEF, UNDEF};
+        wr_mem[11] = {1'b0, UNDEF, UNDEF};
+        wr_mem[12] = {1'b0, UNDEF, UNDEF};
+        wr_mem[13] = {1'b0, UNDEF, UNDEF};
+        wr_mem[14] = {1'b0, UNDEF, UNDEF};
+        wr_mem[15] = {1'b0, UNDEF, UNDEF};
+        wr_mem[16] = {1'b0, UNDEF, UNDEF};
+        wr_mem[17] = {1'b0, UNDEF, UNDEF};
+        wr_mem[18] = {1'b0, UNDEF, UNDEF};
+        wr_mem[19] = {1'b0, UNDEF, UNDEF};
+        wr_mem[20] = {1'b0, UNDEF, UNDEF};
+        wr_mem[21] = {1'b0, UNDEF, UNDEF};
+        wr_mem[22] = {1'b0, UNDEF, UNDEF};
+        wr_mem[23] = {1'b0, UNDEF, UNDEF};
+        wr_mem[24] = {1'b0, UNDEF, UNDEF};
+        wr_mem[25] = {1'b0, UNDEF, UNDEF};
+        wr_mem[26] = {1'b0, UNDEF, UNDEF};
+        wr_mem[27] = {1'b0, UNDEF, UNDEF};
+        wr_mem[28] = {1'b0, UNDEF, UNDEF};
+        wr_mem[29] = {1'b0, UNDEF, UNDEF};
+        wr_mem[30] = {1'b0, UNDEF, UNDEF};
+        wr_mem[31] = {1'b0, UNDEF, UNDEF};
+    end
+    assign wr_en = wr_mem[state][32];
+    assign waddr = wr_mem[state][31:16];
+    assign wdata = wr_mem[state][15:0];
 
     always @(posedge i_clk) begin
         if (o_running) begin

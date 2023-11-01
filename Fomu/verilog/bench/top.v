@@ -6,8 +6,8 @@ Physical Test Bench
 
 `default_nettype none
 
-`include "alloc_test.v"
-//`include "fixture.v"
+//`include "alloc_test.v"
+`include "fixture.v"
 
 module top (
     input                       clki,                           // 48MHz oscillator input on Fomu-PVT
@@ -53,7 +53,7 @@ module top (
     );
 
     // start-up delay
-    reg [7:0] waiting;
+    reg [5:0] waiting;
     initial waiting = 63;  // wait for memory to "settle"?
     always @(posedge clk) begin
         if (waiting) begin
