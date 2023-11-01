@@ -2,19 +2,19 @@
 
 Linked-Memory Allocator
 
-    +---------------+
-    | alloc         |
-    |               |
---->|i_alloc    i_wr|<---
-=N=>|i_data  i_wdata|<=N=
-<=N=|o_addr  i_waddr|<=N=
-    |               |
---->|i_free     i_rd|<---
-=N=>|i_addr  i_raddr|<=N=
-    |        o_rdata|=N=>
-    |               |
- +->|i_clk     o_err|--->
- |  +---------------+
+    +-----------------+
+    | alloc           |
+    |                 |
+--->|i_al         i_wr|<---
+=N=>|i_adata   i_waddr|<=N=
+<=N=|o_aaddr   i_wdata|<=N=
+    |                 |
+--->|i_fr         i_rd|<---
+=N=>|i_faddr   i_raddr|<=N=
+    |          o_rdata|=N=>
+    |                 |
+ +->|i_clk       o_err|--->
+ |  +-----------------+
 
 This component manages a dynamically-allocated memory heap.
 It has two ports, with two functions each, and an error signal.
@@ -53,12 +53,12 @@ module alloc #(
 ) (
     input                       i_clk,                          // domain clock
 
-    input                       i_alloc,                        // allocation request
-    input         [DATA_SZ-1:0] i_data,                         // initial data
-    output reg    [DATA_SZ-1:0] o_addr,                         // allocated address
+    input                       i_al,                           // allocation request
+    input         [DATA_SZ-1:0] i_adata,                        // initial data
+    output reg    [DATA_SZ-1:0] o_aaddr,                        // allocated address
 
-    input                       i_free,                         // free request
-    input         [DATA_SZ-1:0] i_addr,                         // free address
+    input                       i_fr,                           // free request
+    input         [DATA_SZ-1:0] i_faddr,                        // free address
 
     input                       i_wr,                           // write request
     input         [DATA_SZ-1:0] i_waddr,                        // write address
@@ -85,17 +85,17 @@ module alloc #(
     localparam UNIT             = 16'h0004;                     // inert result
     localparam ZERO             = 16'h8000;                     // fixnum +0
 
-    initial o_addr = UNDEF;
+    initial o_aaddr = UNDEF;
     initial o_err = 1'b0;
     assign o_rdata = rdata;
 
-    wire ptr_op = i_alloc || i_free;
+    wire ptr_op = i_al || i_fr;
     wire mem_op = i_rd || i_wr;
     wire bad_op = ptr_op && mem_op;
     wire read_op = i_rd && !ptr_op;
     wire write_op = i_wr && !ptr_op;
-    wire alloc_op = i_alloc && !mem_op;
-    wire free_op = i_free && !mem_op;
+    wire alloc_op = i_al && !mem_op;
+    wire free_op = i_fr && !mem_op;
 
     // top of available memory
     reg [DATA_SZ-1:0] mem_top = (MUT_TAG | VLT_TAG);
@@ -132,7 +132,7 @@ module alloc #(
         .i_wr_en(alloc_op || free_op || write_op),
         .i_waddr(
             free_op
-            ? i_addr[ADDR_SZ-1:0] // if also alloc_op, assign passed-thru memory
+            ? i_faddr[ADDR_SZ-1:0] // if also alloc_op, assign passed-thru memory
             : (
                 alloc_op
                 ? (
@@ -145,7 +145,7 @@ module alloc #(
         ),
         .i_wdata(
             alloc_op
-            ? i_data
+            ? i_adata
             : (
                 free_op
                 ? mem_next
@@ -165,15 +165,15 @@ module alloc #(
         // check for error conditions
         if (bad_op || (raise_top && full_f)) begin
             o_err <= 1;
-            o_addr <= UNDEF;
+            o_aaddr <= UNDEF;
         end else begin
             o_err <= 0;  // strobe, not sticky...
             // register the allocated address
-            o_addr <= (
+            o_aaddr <= (
                 alloc_op
                 ? (
                     free_op
-                    ? i_addr
+                    ? i_faddr
                     : (
                         free_f
                         ? mem_next
@@ -192,7 +192,7 @@ module alloc #(
             end
             r_pop_freed <= pop_free;
             if (push_free) begin
-                r_mem_next <= i_addr; // push
+                r_mem_next <= i_faddr; // push
             end
             // maintain free list counter
             if (pop_free) begin

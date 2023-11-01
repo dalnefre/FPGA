@@ -2,19 +2,19 @@
 
 Linked-Memory Allocator
 
-    +---------------+
-    | alloc         |
-    |               |
---->|i_alloc    i_wr|<---
-=N=>|i_data  i_waddr|<=N=
-<=N=|o_addr  i_wdata|<=N=
-    |               |
---->|i_free     i_rd|<---
-=N=>|i_addr  i_raddr|<=N=
-    |        o_rdata|=N=>
-    |               |
- +->|i_clk     o_err|--->
- |  +---------------+
+    +-----------------+
+    | alloc           |
+    |                 |
+--->|i_al         i_wr|<---
+=N=>|i_adata   i_waddr|<=N=
+<=N=|o_aaddr   i_wdata|<=N=
+    |                 |
+--->|i_fr         i_rd|<---
+=N=>|i_faddr   i_raddr|<=N=
+    |          o_rdata|=N=>
+    |                 |
+ +->|i_clk      o_full|--->
+ |  +-----------------+
 
 This component manages a dynamically-allocated memory heap.
 It has two ports, with two functions each, and an error signal.
@@ -53,12 +53,12 @@ module alloc #(
 ) (
     input                       i_clk,                          // domain clock
 
-    input                       i_alloc,                        // allocation request
-    input         [DATA_SZ-1:0] i_data,                         // initial data
-    output reg    [DATA_SZ-1:0] o_addr,                         // allocated address
+    input                       i_al,                           // allocation request
+    input         [DATA_SZ-1:0] i_adata,                        // initial data
+    output reg    [DATA_SZ-1:0] o_aaddr,                        // allocated address
 
-    input                       i_free,                         // free request
-    input         [DATA_SZ-1:0] i_addr,                         // free address
+    input                       i_fr,                           // free request
+    input         [DATA_SZ-1:0] i_faddr,                        // free address
 
     input                       i_wr,                           // write request
     input         [DATA_SZ-1:0] i_waddr,                        // write address
@@ -87,7 +87,7 @@ module alloc #(
 
     // aggregate operation pattern
     wire [3:0] curr_op;
-    assign curr_op = { i_alloc, i_free, i_rd, i_wr };
+    assign curr_op = { i_al, i_fr, i_rd, i_wr };
     reg [3:0] prev_op;
     initial prev_op = 0;
     always @(posedge i_clk) begin
@@ -117,18 +117,18 @@ module alloc #(
         o_err <= err_en;
     end
 
-    initial o_addr = UNDEF;
+    initial o_aaddr = UNDEF;
 //    initial o_rdata = UNDEF; <--- not a register
     assign o_rdata = rdata;
 
     // an operation for the pointer management port
-    wire ptr_op = ((i_alloc || i_free) && !(i_rd || i_wr));
+    wire ptr_op = ((i_al || i_fr) && !(i_rd || i_wr));
 
     // an operation for the memory management port
-    wire mem_op = (!(i_alloc || i_free) && (i_rd || i_wr));
+    wire mem_op = (!(i_al || i_fr) && (i_rd || i_wr));
 
     // no operation requested
-    wire no_op = !(i_alloc || i_free || i_rd || i_wr);
+    wire no_op = !(i_al || i_fr || i_rd || i_wr);
 
     // top of available memory
     reg [DATA_SZ-1:0] mem_top = (MUT_TAG | VLT_TAG);
@@ -146,19 +146,19 @@ module alloc #(
     wire free_f = mem_next[14];  // check MUT_TAG
 
     always @(posedge i_clk) begin
-        o_addr <= UNDEF;  // default
+        o_aaddr <= UNDEF;  // default
         if (ptr_op) begin
-            if (i_alloc && i_free) begin  // assign passed-thru memory
-                o_addr <= i_addr;
-            end else if (i_alloc && !free_f) begin  // assign expanded memory
-                o_addr <= mem_top;
+            if (i_al && i_fr) begin  // assign passed-thru memory
+                o_aaddr <= i_faddr;
+            end else if (i_al && !free_f) begin  // assign expanded memory
+                o_aaddr <= mem_top;
                 mem_top <= { mem_top[DATA_SZ-1:ADDR_SZ+1], next_top };
-            end else if (i_alloc && free_f) begin  // assign free-list memory
-                o_addr <= mem_next;
+            end else if (i_al && free_f) begin  // assign free-list memory
+                o_aaddr <= mem_next;
                 mem_next <= o_rdata;  // previously read memory
                 mem_free <= mem_free - 1'b1;
-            end else if (i_free) begin  // link free'd memory into free-list
-                mem_next <= i_addr;
+            end else if (i_fr) begin  // link free'd memory into free-list
+                mem_next <= i_faddr;
                 mem_free <= mem_free + 1'b1;
             end
         end
@@ -168,8 +168,8 @@ module alloc #(
         mem_op
         ? i_waddr[ADDR_SZ-1:0]
         : (
-            i_free
-            ? i_addr[ADDR_SZ-1:0]
+            i_fr
+            ? i_faddr[ADDR_SZ-1:0]
             : (
                 free_f
                 ? mem_next[ADDR_SZ-1:0]
@@ -181,9 +181,9 @@ module alloc #(
         mem_op
         ? i_wdata
         : (
-            (!i_alloc && i_free)
+            (!i_al && i_fr)
             ? mem_next
-            : i_data
+            : i_adata
         )
     );
     wire [7:0] raddr = (

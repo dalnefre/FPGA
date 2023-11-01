@@ -68,12 +68,12 @@ module alloc_test (
     alloc ALLOC (
         .i_clk(i_clk),
 
-        .i_alloc(al_en),
-        .i_data(adata),
-        .o_addr(aaddr),
+        .i_al(al_en),
+        .i_adata(adata),
+        .o_aaddr(aaddr),
 
-        .i_free(fr_en),
-        .i_addr(faddr),
+        .i_fr(fr_en),
+        .i_faddr(faddr),
 
         .i_wr(wr_en),
         .i_waddr(waddr),
@@ -221,8 +221,10 @@ module alloc_test (
                     if (err) begin
                         o_error <= 1'b0;
                         state <= 10;
+/*
                     end else begin
                         state <= 0;
+*/
                     end
                 end
                 10: begin
