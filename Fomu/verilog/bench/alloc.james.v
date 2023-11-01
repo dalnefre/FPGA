@@ -1,6 +1,6 @@
 /*
 
-Linked-Memory Allocator
+A linked-memory allocator with configurable address and data sizes.
 
     +-----------------+
     | alloc           |
@@ -13,7 +13,7 @@ Linked-Memory Allocator
 =N=>|i_faddr   i_raddr|<=N=
     |          o_rdata|=N=>
     |                 |
- +->|i_clk       o_err|--->
+ +->|i_clk      o_full|--->
  |  +-----------------+
 
 This component manages a dynamically-allocated memory heap.
@@ -32,9 +32,37 @@ The second port is a simple memory-access interface.
 A "write" request stores data at a previously allocated address.
 A "read" request retrieves the last data stored at an address.
 
-If an error (such as out-of-memory) or invalid request occurs,
-the error signal is raised and the component halts.
+If an invalid request is issued, such as alloc-on-full or read+free,
+the component will move to an undefined state.
 
+Internally, this component comprises several 4kb memory blocks
+arranged in a grid.
+
+                       DATA_SZ
+    |----------------------------------------|
+
+    +--------+   +--------+         +--------+   ---
+    |        |   |        |         |        |    |
+    |   4k   |   |   4k   |   ...   |   4k   |    |
+    |        |   |        |         |        |    |
+    +--------+   +--------+         +--------+    |
+                                                  |
+    +--------+   +--------+         +--------+    |
+    |        |   |        |         |        |    |
+    |   4k   |   |   4k   |   ...   |   4k   |    |
+    |        |   |        |         |        |    | 2^ADDR_SZ
+    +--------+   +--------+         +--------+    |
+                                                  |
+       ....         ....               ....       |
+                                                  |
+    +--------+   +--------+         +--------+    |    ---
+    |        |   |        |         |        |    |     |
+    |   4k   |   |   4k   |   ...   |   4k   |    |     | 2^BLK_ADDR_SZ
+    |        |   |        |         |        |    |     |
+    +--------+   +--------+         +--------+   ---   ---
+
+                                    |--------|
+                                    BLK_DATA_SZ
 */
 
 `default_nettype none
@@ -46,49 +74,36 @@ the error signal is raised and the component halts.
 `endif
 
 module alloc #(
-    // WARNING: hard-coded contants assume `DATA_SZ` = 16
-    parameter DATA_SZ           = 16,                           // number of bits per memory word
-    parameter ADDR_SZ           = 8,                            // number of bits in each address
-    parameter MEM_MAX           = (1<<ADDR_SZ)                  // maximum available physical memory
+    parameter ADDR_SZ = 9,                  // number of bits in each address
+    parameter DATA_SZ = 16,                 // memory cell size in bits, not less than ADDR_SZ
+    // The following parameters can be adjusted for testing purposes. The
+    // quantity BLK_DATA_SZ * 2^BLK_ADDR_SZ must not exceed 4096.
+    parameter BLK_ADDR_SZ = 8,              // number of bits in each address, per block
+    parameter BLK_DATA_SZ = 16              // memory cell size in bits, per block
 ) (
-    input                       i_clk,                          // domain clock
+    input                       i_clk,      // domain clock
 
-    input                       i_al,                           // allocation request
-    input         [DATA_SZ-1:0] i_adata,                        // initial data
-    output reg    [DATA_SZ-1:0] o_aaddr,                        // allocated address
-    output                      o_full,                         // space exhausted
+    input                       i_al,       // allocation request
+    input         [DATA_SZ-1:0] i_adata,    // initial data
+    output reg    [ADDR_SZ-1:0] o_aaddr,    // allocated address
+    output                      o_full,     // space exhausted
 
-    input                       i_fr,                           // free request
-    input         [DATA_SZ-1:0] i_faddr,                        // free address
+    input                       i_fr,       // free request
+    input         [ADDR_SZ-1:0] i_faddr,    // free address
 
-    input                       i_wr,                           // write request
-    input         [DATA_SZ-1:0] i_waddr,                        // write address
-    input         [DATA_SZ-1:0] i_wdata,                        // data written
+    input                       i_wr,       // write request
+    input         [ADDR_SZ-1:0] i_waddr,    // write address
+    input         [DATA_SZ-1:0] i_wdata,    // data written
 
-    input                       i_rd,                           // read request
-    input         [DATA_SZ-1:0] i_raddr,                        // read address
-    output        [DATA_SZ-1:0] o_rdata,                        // data read
+    input                       i_rd,       // read request
+    input         [ADDR_SZ-1:0] i_raddr,    // read address
+    output        [DATA_SZ-1:0] o_rdata,    // data read
 
-    output reg                  o_err                           // error condition
+    output reg                  o_err       // error strobe
 );
-
-    // type-tags
-    localparam DIR_TAG          = 16'h8000;                     // direct(fixnum) or indirect(ptr)
-    localparam MUT_TAG          = 16'h4000;                     // mutable or immutable(rom)
-    localparam OPQ_TAG          = 16'h2000;                     // opaque(cap) or transparent(ram)
-    localparam VLT_TAG          = 16'h1000;                     // volatile or reserved
-
-    // reserved constants
-    localparam UNDEF            = 16'h0000;                     // undefined value
-    localparam NIL              = 16'h0001;                     // the empty list
-    localparam TRUE             = 16'h0002;                     // boolean true
-    localparam FALSE            = 16'h0003;                     // boolean false
-    localparam UNIT             = 16'h0004;                     // inert result
-    localparam ZERO             = 16'h8000;                     // fixnum +0
-
-    initial o_aaddr = UNDEF;
-    initial o_err = 1'b0;
-    assign o_rdata = rdata;
+    localparam ROW_ADDR_SZ = ADDR_SZ - BLK_ADDR_SZ;
+    localparam NR_ROWS = 1 << ROW_ADDR_SZ;
+    localparam NR_COLS = DATA_SZ / BLK_DATA_SZ;
 
     wire ptr_op = i_al || i_fr;
     wire mem_op = i_rd || i_wr;
@@ -99,7 +114,7 @@ module alloc #(
     wire free_op = i_fr && !mem_op;
 
     // top of available memory
-    reg [DATA_SZ-1:0] mem_top = (MUT_TAG | VLT_TAG);
+    reg [ADDR_SZ:0] mem_top = 0;
     // no more memory available (hard limit)
     wire full_f = mem_top[ADDR_SZ];
 
@@ -115,74 +130,99 @@ module alloc #(
     // whether a cell is being pushed onto or popped from the free list
     wire pop_free = alloc_op && !free_op && free_f;
     wire push_free = free_op && !alloc_op;
-
-    // the data read from BRAM
-    wire [DATA_SZ-1:0] rdata;
-
-    // next memory cell on free-list
-    reg [DATA_SZ-1:0] r_mem_next = NIL;
-    wire [DATA_SZ-1:0] mem_next = (
-        r_pop_freed
-        ? rdata
-        : r_mem_next
-    );
     // previous operation was pop_free
     reg r_pop_freed = 1'b0;
 
-    bram BRAM (
-        .i_clk(i_clk),
-        .i_wr_en(alloc_op || free_op || write_op),
-        .i_waddr(
-            free_op
-            ? i_faddr[ADDR_SZ-1:0] // if also alloc_op, assign passed-thru memory
-            : (
-                alloc_op
-                ? (
-                    free_f
-                    ? mem_next[ADDR_SZ-1:0]
-                    : mem_top[ADDR_SZ-1:0]
-                )
-                : i_waddr[ADDR_SZ-1:0]
-            )
-        ),
-        .i_wdata(
-            alloc_op
-            ? i_adata
-            : (
-                free_op
-                ? mem_next
-                : i_wdata
-            )
-        ),
-        .i_rd_en(read_op || pop_free),
-        .i_raddr(
-            pop_free
-            ? mem_next[ADDR_SZ-1:0]
-            : i_raddr[ADDR_SZ-1:0]
-        ),
-        .o_rdata(rdata)
+    // enable/disable BRAM requests
+    wire wr_en = alloc_op || free_op || write_op;
+    wire rd_en = read_op || pop_free;
+
+    // the data read from BRAM
+    wire [DATA_SZ-1:0] rdata [0:NR_ROWS-1];
+    reg [ROW_ADDR_SZ-1:0] r_rd_row;
+
+    // next memory cell on free-list
+    reg [ADDR_SZ-1:0] r_mem_next = 0;
+    wire [ADDR_SZ-1:0] mem_next = (
+        r_pop_freed
+        ? rdata[r_rd_row][ADDR_SZ-1:0]
+        : r_mem_next
     );
 
+    // determine the abstract memory locations to read/write
+    wire [ADDR_SZ-1:0] waddr = (
+        free_op
+        ? i_faddr // if also alloc_op, assign passed-thru memory
+        : (
+            alloc_op
+            ? (
+                free_f
+                ? mem_next
+                : mem_top[ADDR_SZ-1:0]
+            )
+            : i_waddr
+        )
+    );
+    wire [ADDR_SZ-1:0] raddr = (
+        pop_free
+        ? mem_next
+        : i_raddr
+    );
+
+    // route the request addresses to a particular row of blocks
+    wire [ROW_ADDR_SZ-1:0] wr_row = waddr[ADDR_SZ-1:BLK_ADDR_SZ];
+    wire [ROW_ADDR_SZ-1:0] rd_row = raddr[ADDR_SZ-1:BLK_ADDR_SZ];
+    wire [ROW_ADDR_SZ-1:0] fr_row = i_faddr[ADDR_SZ-1:BLK_ADDR_SZ];
+
+    // instantiate the grid of blocks
+    genvar row;
+    genvar col;
+    for (row = 0; row < NR_ROWS; row = row + 1) begin
+        for (col = 0; col < NR_COLS; col = col + 1) begin
+            localparam ms = BLK_DATA_SZ * (col + 1) - 1;
+            localparam ls = BLK_DATA_SZ * col;
+            bram #(
+                .ADDR_SZ(BLK_ADDR_SZ),
+                .DATA_SZ(BLK_DATA_SZ)
+            ) BRAM (
+                .i_clk(i_clk),
+                .i_wr_en(wr_en && wr_row == row),
+                .i_waddr(waddr[BLK_ADDR_SZ-1:0]),
+                .i_wdata(
+                    alloc_op
+                    ? i_adata[ms:ls]
+                    : (
+                        free_op
+                        ? mem_next[ms:ls]
+                        : i_wdata[ms:ls]
+                    )
+                ),
+                .i_rd_en(rd_en && rd_row == row),
+                .i_raddr(raddr[BLK_ADDR_SZ-1:0]),
+                .o_rdata(rdata[row][ms:ls])
+            );
+        end
+    end
+
+    assign o_rdata = rdata[r_rd_row];
+    always @(posedge i_clk) begin
+        r_rd_row <= rd_row;
+    end
     always @(posedge i_clk) begin
         // check for error conditions
         if (bad_op || (raise_top && full_f)) begin
             o_err <= 1;
-            o_aaddr <= UNDEF;
         end else begin
             o_err <= 0;  // strobe, not sticky...
-            // register the allocated address
+            // register the allocated address (garbage if alloc_op if low)
             o_aaddr <= (
-                alloc_op
-                ? (
-                    free_op
-                    ? i_faddr
-                    : (
-                        free_f
-                        ? mem_next
-                        : mem_top
-                    )
+                free_op
+                ? i_faddr
+                : (
+                    free_f
+                    ? mem_next
+                    : mem_top[ADDR_SZ-1:0]
                 )
-                : UNDEF
             );
             // increment memory top marker
             if (raise_top) begin
@@ -190,7 +230,7 @@ module alloc #(
             end
             // maintain the free list
             if (r_pop_freed) begin
-                r_mem_next <= rdata; // pop
+                r_mem_next <= rdata[r_rd_row][ADDR_SZ-1:0]; // pop
             end
             r_pop_freed <= pop_free;
             if (push_free) begin

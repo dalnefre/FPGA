@@ -37,7 +37,7 @@ module test_bench;
     end
 
     wire running;
-    wire [15:0] debug;
+    wire [63:0] debug;
     wire passed;
     wire error;
     alloc_test TEST (

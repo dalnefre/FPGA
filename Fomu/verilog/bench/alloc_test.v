@@ -66,30 +66,23 @@ if the traversed linked list was the expected length and terminated in NIL.
 
 `default_nettype none
 
-// `define ALLOC_TEST_MUX
-
-`ifdef ALLOC_TEST_MUX
-`include "alloc_mux.v"
-`else
 `include "alloc.james.v"
 // `include "alloc.v"
-`endif
 
 module alloc_test (
-    input                       i_clk,                          // system clock
-    input                       i_en,                           // testing enabled
+    input                       i_clk,                  // system clock
+    input                       i_en,                   // testing enabled
     output                      o_running,
-    output reg           [15:0] o_debug,
+    output reg  [DATA_SZ-1:0]   o_debug,
     output                      o_passed,
     output                      o_error
 );
-`ifdef ALLOC_TEST_MUX
-    localparam ADDR_SZ = 12;  // must be at least 2
-`else
-    localparam ADDR_SZ = 8;  // must be at least 2
-`endif
-    localparam UNDEF = 16'h0000;
-    localparam NIL = 16'h0001;
+    localparam ADDR_SZ = 10;  // must be at least 2
+    localparam DATA_SZ = 64;
+    localparam BLK_ADDR_SZ = 9;
+    localparam BLK_DATA_SZ = 8;
+    localparam UNDEF = 1'b0;
+    localparam NIL = 1'b1;
 
 // Whilst 'i_en' is high, the 'state' vector increments each clock cycle until
 // the test finishes.
@@ -142,9 +135,9 @@ module alloc_test (
     reg addr_prev_rdy = 0;
     reg rdata_rdy = 0;
     reg rdata_prev_rdy = 0;
-    reg [15:0] addr_prev = UNDEF;
-    reg [15:0] rdata_prev = UNDEF;
-    reg [15:0] rdata_prev_prev = UNDEF;
+    reg [ADDR_SZ-1:0] addr_prev = UNDEF;
+    reg [DATA_SZ-1:0] rdata_prev = UNDEF;
+    reg [DATA_SZ-1:0] rdata_prev_prev = UNDEF;
     always @(posedge i_clk) begin
         if (i_en) begin
             addr_rdy <= allocate;
@@ -156,34 +149,33 @@ module alloc_test (
             rdata_prev_prev <= rdata_prev;
         end
     end
-    wire        err;
-    wire [15:0] addr;
-    wire [15:0] rdata;
-`ifdef ALLOC_TEST_MUX
-    alloc_mux #(
-`else
+    wire err;
+    wire [ADDR_SZ-1:0] addr;
+    wire [DATA_SZ-1:0] rdata;
     alloc #(
-`endif
-        .ADDR_SZ(ADDR_SZ)
+        .ADDR_SZ(ADDR_SZ),
+        .DATA_SZ(DATA_SZ),
+        .BLK_ADDR_SZ(BLK_ADDR_SZ),
+        .BLK_DATA_SZ(BLK_DATA_SZ)
     ) ALLOC (
         .i_clk(i_clk),
         .i_al(allocate),
         .i_adata(
             addr_rdy
-            ? addr
+            ? addr[DATA_SZ-1:0]
             : NIL
         ),
         .o_aaddr(addr),
         .i_fr(free),
         .i_faddr(
             free
-            ? rdata_prev_prev
+            ? rdata_prev_prev[ADDR_SZ-1:0]
             : UNDEF
         ),
         .i_wr(reverse),
         .i_waddr(
             rdata_rdy
-            ? rdata
+            ? rdata[ADDR_SZ-1:0]
             : addr
         ),
         .i_wdata(
@@ -198,12 +190,12 @@ module alloc_test (
         .i_rd(reverse || read),
         .i_raddr(
             read
-            ? rdata_prev
+            ? rdata_prev[ADDR_SZ-1:0]
             : (
                 reverse
                 ? (
                     rdata_rdy
-                    ? rdata
+                    ? rdata[ADDR_SZ-1:0]
                     : addr
                 )
                 : UNDEF

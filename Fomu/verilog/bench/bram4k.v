@@ -13,28 +13,36 @@ iCE40 Dual-Ported Block RAM
  +->|i_clk            |
  |  +-----------------+
 
+DATA_SZ may be 16, 8, 4, or 2.
+
 */
 
 `default_nettype none
 
 module bram #(
-    // DATA_SZ x MEM_MAX = 4096 bits
-    parameter DATA_SZ           = 16,                           // number of bits per memory word
-    parameter ADDR_SZ           = 8,                            // number of bits in each address
-    parameter MEM_MAX           = (1<<ADDR_SZ)                  // maximum memory memory address
+    parameter DATA_SZ = 16, /* 16, 8, 4, 2 */   // number of bits per memory word
+    // DATA_SZ x 2^ADDR_SZ = 4096 bits
+    parameter ADDR_SZ = $clog2(4096 / DATA_SZ)  // number of bits in each address
 ) (
-    input                       i_clk,                          // system clock
+    input                       i_clk,          // system clock
 
-    input                       i_wr_en,                        // write request
-    input         [ADDR_SZ-1:0] i_waddr,                        // write address
-    input         [DATA_SZ-1:0] i_wdata,                        // data written
+    input                       i_wr_en,        // write request
+    input         [ADDR_SZ-1:0] i_waddr,        // write address
+    input         [DATA_SZ-1:0] i_wdata,        // data written
 
-    input                       i_rd_en,                        // read request
-    input         [ADDR_SZ-1:0] i_raddr,                        // read address
-    output reg    [DATA_SZ-1:0] o_rdata                         // data read
+    input                       i_rd_en,        // read request
+    input         [ADDR_SZ-1:0] i_raddr,        // read address
+    output reg    [DATA_SZ-1:0] o_rdata         // data read
 );
-
-    SB_RAM40_4K BRAM (
+    // MODE=0: 256x16
+    // MODE=1: 512x8
+    // MODE=2: 1024x4
+    // MODE=3: 2048x2
+    localparam MODE = ADDR_SZ - 8;
+    SB_RAM40_4K #(
+        .READ_MODE(MODE),
+        .WRITE_MODE(MODE)
+    ) BRAM (
         .WCLKE(1'b1),
         .WCLK(i_clk),
         .WE(i_wr_en),
