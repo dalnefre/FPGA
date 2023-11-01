@@ -77,10 +77,13 @@ module alloc_test (
     output                      o_passed,
     output                      o_error
 );
+
+// To synthesize correctly, ADDR_SZ and BLK_DATA_SZ must be chosen such that
+// BLK_DATA_SZ * 2^ADDR_SZ = 4096.
+
     localparam ADDR_SZ = 10;  // must be at least 2
     localparam DATA_SZ = 64;
-    localparam BLK_ADDR_SZ = 9;
-    localparam BLK_DATA_SZ = 8;
+    localparam BLK_DATA_SZ = 4; // 16 columns
     localparam UNDEF = 1'b0;
     localparam NIL = 1'b1;
 
@@ -115,12 +118,11 @@ module alloc_test (
 //      1) Tear down phase. The linked list is followed and freed. The state[0]
 //         bit controls whether the current cell is being read or freed.
 
-    wire working = i_en && !done && !check;
-    wire build_up = working && !state[ADDR_SZ+1];
-    wire allocate = working &&  build_up && !state[ADDR_SZ];
-    wire reverse =  working &&  build_up &&  state[ADDR_SZ];
-    wire read =     working && !build_up && !state[0];
-    wire free =     working && !build_up &&  state[0];
+    wire working =  i_en && !done && !check;
+    wire allocate = working && !state[ADDR_SZ+1] && !state[ADDR_SZ];
+    wire reverse =  working && !state[ADDR_SZ+1] &&  state[ADDR_SZ];
+    wire read =     working &&  state[ADDR_SZ+1] && !state[0];
+    wire free =     working &&  state[ADDR_SZ+1] &&  state[0];
 
 // state[ADDR_SZ-1:0]   (during build up)
 // state[ADDR_SZ:1]     (during tear down)
@@ -155,7 +157,6 @@ module alloc_test (
     alloc #(
         .ADDR_SZ(ADDR_SZ),
         .DATA_SZ(DATA_SZ),
-        .BLK_ADDR_SZ(BLK_ADDR_SZ),
         .BLK_DATA_SZ(BLK_DATA_SZ)
     ) ALLOC (
         .i_clk(i_clk),
@@ -167,11 +168,7 @@ module alloc_test (
         ),
         .o_aaddr(addr),
         .i_fr(free),
-        .i_faddr(
-            free
-            ? rdata_prev_prev[ADDR_SZ-1:0]
-            : UNDEF
-        ),
+        .i_faddr(rdata_prev_prev[ADDR_SZ-1:0]),
         .i_wr(reverse),
         .i_waddr(
             rdata_rdy
@@ -192,13 +189,9 @@ module alloc_test (
             read
             ? rdata_prev[ADDR_SZ-1:0]
             : (
-                reverse
-                ? (
-                    rdata_rdy
-                    ? rdata[ADDR_SZ-1:0]
-                    : addr
-                )
-                : UNDEF
+                rdata_rdy
+                ? rdata[ADDR_SZ-1:0]
+                : addr
             )
         ),
         .o_rdata(rdata),
@@ -216,7 +209,7 @@ module alloc_test (
                     : 2'b00 // fail with no error
                 );
                 o_debug <= rdata;
-            end else if (!done && !check) begin
+            end else if (!done) begin
                 // FIXME: are rdata/addr lost if i_en goes low?
                 state <= state + 1'b1;
             end

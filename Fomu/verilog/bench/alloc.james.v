@@ -35,31 +35,18 @@ A "read" request retrieves the last data stored at an address.
 If an invalid request is issued, such as alloc-on-full or read+free,
 the component will move to an undefined state.
 
-Internally, this component comprises several 4kb memory blocks
-arranged in a grid.
+This component comprises a number of 4kb memory blocks arranged in a single row.
+A single row seems to give better performance than a grid arrangement.
+The width of each memory cell (DATA_SZ) is the combined width of all blocks.
 
                        DATA_SZ
     |----------------------------------------|
 
     +--------+   +--------+         +--------+   ---
     |        |   |        |         |        |    |
-    |   4k   |   |   4k   |   ...   |   4k   |    |
+    |   4k   |   |   4k   |   ...   |   4k   |    | 2^ADDR_SZ
     |        |   |        |         |        |    |
-    +--------+   +--------+         +--------+    |
-                                                  |
-    +--------+   +--------+         +--------+    |
-    |        |   |        |         |        |    |
-    |   4k   |   |   4k   |   ...   |   4k   |    |
-    |        |   |        |         |        |    | 2^ADDR_SZ
-    +--------+   +--------+         +--------+    |
-                                                  |
-       ....         ....               ....       |
-                                                  |
-    +--------+   +--------+         +--------+    |    ---
-    |        |   |        |         |        |    |     |
-    |   4k   |   |   4k   |   ...   |   4k   |    |     | 2^BLK_ADDR_SZ
-    |        |   |        |         |        |    |     |
-    +--------+   +--------+         +--------+   ---   ---
+    +--------+   +--------+         +--------+   ---
 
                                     |--------|
                                     BLK_DATA_SZ
@@ -74,11 +61,10 @@ arranged in a grid.
 `endif
 
 module alloc #(
-    parameter ADDR_SZ = 9,                  // number of bits in each address
+    parameter ADDR_SZ = 8,                  // number of bits in each address
     parameter DATA_SZ = 16,                 // memory cell size in bits, not less than ADDR_SZ
     // The following parameters can be adjusted for testing purposes. The
-    // quantity BLK_DATA_SZ * 2^BLK_ADDR_SZ must not exceed 4096.
-    parameter BLK_ADDR_SZ = 8,              // number of bits in each address, per block
+    // quantity BLK_DATA_SZ * 2^ADDR_SZ must not exceed 4096.
     parameter BLK_DATA_SZ = 16              // memory cell size in bits, per block
 ) (
     input                       i_clk,      // domain clock
@@ -101,9 +87,7 @@ module alloc #(
 
     output reg                  o_err       // error strobe
 );
-    localparam ROW_ADDR_SZ = ADDR_SZ - BLK_ADDR_SZ;
-    localparam NR_ROWS = 1 << ROW_ADDR_SZ;
-    localparam NR_COLS = DATA_SZ / BLK_DATA_SZ;
+    localparam NR_BLKS = DATA_SZ / BLK_DATA_SZ;
 
     wire ptr_op = i_al || i_fr;
     wire mem_op = i_rd || i_wr;
@@ -138,14 +122,13 @@ module alloc #(
     wire rd_en = read_op || pop_free;
 
     // the data read from BRAM
-    wire [DATA_SZ-1:0] rdata [0:NR_ROWS-1];
-    reg [ROW_ADDR_SZ-1:0] r_rd_row;
+    wire [DATA_SZ-1:0] rdata;
 
     // next memory cell on free-list
     reg [ADDR_SZ-1:0] r_mem_next = 0;
     wire [ADDR_SZ-1:0] mem_next = (
         r_pop_freed
-        ? rdata[r_rd_row][ADDR_SZ-1:0]
+        ? rdata[ADDR_SZ-1:0]
         : r_mem_next
     );
 
@@ -169,45 +152,34 @@ module alloc #(
         : i_raddr
     );
 
-    // route the request addresses to a particular row of blocks
-    wire [ROW_ADDR_SZ-1:0] wr_row = waddr[ADDR_SZ-1:BLK_ADDR_SZ];
-    wire [ROW_ADDR_SZ-1:0] rd_row = raddr[ADDR_SZ-1:BLK_ADDR_SZ];
-    wire [ROW_ADDR_SZ-1:0] fr_row = i_faddr[ADDR_SZ-1:BLK_ADDR_SZ];
-
     // instantiate the grid of blocks
-    genvar row;
-    genvar col;
-    for (row = 0; row < NR_ROWS; row = row + 1) begin
-        for (col = 0; col < NR_COLS; col = col + 1) begin
-            localparam ms = BLK_DATA_SZ * (col + 1) - 1;
-            localparam ls = BLK_DATA_SZ * col;
-            bram #(
-                .ADDR_SZ(BLK_ADDR_SZ),
-                .DATA_SZ(BLK_DATA_SZ)
-            ) BRAM (
-                .i_clk(i_clk),
-                .i_wr_en(wr_en && wr_row == row),
-                .i_waddr(waddr[BLK_ADDR_SZ-1:0]),
-                .i_wdata(
-                    alloc_op
-                    ? i_adata[ms:ls]
-                    : (
-                        free_op
-                        ? mem_next[ms:ls]
-                        : i_wdata[ms:ls]
-                    )
-                ),
-                .i_rd_en(rd_en && rd_row == row),
-                .i_raddr(raddr[BLK_ADDR_SZ-1:0]),
-                .o_rdata(rdata[row][ms:ls])
-            );
-        end
+    genvar blk_nr;
+    for (blk_nr = 0; blk_nr < NR_BLKS; blk_nr = blk_nr + 1) begin
+        localparam ms = BLK_DATA_SZ * (blk_nr + 1) - 1;
+        localparam ls = BLK_DATA_SZ * blk_nr;
+        bram #(
+            .ADDR_SZ(ADDR_SZ),
+            .DATA_SZ(BLK_DATA_SZ)
+        ) BRAM (
+            .i_clk(i_clk),
+            .i_wr_en(wr_en),
+            .i_waddr(waddr[ADDR_SZ-1:0]),
+            .i_wdata(
+                alloc_op
+                ? i_adata[ms:ls]
+                : (
+                    free_op
+                    ? mem_next[ms:ls]
+                    : i_wdata[ms:ls]
+                )
+            ),
+            .i_rd_en(rd_en),
+            .i_raddr(raddr[ADDR_SZ-1:0]),
+            .o_rdata(rdata[ms:ls])
+        );
     end
 
-    assign o_rdata = rdata[r_rd_row];
-    always @(posedge i_clk) begin
-        r_rd_row <= rd_row;
-    end
+    assign o_rdata = rdata;
     always @(posedge i_clk) begin
         // check for error conditions
         if (bad_op || (raise_top && full_f)) begin
@@ -230,7 +202,7 @@ module alloc #(
             end
             // maintain the free list
             if (r_pop_freed) begin
-                r_mem_next <= rdata[r_rd_row][ADDR_SZ-1:0]; // pop
+                r_mem_next <= rdata[ADDR_SZ-1:0]; // pop
             end
             r_pop_freed <= pop_free;
             if (push_free) begin
