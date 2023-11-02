@@ -295,6 +295,9 @@ module alloc_test (
                 end
                 10: begin
                     // aaddr <= alloc(256);
+/*
+                    state <= 10;  // LOOP ALLOCATING FOREVER!
+*/
                 end
                 11: begin
                     // assert(aaddr == ^5..0)
@@ -325,9 +328,6 @@ module alloc_test (
                 end
                 15: begin
                     // free(^5..2);
-/*
-*/
-                    state <= 24;  // SKIP TO THE END...
                 end
                 16: begin
                     // free(^5..1);
@@ -349,6 +349,10 @@ module alloc_test (
                     if (aaddr != (BASE | 0)) begin
                         o_debug <= aaddr;
                         state <= 0;
+/*
+*/
+                    end else begin
+                        state <= 24;  // SKIP TO THE END...
                     end
                     // aaddr <= alloc(261);
                 end
