@@ -53,111 +53,88 @@ module top (
     );
 
     // start-up delay
-    reg [7:0] waiting;
-    initial waiting = 63;  // wait for memory to "settle"?
+/*
+    wire run = 1'b1;
+*/
+    reg run = 1'b0;
+    reg [5:0] waiting = 0;
     always @(posedge clk) begin
-        if (waiting) begin
-            waiting <= waiting - 1'b1;
+        // wait for memory to "settle"?
+        if (!run) begin
+            {run, waiting} <= {1'b0, waiting} + 1'b1;
         end
     end
 
-    // inputs
-    wire wr_en;
-    wire [7:0] waddr;
-    wire [15:0] wdata;
-    wire rd_en;
-    wire [7:0] raddr;
-    // outputs
-    wire [15:0] rdata;
     // instantiate BRAM
     bram BRAM (
         .i_clk(clk),
 
-        .i_wr_en(wr_en),
+        .i_wr_en(wr),
         .i_waddr(waddr),
         .i_wdata(wdata),
 
-        .i_rd_en(rd_en),
+        .i_rd_en(rd),
         .i_raddr(raddr),
-        .o_rdata(rdata)
+        .o_rdata(actual)
     );
+    wire [15:0] actual;
 
     //
     // test fixture
     //
 
-    reg [7:0] state;  // 8-bit state-machine
-    initial state = 1;
+    reg [3:0] state = 4'h1;  // 4-bit state-machine
+    localparam STOP = 4'h0;
+    localparam DONE = 4'hF;
 
-    wire o_running;  // test is running
-    assign o_running = !waiting && (state != 0);
+    reg [54:0] script [0:15];  // script indexed by state
+    initial begin    //    wr, waddr,    wdata,    rd, raddr,   expect,  cmp  next
+        script[STOP] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, STOP };
+        script[4'h1] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'h2 };
+        script[4'h2] = { 1'b1, 8'hFF, 16'hBE11,  1'b0, 8'h00, 16'h0000, 1'b0, 4'h3 };
+        script[4'h3] = { 1'b1, 8'h95, 16'hC0DE,  1'b0, 8'h00, 16'h0000, 1'b0, 4'h4 };
+        script[4'h4] = { 1'b0, 8'h00, 16'h0000,  1'b1, 8'hFF, 16'h0000, 1'b0, 4'h5 };
+        script[4'h5] = { 1'b0, 8'h00, 16'h0000,  1'b1, 8'h95, 16'hBE11, 1'b1, 4'h6 };
+        script[4'h6] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'hC0DE, 1'b1, 4'h7 };
+        script[4'h7] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'h8 };
+        script[4'h8] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'h9 };
+        script[4'h9] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'hA };
+        script[4'hA] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'hB };
+        script[4'hB] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'hC };
+        script[4'hC] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'hD };
+        script[4'hD] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'hE };
+        script[4'hE] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'hF };
+        script[DONE] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, STOP };
+    end
+    // inputs
+    wire wr             = script[state][54];
+    wire [7:0] waddr    = script[state][53:46];
+    wire [15:0] wdata   = script[state][45:30];
+    wire rd             = script[state][29];
+    wire [7:0] raddr    = script[state][28:21];
+    // outputs
+    wire [15:0] expect  = script[state][20:5];
+    wire cmp            = script[state][4];
+    wire [3:0] next     = script[state][3:0];
 
-    reg o_passed;  // test passed
-    initial o_passed = 1'b0;
+    // test is running
+    wire o_running = run && (state != STOP);
 
-    // FIXME: consider combinational "always @(*)" block
-    assign wr_en = ((state == 2) || (state == 3));
-    assign waddr =
-        (state == 2)
-        ? 42
-        : (
-            (state == 3)
-            ? 144
-            : 0
-        );
-    assign wdata =
-        (state == 2)
-        ? 420
-        : (
-            (state == 3)
-            ? 1337
-            : 0
-        );
-    assign rd_en = ((state == 4) || (state == 5));
-    assign raddr =
-        (state == 4)
-        ? 42
-        : (
-            (state == 5)
-            ? 144
-            : 0
-        );
+    // test passed
+    reg o_passed = 1'b0;
 
     always @(posedge clk) begin
         if (o_running) begin
-            state <= state + 1'b1;  // default: advance to next state
-            case (state)
-                1: begin
-                    // start state
+            if (state == DONE) begin
+                // register success
+                o_passed <= 1'b1;
+            end
+            state <= next;  // default transition
+            if (cmp) begin
+                if (actual != expect) begin
+                    state <= STOP;  // stop (failed)
                 end
-                2: begin
-                    // ram[42] <= 420
-                end
-                3: begin
-                    // ram[144] <= 1337
-                end
-                4: begin
-                    // rdata <= ram[42]
-                end
-                5: begin
-                    // assert(rdata == 420)
-                    if (rdata != 420) begin
-                        state <= 0;
-                    end
-                    // rdata <= ram[144]
-                end
-                6: begin
-                    // assert(rdata == 1337)
-                    if (rdata != 1337) begin
-                        state <= 0;
-                    end
-                end
-                9: begin
-                    // successful completion
-                    o_passed <= 1'b1;
-                    state <= 0;
-                end
-            endcase
+            end
         end
     end
 
