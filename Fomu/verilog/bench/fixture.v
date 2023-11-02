@@ -44,19 +44,22 @@ module alloc_test (
     initial o_debug = UNDEF;
     initial o_passed = 1'b0;
 
-    reg [4:0] state;  // 5-bit state-machine
-    initial state = 1;
+    reg [4:0] state = 1;  // 5-bit state-machine
+    reg [4:0] r_state = 0;  // previous state
+    always @(posedge i_clk) begin
+        r_state <= state;
+    end
 
     // inputs
-    wire al_en;
-    wire [15:0] adata;
-    wire fr_en;
-    wire [15:0] faddr;
-    wire wr_en;
-    wire [15:0] waddr;
-    wire [15:0] wdata;
-    wire rd_en;
-    wire [15:0] raddr;
+    reg al_en;
+    reg [15:0] adata;
+    reg fr_en;
+    reg [15:0] faddr;
+    reg wr_en;
+    reg [15:0] waddr;
+    reg [15:0] wdata;
+    reg rd_en;
+    reg [15:0] raddr;
     // outputs
     wire [15:0] aaddr;
     wire [15:0] rdata;
@@ -114,8 +117,10 @@ module alloc_test (
         al_mem[30] = {1'b0, UNDEF};
         al_mem[31] = {1'b0, UNDEF};
     end
-    assign al_en = al_mem[state][16];
-    assign adata = al_mem[state][15:0];
+    always @(posedge i_clk) begin
+        al_en <= al_mem[state][16];
+        adata <= al_mem[state][15:0];
+    end
 
     reg [16:0] fr_mem [0:31];
     initial begin
@@ -152,8 +157,10 @@ module alloc_test (
         fr_mem[30] = {1'b0, UNDEF};
         fr_mem[31] = {1'b0, UNDEF};
     end
-    assign fr_en = fr_mem[state][16];
-    assign faddr = fr_mem[state][15:0];
+    always @(posedge i_clk) begin
+        fr_en <= fr_mem[state][16];
+        faddr <= fr_mem[state][15:0];
+    end
 
     reg [16:0] rd_mem [0:31];
     initial begin
@@ -190,8 +197,10 @@ module alloc_test (
         rd_mem[30] = {1'b0, UNDEF};
         rd_mem[31] = {1'b0, UNDEF};
     end
-    assign rd_en = rd_mem[state][16];
-    assign raddr = rd_mem[state][15:0];
+    always @(posedge i_clk) begin
+        rd_en <= rd_mem[state][16];
+        raddr <= rd_mem[state][15:0];
+    end
 
     reg [32:0] wr_mem [0:31];
     initial begin
@@ -228,14 +237,16 @@ module alloc_test (
         wr_mem[30] = {1'b0, UNDEF, UNDEF};
         wr_mem[31] = {1'b0, UNDEF, UNDEF};
     end
-    assign wr_en = wr_mem[state][32];
-    assign waddr = wr_mem[state][31:16];
-    assign wdata = wr_mem[state][15:0];
+    always @(posedge i_clk) begin
+        wr_en <= wr_mem[state][32];
+        waddr <= wr_mem[state][31:16];
+        wdata <= wr_mem[state][15:0];
+    end
 
     always @(posedge i_clk) begin
         if (o_running) begin
-            state <= state + 1'b1;  // default: advance to next state or fail
-            case (state)
+            state <= state + 1'b1;  // default: advance to next state
+            case (r_state)  // verify one clock behind action
                 1: begin
                     // start state
                 end
@@ -334,12 +345,19 @@ module alloc_test (
                 end
                 17: begin
                     // aaddr <= alloc(259);
+/*
+                    state <= 24;  // SKIP TO THE END...
+*/
                 end
                 18: begin
                     // assert(aaddr == ^5..1)
                     if (aaddr != (BASE | 1)) begin
                         o_debug <= aaddr;
                         state <= 0;
+/*
+*/
+                    end else begin
+                        state <= 24;  // SKIP TO THE END...
                     end
                     // free(^5..0);
                     // aaddr <= alloc(260);

@@ -53,6 +53,9 @@ module top (
     );
 
     // start-up delay
+/*
+    wire run = 1'b1;
+*/
     reg run = 1'b0;
     reg [5:0] waiting = 0;
     always @(posedge clk) begin
