@@ -6,8 +6,8 @@ Test Bench for alloc.v
 
 `default_nettype none
 
-//`include "alloc_test.v"
-`include "fixture.v"
+`include "alloc_test.v"
+// `include "fixture.v"
 
 `timescale 10ns/1ns
 
@@ -17,7 +17,7 @@ module test_bench;
     initial begin
         $dumpfile("alloc.vcd");
         $dumpvars(0, test_bench);
-        #4200;
+        #40000;
         $finish;
     end
 
@@ -37,16 +37,14 @@ module test_bench;
     end
 
     wire running;
-    wire [15:0] debug;
+    wire [63:0] debug;
     wire passed;
-    wire error;
     alloc_test TEST (
         .i_clk(clk),
         .i_en(!waiting),
         .o_running(running),
         .o_debug(debug),
-        .o_passed(passed),
-        .o_error(error)
+        .o_passed(passed)
     );
 
 endmodule
