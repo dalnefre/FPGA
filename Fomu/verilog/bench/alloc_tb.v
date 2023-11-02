@@ -6,8 +6,8 @@ Test Bench for alloc.v
 
 `default_nettype none
 
-`include "alloc_test.v"
-// `include "fixture.v"
+//`include "alloc_test.v"
+`include "fixture.v"
 
 `timescale 10ns/1ns
 
@@ -37,14 +37,14 @@ module test_bench;
     end
 
     wire running;
-    wire [63:0] debug;
     wire passed;
+    wire [63:0] debug;
     alloc_test TEST (
         .i_clk(clk),
         .i_en(!waiting),
         .o_running(running),
-        .o_debug(debug),
-        .o_passed(passed)
+        .o_passed(passed),
+        .o_debug(debug)
     );
 
 endmodule

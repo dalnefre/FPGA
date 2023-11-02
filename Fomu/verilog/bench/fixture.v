@@ -6,9 +6,8 @@ Test fixture for the Linked-Memory Allocator
     | alloc_test    |
     |               |
 --->|i_en  o_running|--->
-    |        o_debug|--->
     |       o_passed|--->
-    |        o_error|--->
+    |        o_debug|--->
     |               |
  +->|i_clk          |
  |  +---------------+
@@ -16,7 +15,6 @@ Test fixture for the Linked-Memory Allocator
 This component runs some tests on alloc.v, producing a pass or fail result.
 Activity is paused whilst i_en is low. During operation, o_running remains
 high. Once o_running goes low, the value of o_passed indicates success or failure.
-If the allocator signals o_err, then o_error is held high (sticky).
 
 */
 
@@ -29,9 +27,8 @@ module alloc_test (
     input                       i_clk,                          // system clock
     input                       i_en,                           // testing enabled
     output                      o_running,
-    output reg           [15:0] o_debug,
     output reg                  o_passed,
-    output reg                  o_error
+    output reg           [63:0] o_debug
 );
     // reserved constants
     localparam UNDEF            = 16'h0000;                     // undefined value
@@ -46,7 +43,6 @@ module alloc_test (
 
     initial o_debug = UNDEF;
     initial o_passed = 1'b0;
-    initial o_error = 1'b0;
 
     reg [4:0] state;  // 5-bit state-machine
     initial state = 1;
@@ -64,7 +60,6 @@ module alloc_test (
     // outputs
     wire [15:0] aaddr;
     wire [15:0] rdata;
-    wire err;
     alloc ALLOC (
         .i_clk(i_clk),
 
@@ -81,9 +76,7 @@ module alloc_test (
 
         .i_rd(rd_en),
         .i_raddr(raddr),
-        .o_rdata(rdata),
-
-        .o_err(err)
+        .o_rdata(rdata)
     );
 
     reg [16:0] al_mem [0:31];
@@ -241,8 +234,7 @@ module alloc_test (
 
     always @(posedge i_clk) begin
         if (o_running) begin
-            o_error <= err;
-            state <= err ? 0 : state + 1'b1;  // default: advance to next state or fail
+            state <= state + 1'b1;  // default: advance to next state or fail
             case (state)
                 1: begin
                     // start state
@@ -269,6 +261,10 @@ module alloc_test (
                     if (rdata != (ZERO | 1337)) begin
                         o_debug <= rdata;
                         state <= 0;
+/*
+*/
+                    end else begin
+                        state <= 10;  // SKIP CONCURRENT R/W
                     end
                 end
                 7: begin
@@ -291,6 +287,10 @@ module alloc_test (
                     if (rdata != (ZERO | 1337)) begin
                         o_debug <= rdata;
                         state <= 0;
+/*
+                    end else begin
+                        state <= 24;  // SKIP TO THE END...
+*/
                     end
                 end
                 10: begin
@@ -309,10 +309,6 @@ module alloc_test (
                     if (aaddr != (BASE | 1)) begin
                         o_debug <= aaddr;
                         state <= 0;
-/*
-                    end else begin
-                        state <= 22;  // SKIP TO THE END...
-*/
                     end
                     // aaddr <= alloc(258);
                 end
@@ -321,10 +317,17 @@ module alloc_test (
                     if (aaddr != (BASE | 2)) begin
                         o_debug <= aaddr;
                         state <= 0;
+/*
+                    end else begin
+                        state <= 24;  // SKIP TO THE END...
+*/
                     end
                 end
                 15: begin
                     // free(^5..2);
+/*
+*/
+                    state <= 24;  // SKIP TO THE END...
                 end
                 16: begin
                     // free(^5..1);

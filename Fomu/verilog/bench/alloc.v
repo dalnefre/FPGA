@@ -17,7 +17,7 @@ Linked-Memory Allocator
  |  +-----------------+
 
 This component manages a dynamically-allocated memory heap.
-It has two ports, with two functions each, and an error signal.
+It has two ports, with two functions each, and a memory-full signal.
 Only one of the two ports may be used in any given cycle.
 All results are available on the next clock-cycle.
 Requests are pipelined and may be issued on every cycle.
@@ -32,8 +32,8 @@ The second port is a simple memory-access interface.
 A "write" request stores data at a previously allocated address.
 A "read" request retrieves the last data stored at an address.
 
-If an error (such as out-of-memory) or invalid request occurs,
-the error signal is raised and the component halts.
+If o_full is high, the heap is full.
+Some memory must be freed before allocation can resume.
 
 */
 
@@ -68,7 +68,6 @@ module alloc #(
     input         [DATA_SZ-1:0] i_raddr,                        // read address
     output        [DATA_SZ-1:0] o_rdata,                        // data read
 
-    output reg                  o_err,                          // error condition
     output reg                  o_full                          // memory full condition
 );
 
@@ -87,7 +86,6 @@ module alloc #(
     localparam ZERO             = 16'h8000;                     // fixnum +0
 
     assign o_rdata = rdata;
-    initial o_err = 1'b0;
     initial o_full = 1'b0;
     always @(posedge i_clk) begin
         o_full <= (empty_f && full_f);                          // free-list empty, memory full
