@@ -73,7 +73,7 @@ module alloc_test (
     input                       i_en,                   // testing enabled
     output                      o_running,
     output reg  [DATA_SZ-1:0]   o_debug,
-    output                      o_passed
+    output reg                  o_passed
 );
 
 // To synthesize correctly, ADDR_SZ and BLK_DATA_SZ must be chosen such that
@@ -85,24 +85,28 @@ module alloc_test (
     localparam UNDEF = 1'b0;
     localparam NIL = 1'b1;
 
+// The 'done' register indicates that the test has concluded.
+
+    reg done = 0;
+
 // Whilst 'i_en' is high, the 'state' vector increments each clock cycle until
 // the test finishes.
 
-    reg [ADDR_SZ+4:0] state = 0;
-
-// state[ADDR_SZ+4]
-//      Indicates that the test has concluded, with the least significant bit
-//      indicating a pass (1) or fail (0) result.
-
-    wire done = state[ADDR_SZ+4];
-    assign o_running = !done;
-    assign o_passed = done && state[0];
+    reg [ADDR_SZ+3:0] state = 0;
+    always @(posedge i_clk) begin
+        if (i_en) begin
+            state <= state + 1;
+        end
+    end
 
 // state[ADDR_SZ+3]
 //      Indicates that the test has just finished and a report is being
 //      generated.
 
-    wire check = state[ADDR_SZ+3];
+    reg check = 0;
+    always @(posedge i_clk) begin
+        check <= i_en && state[ADDR_SZ+3] && !done && !check;
+    end
 
 // state[ADDR_SZ+2]
 //      0) First run. Allocations raise the top of memory.
@@ -115,11 +119,20 @@ module alloc_test (
 //      1) Tear down phase. The linked list is followed and freed. The state[0]
 //         bit controls whether the current cell is being read or freed.
 
-    wire working =  i_en && !done && !check;
-    wire allocate = working && !state[ADDR_SZ+1] && !state[ADDR_SZ];
-    wire reverse =  working && !state[ADDR_SZ+1] &&  state[ADDR_SZ];
-    wire read =     working &&  state[ADDR_SZ+1] && !state[0];
-    wire free =     working &&  state[ADDR_SZ+1] &&  state[0];
+// The signals provided to the allocator are delayed a cycle,
+// so that the combinatorial logic dependent on 'state' has time to settle.
+
+    reg allocate = 0;
+    reg reverse = 0;
+    reg read = 0;
+    reg free = 0;
+    wire working =  i_en && !done && !state[ADDR_SZ+3];
+    always @(posedge i_clk) begin
+        allocate <= working && !state[ADDR_SZ+1] && !state[ADDR_SZ];
+        reverse  <= working && !state[ADDR_SZ+1] &&  state[ADDR_SZ];
+        read     <= working &&  state[ADDR_SZ+1] && !state[0];
+        free     <= working &&  state[ADDR_SZ+1] &&  state[0];
+    end
 
 // state[ADDR_SZ-1:0]   (during build up)
 // state[ADDR_SZ:1]     (during tear down)
@@ -131,9 +144,9 @@ module alloc_test (
 // the list operations.
 
     reg addr_rdy = 0;
-    reg addr_prev_rdy = 0;
     reg rdata_rdy = 0;
     reg rdata_prev_rdy = 0;
+    reg second_write = 0;
     reg [ADDR_SZ-1:0] addr_prev = UNDEF;
     reg [DATA_SZ-1:0] rdata_prev = UNDEF;
     reg [DATA_SZ-1:0] rdata_prev_prev = UNDEF;
@@ -142,14 +155,15 @@ module alloc_test (
             addr_rdy <= allocate;
             rdata_rdy <= read || reverse;
             addr_prev <= addr;
-            addr_prev_rdy <= addr_rdy;
             rdata_prev <= rdata;
             rdata_prev_rdy <= rdata_rdy;
             rdata_prev_prev <= rdata_prev;
+            second_write <= addr_rdy && !allocate;
         end
     end
     wire [ADDR_SZ-1:0] addr;
     wire [DATA_SZ-1:0] rdata;
+    wire [DATA_SZ-1:0] addr_ptr = addr; // expand to DATA_SZ
     alloc #(
         .ADDR_SZ(ADDR_SZ),
         .DATA_SZ(DATA_SZ),
@@ -159,7 +173,7 @@ module alloc_test (
         .i_al(allocate),
         .i_adata(
             addr_rdy
-            ? addr[DATA_SZ-1:0]
+            ? addr_ptr
             : NIL
         ),
         .o_aaddr(addr),
@@ -175,9 +189,9 @@ module alloc_test (
             rdata_prev_rdy
             ? rdata_prev
             : (
-                (addr_prev_rdy && !addr_rdy)
+                second_write
                 ? addr_prev
-                : NIL
+                : NIL // first write
             )
         ),
         .i_rd(reverse || read),
@@ -192,20 +206,18 @@ module alloc_test (
         ),
         .o_rdata(rdata)
     );
+    assign o_running = i_en && !done;
+    initial o_passed = 0;
     initial o_debug = UNDEF;
     always @(posedge i_clk) begin
-        if (i_en) begin
-            if (check) begin
-                state <= (1 << (ADDR_SZ+4)) | (
-                    rdata_prev == NIL
-                    ? 1'b1 // pass
-                    : 1'b0 // fail
-                );
-                o_debug <= rdata;
-            end else if (!done) begin
-                // FIXME: are rdata/addr lost if i_en goes low?
-                state <= state + 1'b1;
-            end
+        if (check) begin
+            done <= 1;
+            o_passed <= (
+                rdata_prev == NIL
+                ? 1 // pass
+                : 0 // fail
+            );
+            o_debug <= rdata_prev;
         end
     end
 endmodule
