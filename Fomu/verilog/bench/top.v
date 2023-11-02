@@ -64,19 +64,17 @@ module top (
     wire running;
     wire [15:0] debug;
     wire passed;
-    wire error;
     alloc_test TEST (
         .i_clk(clk),
         .i_en(waiting[6]),
         .o_running(running),
         .o_debug(debug),
-        .o_passed(passed),
-        .o_error(error)
+        .o_passed(passed)
     );
 
     // drive LEDs
-    assign led_r = error;
+    assign led_r = !passed;
     assign led_g = passed;
-    assign led_b = !running;
+    assign led_b = running;
 
 endmodule

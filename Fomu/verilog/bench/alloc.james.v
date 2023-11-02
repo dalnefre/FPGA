@@ -17,7 +17,8 @@ A linked-memory allocator with configurable address and data sizes.
  |  +-----------------+
 
 This component manages a dynamically-allocated memory heap.
-It has two ports, with two functions each, and an error signal.
+It has two ports, with two functions each,
+and a signal that indicates the memory is full.
 Only one of the two ports may be used in any given cycle.
 All results are available on the next clock-cycle.
 Requests are pipelined and may be issued on every cycle.
@@ -27,6 +28,8 @@ An "alloc" request reserves a new address
 and stores an initial data value there.
 A "free" request returns memory to the heap.
 Both requests can be serviced in the same cycle.
+A "free" request must accompany an "alloc" request
+if the memory is full.
 
 The second port is a simple memory-access interface.
 A "write" request stores data at a previously allocated address.
@@ -72,7 +75,6 @@ module alloc #(
     input                       i_al,       // allocation request
     input         [DATA_SZ-1:0] i_adata,    // initial data
     output reg    [ADDR_SZ-1:0] o_aaddr,    // allocated address
-    output                      o_full,     // space exhausted
 
     input                       i_fr,       // free request
     input         [ADDR_SZ-1:0] i_faddr,    // free address
@@ -85,17 +87,9 @@ module alloc #(
     input         [ADDR_SZ-1:0] i_raddr,    // read address
     output        [DATA_SZ-1:0] o_rdata,    // data read
 
-    output reg                  o_err       // error strobe
+    output                      o_full      // memory full condition
 );
     localparam NR_BLKS = DATA_SZ / BLK_DATA_SZ;
-
-    wire ptr_op = i_al || i_fr;
-    wire mem_op = i_rd || i_wr;
-    wire bad_op = ptr_op && mem_op;
-    wire read_op = i_rd && !ptr_op;
-    wire write_op = i_wr && !ptr_op;
-    wire alloc_op = i_al && !mem_op;
-    wire free_op = i_fr && !mem_op;
 
     // top of available memory
     reg [ADDR_SZ:0] mem_top = 0;
@@ -109,17 +103,17 @@ module alloc #(
     assign o_full = full_f && !free_f;
 
     // raise the memory ceiling?
-    wire raise_top = alloc_op && !free_op && !free_f;
+    wire raise_top = i_al && !i_fr && !free_f;
 
     // whether a cell is being pushed onto or popped from the free list
-    wire pop_free = alloc_op && !free_op && free_f;
-    wire push_free = free_op && !alloc_op;
+    wire pop_free = i_al && !i_fr && free_f;
+    wire push_free = i_fr && !i_al;
     // previous operation was pop_free
     reg r_pop_freed = 1'b0;
 
     // enable/disable BRAM requests
-    wire wr_en = alloc_op || free_op || write_op;
-    wire rd_en = read_op || pop_free;
+    wire wr_en = i_al || i_fr || i_wr;
+    wire rd_en = i_rd || pop_free;
 
     // the data read from BRAM
     wire [DATA_SZ-1:0] rdata;
@@ -134,10 +128,10 @@ module alloc #(
 
     // determine the abstract memory locations to read/write
     wire [ADDR_SZ-1:0] waddr = (
-        free_op
-        ? i_faddr // if also alloc_op, assign passed-thru memory
+        i_fr
+        ? i_faddr // if also i_al, assign passed-thru memory
         : (
-            alloc_op
+            i_al
             ? (
                 free_f
                 ? mem_next
@@ -165,10 +159,10 @@ module alloc #(
             .i_wr_en(wr_en),
             .i_waddr(waddr[ADDR_SZ-1:0]),
             .i_wdata(
-                alloc_op
+                i_al
                 ? i_adata[ms:ls]
                 : (
-                    free_op
+                    i_fr
                     ? mem_next[ms:ls]
                     : i_wdata[ms:ls]
                 )
@@ -181,39 +175,33 @@ module alloc #(
 
     assign o_rdata = rdata;
     always @(posedge i_clk) begin
-        // check for error conditions
-        if (bad_op || (raise_top && full_f)) begin
-            o_err <= 1;
-        end else begin
-            o_err <= 0;  // strobe, not sticky...
-            // register the allocated address (garbage if alloc_op if low)
-            o_aaddr <= (
-                free_op
-                ? i_faddr
-                : (
-                    free_f
-                    ? mem_next
-                    : mem_top[ADDR_SZ-1:0]
-                )
-            );
-            // increment memory top marker
-            if (raise_top) begin
-                mem_top <= mem_top + 1;
-            end
-            // maintain the free list
-            if (r_pop_freed) begin
-                r_mem_next <= rdata[ADDR_SZ-1:0]; // pop
-            end
-            r_pop_freed <= pop_free;
-            if (push_free) begin
-                r_mem_next <= i_faddr; // push
-            end
-            // maintain free list counter
-            if (pop_free) begin
-                mem_free <= mem_free - 1'b1;
-            end else if (push_free) begin
-                mem_free <= mem_free + 1'b1;
-            end
+        // register the allocated address (garbage if i_al if low)
+        o_aaddr <= (
+            i_fr
+            ? i_faddr
+            : (
+                free_f
+                ? mem_next
+                : mem_top[ADDR_SZ-1:0]
+            )
+        );
+        // increment memory top marker
+        if (raise_top) begin
+            mem_top <= mem_top + 1;
+        end
+        // maintain the free list
+        if (r_pop_freed) begin
+            r_mem_next <= rdata[ADDR_SZ-1:0]; // pop
+        end
+        r_pop_freed <= pop_free;
+        if (push_free) begin
+            r_mem_next <= i_faddr; // push
+        end
+        // maintain free list counter
+        if (pop_free) begin
+            mem_free <= mem_free - 1'b1;
+        end else if (push_free) begin
+            mem_free <= mem_free + 1'b1;
         end
     end
 endmodule

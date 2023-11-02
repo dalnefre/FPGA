@@ -8,7 +8,6 @@ Test component for the Linked-Memory Allocator
 --->|i_en  o_running|--->
     |        o_debug|--->
     |       o_passed|--->
-    |        o_error|--->
     |               |
  +->|i_clk          |
  |  +---------------+
@@ -59,8 +58,8 @@ PHASE 3
     Note that phase 3 takes twice as long as either phase 1 or phase 2, because
     concurrent read and free requests are not permitted.
 
-The test fails if the allocator reports an error at any time. It succeeds only
-if the traversed linked list was the expected length and terminated in NIL.
+The test succeeds only if the traversed linked list was the expected length and
+terminated in NIL.
 
 */
 
@@ -74,8 +73,7 @@ module alloc_test (
     input                       i_en,                   // testing enabled
     output                      o_running,
     output reg  [DATA_SZ-1:0]   o_debug,
-    output                      o_passed,
-    output                      o_error
+    output                      o_passed
 );
 
 // To synthesize correctly, ADDR_SZ and BLK_DATA_SZ must be chosen such that
@@ -93,13 +91,12 @@ module alloc_test (
     reg [ADDR_SZ+4:0] state = 0;
 
 // state[ADDR_SZ+4]
-//      Indicates that the test has concluded, with a report encoded in the low
-//      two bits.
+//      Indicates that the test has concluded, with the least significant bit
+//      indicating a pass (1) or fail (0) result.
 
     wire done = state[ADDR_SZ+4];
     assign o_running = !done;
     assign o_passed = done && state[0];
-    assign o_error = done && state[1];
 
 // state[ADDR_SZ+3]
 //      Indicates that the test has just finished and a report is being
@@ -151,7 +148,6 @@ module alloc_test (
             rdata_prev_prev <= rdata_prev;
         end
     end
-    wire err;
     wire [ADDR_SZ-1:0] addr;
     wire [DATA_SZ-1:0] rdata;
     alloc #(
@@ -194,19 +190,16 @@ module alloc_test (
                 : addr
             )
         ),
-        .o_rdata(rdata),
-        .o_err(err)
+        .o_rdata(rdata)
     );
     initial o_debug = UNDEF;
     always @(posedge i_clk) begin
         if (i_en) begin
-            if (err) begin
-                state <= (1 << (ADDR_SZ+4)) | 2'b10; // halt with error
-            end else if (check) begin
+            if (check) begin
                 state <= (1 << (ADDR_SZ+4)) | (
                     rdata_prev == NIL
-                    ? 2'b01 // pass with no error
-                    : 2'b00 // fail with no error
+                    ? 1'b1 // pass
+                    : 1'b0 // fail
                 );
                 o_debug <= rdata;
             end else if (!done) begin

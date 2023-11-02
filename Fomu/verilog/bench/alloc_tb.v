@@ -39,14 +39,12 @@ module test_bench;
     wire running;
     wire [63:0] debug;
     wire passed;
-    wire error;
     alloc_test TEST (
         .i_clk(clk),
         .i_en(!waiting),
         .o_running(running),
         .o_debug(debug),
-        .o_passed(passed),
-        .o_error(error)
+        .o_passed(passed)
     );
 
 endmodule
