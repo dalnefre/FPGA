@@ -119,10 +119,10 @@ module alloc #(
     wire [DATA_SZ-1:0] rdata;
 
     // next memory cell on free-list
-    reg [ADDR_SZ-1:0] r_mem_next = 0;
-    wire [ADDR_SZ-1:0] mem_next = (
+    reg [DATA_SZ-1:0] r_mem_next = 0;
+    wire [DATA_SZ-1:0] mem_next = (
         r_pop_freed
-        ? rdata[ADDR_SZ-1:0]
+        ? rdata
         : r_mem_next
     );
 
@@ -134,7 +134,7 @@ module alloc #(
             i_al
             ? (
                 free_f
-                ? mem_next
+                ? mem_next[ADDR_SZ-1:0]
                 : mem_top[ADDR_SZ-1:0]
             )
             : i_waddr
@@ -142,7 +142,7 @@ module alloc #(
     );
     wire [ADDR_SZ-1:0] raddr = (
         pop_free
-        ? mem_next
+        ? mem_next[ADDR_SZ-1:0]
         : i_raddr
     );
 
@@ -181,7 +181,7 @@ module alloc #(
             ? i_faddr
             : (
                 free_f
-                ? mem_next
+                ? mem_next[ADDR_SZ-1:0]
                 : mem_top[ADDR_SZ-1:0]
             )
         );
@@ -191,7 +191,7 @@ module alloc #(
         end
         // maintain the free list
         if (r_pop_freed) begin
-            r_mem_next <= rdata[ADDR_SZ-1:0]; // pop
+            r_mem_next <= rdata; // pop
         end
         r_pop_freed <= pop_free;
         if (push_free) begin
