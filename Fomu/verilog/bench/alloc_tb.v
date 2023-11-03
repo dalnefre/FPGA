@@ -17,7 +17,7 @@ module test_bench;
     initial begin
         $dumpfile("alloc.vcd");
         $dumpvars(0, test_bench);
-        #40000;
+        #20000;
         $finish;
     end
 

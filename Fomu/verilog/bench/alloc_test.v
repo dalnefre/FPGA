@@ -1,6 +1,6 @@
 /*
 
-Test component for the Linked-Memory Allocator
+Test component for the quad allocator
 
     +---------------+
     | alloc_test    |
@@ -12,12 +12,10 @@ Test component for the Linked-Memory Allocator
  +->|i_clk          |
  |  +---------------+
 
-This component tests alloc.v, producing a pass or fail result.
-
 Activity is paused until i_en goes low. During operation, o_running remains
 high. Once o_running goes low, the value of o_pass indicates success or failure.
 
-All four kinds of allocator request are tested, including ALLOCATE, FREE, READ,
+All four kinds of allocator requests are tested, including ALLOCATE, FREE, READ,
 and WRITE. Simultaneous READ and WRITE requests are tested, but not
 simultaneous ALLOCATE and FREE requests.
 
@@ -26,35 +24,35 @@ of the free list. Each of the two test runs has three distinct phases:
 
 PHASE 1
 
-    address       0       1       2             252     253     254     255
+    addresses     0       1       2             252     253     254     255
                 +---+   +---+   +---+          +---+   +---+   +---+   +---+
-    cell        |NIL|<--+-0 |<--+-1 |  ...  <--+251|<--+252|<--+253|<--+254|
+    quads       |NIL|<--+-0 |<--+-1 |  ...  <--+251|<--+252|<--+253|<--+254|
                 +---+   +---+   +---+          +---+   +---+   +---+   +---+
-    request       A  ->   A  ->   A    ...       A  ->   A  ->   A  ->   A
+    requests      A  ->   A  ->   A    ...       A  ->   A  ->   A  ->   A
 
-    Cells are allocated to form a linked list ending in NIL, completely filling
-    the allocator's memory.
+    DICT_T quads are allocated to form a linked list ending in NIL, completely
+    filling the allocator's memory.
 
 PHASE 2
 
-    address                     250     251     252     253     254     255
+    addresses                   250     251     252     253     254     255
                                +---+   +---+   +---+   +---+   +---+   +---+
-    cell               ...  <--+249|<--+250|   |253+-->|254+-->|255+-->|NIL|
+    quads              ...  <--+249|<--+250|   |253+-->|254+-->|255+-->|NIL|
                                +---+   +---+   +---+   +---+   +---+   +---+
-    request                                     R+W  <- R+W  <- R+W  <- R+W
+    requests                                    R+W  <- R+W  <- R+W  <- R+W
 
     The linked list is reversed, in situ, using simultaneous read and write
     requests.
 
 PHASE 3
 
-    address       0       1             251     252     253     254     255
+    addresses     0       1             251     252     253     254     255
                 +---+   +---+          +---+   +---+   +---+   +---+   +---+
-    cell        |   |   |   |   ...    |   |   |   |   |254+-->|255+-->|NIL|
+    quads       |   |   |   |   ...    |   |   |   |   |254+-->|255+-->|NIL|
                 +---+   +---+          +---+   +---+   +---+   +---+   +---+
-    request      R,F ->  R,F    ...     R,F ->  R,F
+    requests     R,F ->  R,F    ...     R,F ->  R,F
 
-    The reversed list is traversed, with each cell being freed after it is read.
+    The reversed list is traversed, with each quad being freed after it is read.
     Note that phase 3 takes twice as long as either phase 1 or phase 2, because
     concurrent read and free requests are not permitted.
 
@@ -72,7 +70,7 @@ module alloc_test (
     input                       i_clk,                  // system clock
     input                       i_en,                   // testing enabled
     output                      o_running,
-    output reg  [DATA_SZ-1:0]   o_debug,
+    output reg  [QUAD_SZ-1:0]   o_debug,
     output reg                  o_passed
 );
 
@@ -80,10 +78,13 @@ module alloc_test (
 // BLK_DATA_SZ * 2^ADDR_SZ = 4096.
 
     localparam ADDR_SZ = 10;  // must be at least 2
-    localparam DATA_SZ = 64;
-    localparam BLK_DATA_SZ = 4; // 16 columns
+    localparam FIELD_SZ = 16;
+    localparam QUAD_SZ = 4 * FIELD_SZ;
+    localparam BLK_DATA_SZ = 4; // 8 blocks
     localparam UNDEF = 1'b0;
     localparam NIL = 1'b1;
+    localparam DICT_T = 13; // 0xD
+    localparam DICT_QUAD = DICT_T << (3 * FIELD_SZ);
 
 // The 'done' register indicates that the test has concluded.
 
@@ -117,7 +118,7 @@ module alloc_test (
 //         The state[ADDR_SZ] bit controls whether the list is being allocated
 //         or reversed.
 //      1) Tear down phase. The linked list is followed and freed. The state[0]
-//         bit controls whether the current cell is being read or freed.
+//         bit controls whether the current quad is being read or freed.
 
 // The signals provided to the allocator are delayed a cycle,
 // so that the combinatorial logic dependent on 'state' has time to settle.
@@ -136,7 +137,7 @@ module alloc_test (
 
 // state[ADDR_SZ-1:0]   (during build up)
 // state[ADDR_SZ:1]     (during tear down)
-//      Counts the cells in the linked list. Note that the location of this
+//      Counts the quads in the linked list. Note that the location of this
 //      vector shifts one bit to the left during the tear down phase, but does
 //      not change size.
 
@@ -147,9 +148,9 @@ module alloc_test (
     reg rdata_rdy = 0;
     reg rdata_prev_rdy = 0;
     reg second_write = 0;
-    reg [ADDR_SZ-1:0] addr_prev = UNDEF;
-    reg [DATA_SZ-1:0] rdata_prev = UNDEF;
-    reg [DATA_SZ-1:0] rdata_prev_prev = UNDEF;
+    reg [FIELD_SZ-1:0] addr_prev = UNDEF;
+    reg [QUAD_SZ-1:0] rdata_prev = -1;
+    reg [QUAD_SZ-1:0] rdata_prev_prev = -1;
     always @(posedge i_clk) begin
         if (i_en) begin
             addr_rdy <= allocate;
@@ -161,28 +162,28 @@ module alloc_test (
             second_write <= addr_rdy && !allocate;
         end
     end
-    wire [ADDR_SZ-1:0] addr;
-    wire [DATA_SZ-1:0] rdata;
-    wire [DATA_SZ-1:0] addr_ptr = addr; // expand to DATA_SZ
+    wire [FIELD_SZ-1:0] addr;
+    wire [QUAD_SZ-1:0] rdata;
+    wire [QUAD_SZ-1:0] addr_quad = DICT_QUAD | addr; // [DICT_T, #?, #?, addr]
     alloc #(
         .ADDR_SZ(ADDR_SZ),
-        .DATA_SZ(DATA_SZ),
+        .FIELD_SZ(FIELD_SZ),
         .BLK_DATA_SZ(BLK_DATA_SZ)
     ) ALLOC (
         .i_clk(i_clk),
         .i_al(allocate),
         .i_adata(
             addr_rdy
-            ? addr_ptr
-            : NIL
+            ? addr_quad
+            : (DICT_QUAD | NIL)
         ),
         .o_aaddr(addr),
         .i_fr(free),
-        .i_faddr(rdata_prev_prev[ADDR_SZ-1:0]),
+        .i_faddr(rdata_prev_prev[FIELD_SZ-1:0]),
         .i_wr(reverse),
         .i_waddr(
             rdata_rdy
-            ? rdata[ADDR_SZ-1:0]
+            ? rdata[FIELD_SZ-1:0]
             : addr
         ),
         .i_wdata(
@@ -190,17 +191,17 @@ module alloc_test (
             ? rdata_prev
             : (
                 second_write
-                ? addr_prev
-                : NIL // first write
+                ? (DICT_QUAD | addr_prev)
+                : (DICT_QUAD | NIL) // first write
             )
         ),
         .i_rd(reverse || read),
         .i_raddr(
             read
-            ? rdata_prev[ADDR_SZ-1:0]
+            ? rdata_prev[FIELD_SZ-1:0]
             : (
                 rdata_rdy
-                ? rdata[ADDR_SZ-1:0]
+                ? rdata[FIELD_SZ-1:0]
                 : addr
             )
         ),
@@ -208,12 +209,12 @@ module alloc_test (
     );
     assign o_running = i_en && !done;
     initial o_passed = 0;
-    initial o_debug = UNDEF;
+    initial o_debug = -1;
     always @(posedge i_clk) begin
         if (check) begin
             done <= 1;
             o_passed <= (
-                rdata_prev == NIL
+                rdata_prev == (DICT_QUAD | NIL)
                 ? 1 // pass
                 : 0 // fail
             );
