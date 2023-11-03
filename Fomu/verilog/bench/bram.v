@@ -47,7 +47,11 @@ module bram #(
     // read access
     always @(posedge i_clk) begin
         if (i_rd_en) begin
-            o_rdata <= mem[i_raddr];
+            if (i_wr_en && (i_raddr == i_waddr)) begin
+                o_rdata <= i_wdata;  // write-before-read pass-thru
+            end else begin
+                o_rdata <= mem[i_raddr];
+            end
         end else begin
             o_rdata <= 0;  // UNDEF
         end

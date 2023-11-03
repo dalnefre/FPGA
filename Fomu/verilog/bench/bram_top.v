@@ -7,7 +7,8 @@ Physical Test Bench
 `default_nettype none
 
 //`include "bram.v"
-`include "bram4k.v"
+//`include "bram4k.v"
+`include "alloc.v"
 
 module top (
     input                       clki,                           // 48MHz oscillator input on Fomu-PVT
@@ -77,6 +78,20 @@ module top (
         .i_raddr(raddr),
         .o_rdata(actual)
     );
+/*
+    // instantiate allocator
+    alloc ALLOC (
+        .i_clk(clk),
+
+        .i_wr(wr),
+        .i_waddr(waddr),
+        .i_wdata(wdata),
+
+        .i_rd(rd),
+        .i_raddr(raddr),
+        .o_rdata(actual)
+    );
+*/
     wire [15:0] actual;
 
     //

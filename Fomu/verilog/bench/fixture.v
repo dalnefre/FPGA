@@ -273,9 +273,9 @@ module alloc_test (
                         o_debug <= rdata;
                         state <= 0;
 /*
-*/
                     end else begin
                         state <= 10;  // SKIP CONCURRENT R/W
+*/
                     end
                 end
                 7: begin
@@ -289,13 +289,17 @@ module alloc_test (
                         o_debug <= rdata;
                         state <= 0;
                     end
-                    // read/alloc conflict
+                    // read/write same address
                     // rdata <= ram[144];
                     // ram[144] <= 360;
                 end
                 9: begin
-                    // assert(rdata == 1337)
+/*
+                    // assert(rdata == 1337)  // read-before-write
                     if (rdata != (ZERO | 1337)) begin
+*/
+                    // assert(rdata == 360)  // write-before-read
+                    if (rdata != (ZERO | 360)) begin
                         o_debug <= rdata;
                         state <= 0;
 /*
