@@ -39,30 +39,11 @@ module alloc_test (
     localparam ZERO             = 16'h8000;                     // fixnum +0
     localparam BASE             = 16'h5000;                     // offset 0 into RAM
 
-    assign o_running = i_en && (state != 0);
+    assign o_running = i_en && (state != STOP);
 
-    initial o_debug = UNDEF;
     initial o_passed = 1'b0;
+    initial o_debug = UNDEF;
 
-    reg [4:0] state = 1;  // 5-bit state-machine
-    reg [4:0] r_state = 0;  // previous state
-    always @(posedge i_clk) begin
-        r_state <= state;
-    end
-
-    // inputs
-    reg al_en;
-    reg [15:0] adata;
-    reg fr_en;
-    reg [15:0] faddr;
-    reg wr_en;
-    reg [15:0] waddr;
-    reg [15:0] wdata;
-    reg rd_en;
-    reg [15:0] raddr;
-    // outputs
-    wire [15:0] aaddr;
-    wire [15:0] rdata;
     alloc ALLOC (
         .i_clk(i_clk),
 
@@ -81,317 +62,182 @@ module alloc_test (
         .i_raddr(raddr),
         .o_rdata(rdata)
     );
+    wire [15:0] aaddr;
+    wire [15:0] rdata;
 
-    reg [16:0] al_mem [0:31];
-    initial begin
-        al_mem[0] = {1'b0, UNDEF};
-        al_mem[1] = {1'b0, UNDEF};
-        al_mem[2] = {1'b0, UNDEF};
-        al_mem[3] = {1'b0, UNDEF};
-        al_mem[4] = {1'b0, UNDEF};
-        al_mem[5] = {1'b0, UNDEF};
-        al_mem[6] = {1'b0, UNDEF};
-        al_mem[7] = {1'b0, UNDEF};
-        al_mem[8] = {1'b0, UNDEF};
-        al_mem[9] = {1'b0, UNDEF};
-        al_mem[10] = {1'b1, (ZERO | 16'd256)};
-        al_mem[11] = {1'b1, (ZERO | 16'd257)};
-        al_mem[12] = {1'b1, (ZERO | 16'd258)};
-        al_mem[13] = {1'b0, UNDEF};
-        al_mem[14] = {1'b0, UNDEF};
-        al_mem[15] = {1'b0, UNDEF};
-        al_mem[16] = {1'b0, UNDEF};
-        al_mem[17] = {1'b1, (ZERO | 16'd259)};
-        al_mem[18] = {1'b1, (ZERO | 16'd260)};
-        al_mem[19] = {1'b1, (ZERO | 16'd261)};
-        al_mem[20] = {1'b0, UNDEF};
-        al_mem[21] = {1'b0, UNDEF};
-        al_mem[22] = {1'b0, UNDEF};
-        al_mem[23] = {1'b0, UNDEF};
-        al_mem[24] = {1'b0, UNDEF};
-        al_mem[25] = {1'b0, UNDEF};
-        al_mem[26] = {1'b0, UNDEF};
-        al_mem[27] = {1'b0, UNDEF};
-        al_mem[28] = {1'b0, UNDEF};
-        al_mem[29] = {1'b0, UNDEF};
-        al_mem[30] = {1'b0, UNDEF};
-        al_mem[31] = {1'b0, UNDEF};
-    end
-    always @(posedge i_clk) begin
-        al_en <= al_mem[state][16];
-        adata <= al_mem[state][15:0];
-    end
+    //
+    // test script
+    //
 
-    reg [16:0] fr_mem [0:31];
-    initial begin
-        fr_mem[0] = {1'b0, UNDEF};
-        fr_mem[1] = {1'b0, UNDEF};
-        fr_mem[2] = {1'b0, UNDEF};
-        fr_mem[3] = {1'b0, UNDEF};
-        fr_mem[4] = {1'b0, UNDEF};
-        fr_mem[5] = {1'b0, UNDEF};
-        fr_mem[6] = {1'b0, UNDEF};
-        fr_mem[7] = {1'b0, UNDEF};
-        fr_mem[8] = {1'b0, UNDEF};
-        fr_mem[9] = {1'b0, UNDEF};
-        fr_mem[10] = {1'b0, UNDEF};
-        fr_mem[11] = {1'b0, UNDEF};
-        fr_mem[12] = {1'b0, UNDEF};
-        fr_mem[13] = {1'b0, UNDEF};
-        fr_mem[14] = {1'b0, UNDEF};
-        fr_mem[15] = {1'b1, (BASE | 16'd2)};
-        fr_mem[16] = {1'b1, (BASE | 16'd1)};
-        fr_mem[17] = {1'b0, UNDEF};
-        fr_mem[18] = {1'b1, (BASE | 16'd0)};
-        fr_mem[19] = {1'b0, UNDEF};
-        fr_mem[20] = {1'b0, UNDEF};
-        fr_mem[21] = {1'b0, UNDEF};
-        fr_mem[22] = {1'b0, UNDEF};
-        fr_mem[23] = {1'b0, UNDEF};
-        fr_mem[24] = {1'b0, UNDEF};
-        fr_mem[25] = {1'b0, UNDEF};
-        fr_mem[26] = {1'b0, UNDEF};
-        fr_mem[27] = {1'b0, UNDEF};
-        fr_mem[28] = {1'b0, UNDEF};
-        fr_mem[29] = {1'b0, UNDEF};
-        fr_mem[30] = {1'b0, UNDEF};
-        fr_mem[31] = {1'b0, UNDEF};
-    end
-    always @(posedge i_clk) begin
-        fr_en <= fr_mem[state][16];
-        faddr <= fr_mem[state][15:0];
-    end
+    wire al_en          = script[state][122];
+    wire [15:0] adata   = script[state][121:106];
+    wire acmp           = script[state][105];
+    wire [15:0] axpct   = script[state][104:89];
+    wire fr_en          = script[state][88];
+    wire [15:0] faddr   = script[state][87:72];
+    wire [4:0] next     = script[state][71:67];
+    wire wr_en          = script[state][66];
+    wire [15:0] waddr   = script[state][65:50];
+    wire [15:0] wdata   = script[state][49:34];
+    wire rd_en          = script[state][33];
+    wire [15:0] raddr   = script[state][32:17];
+    wire rcmp           = script[state][16];
+    wire [15:0] rxpct   = script[state][15:0];
 
-    reg [16:0] rd_mem [0:31];
+    reg [4:0] state = 5'h01;  // 5-bit state-machine
+    localparam STOP = 5'h00;
+    localparam DONE = 5'h1F;
+    reg [122:0] script [0:31];  // script indexed by state
     initial begin
-        rd_mem[0] = {1'b0, UNDEF};
-        rd_mem[1] = {1'b0, UNDEF};
-        rd_mem[2] = {1'b0, UNDEF};
-        rd_mem[3] = {1'b0, UNDEF};
-        rd_mem[4] = {1'b1, (BASE | 16'd42)};
-        rd_mem[5] = {1'b1, (BASE | 16'd144)};
-        rd_mem[6] = {1'b0, UNDEF};
-        rd_mem[7] = {1'b1, (BASE | 16'd42)};
-        rd_mem[8] = {1'b1, (BASE | 16'd144)};
-        rd_mem[9] = {1'b0, UNDEF};
-        rd_mem[10] = {1'b0, UNDEF};
-        rd_mem[11] = {1'b0, UNDEF};
-        rd_mem[12] = {1'b0, UNDEF};
-        rd_mem[13] = {1'b0, UNDEF};
-        rd_mem[14] = {1'b0, UNDEF};
-        rd_mem[15] = {1'b0, UNDEF};
-        rd_mem[16] = {1'b0, UNDEF};
-        rd_mem[17] = {1'b0, UNDEF};
-        rd_mem[18] = {1'b0, UNDEF};
-        rd_mem[19] = {1'b0, UNDEF};
-        rd_mem[20] = {1'b0, UNDEF};
-        rd_mem[21] = {1'b0, UNDEF};
-        rd_mem[22] = {1'b0, UNDEF};
-        rd_mem[23] = {1'b0, UNDEF};
-        rd_mem[24] = {1'b0, UNDEF};
-        rd_mem[25] = {1'b0, UNDEF};
-        rd_mem[26] = {1'b0, UNDEF};
-        rd_mem[27] = {1'b0, UNDEF};
-        rd_mem[28] = {1'b0, UNDEF};
-        rd_mem[29] = {1'b0, UNDEF};
-        rd_mem[30] = {1'b0, UNDEF};
-        rd_mem[31] = {1'b0, UNDEF};
-    end
-    always @(posedge i_clk) begin
-        rd_en <= rd_mem[state][16];
-        raddr <= rd_mem[state][15:0];
-    end
-
-    reg [32:0] wr_mem [0:31];
-    initial begin
-        wr_mem[0] = {1'b0, UNDEF, UNDEF};
-        wr_mem[1] = {1'b0, UNDEF, UNDEF};
-        wr_mem[2] = {1'b1, (BASE | 16'd42), (ZERO | 16'd420)};
-        wr_mem[3] = {1'b1, (BASE | 16'd144), (ZERO | 16'd1337)};
-        wr_mem[4] = {1'b0, UNDEF, UNDEF};
-        wr_mem[5] = {1'b0, UNDEF, UNDEF};
-        wr_mem[6] = {1'b0, UNDEF, UNDEF};
-        wr_mem[7] = {1'b1, (BASE | 16'd34), (ZERO | 16'd55)};
-        wr_mem[8] = {1'b1, (BASE | 16'd144), (ZERO | 16'd360)};
-        wr_mem[9] = {1'b0, UNDEF, UNDEF};
-        wr_mem[10] = {1'b0, UNDEF, UNDEF};
-        wr_mem[11] = {1'b0, UNDEF, UNDEF};
-        wr_mem[12] = {1'b0, UNDEF, UNDEF};
-        wr_mem[13] = {1'b0, UNDEF, UNDEF};
-        wr_mem[14] = {1'b0, UNDEF, UNDEF};
-        wr_mem[15] = {1'b0, UNDEF, UNDEF};
-        wr_mem[16] = {1'b0, UNDEF, UNDEF};
-        wr_mem[17] = {1'b0, UNDEF, UNDEF};
-        wr_mem[18] = {1'b0, UNDEF, UNDEF};
-        wr_mem[19] = {1'b0, UNDEF, UNDEF};
-        wr_mem[20] = {1'b0, UNDEF, UNDEF};
-        wr_mem[21] = {1'b0, UNDEF, UNDEF};
-        wr_mem[22] = {1'b0, UNDEF, UNDEF};
-        wr_mem[23] = {1'b0, UNDEF, UNDEF};
-        wr_mem[24] = {1'b0, UNDEF, UNDEF};
-        wr_mem[25] = {1'b0, UNDEF, UNDEF};
-        wr_mem[26] = {1'b0, UNDEF, UNDEF};
-        wr_mem[27] = {1'b0, UNDEF, UNDEF};
-        wr_mem[28] = {1'b0, UNDEF, UNDEF};
-        wr_mem[29] = {1'b0, UNDEF, UNDEF};
-        wr_mem[30] = {1'b0, UNDEF, UNDEF};
-        wr_mem[31] = {1'b0, UNDEF, UNDEF};
-    end
-    always @(posedge i_clk) begin
-        wr_en <= wr_mem[state][32];
-        waddr <= wr_mem[state][31:16];
-        wdata <= wr_mem[state][15:0];
+        // al_en,    adata, acmp,    axpct, fr_en,    faddr,    next,
+        // wr_en,    waddr,    wdata, rd_en,    raddr, rcmp,    rxpct
+        script[STOP]  =  // stop state (looping)
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,    STOP,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h01] =  // start state
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h02,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h02] =  // ram[^50FF] <= $BE11
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h03,
+            1'b1, 16'h50FF, 16'hBE11,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h03] =  // ram[^5095] <= $C0DE
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h04,
+            1'b1, 16'h5095, 16'hC0DE,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h04] =  // rdata <= ram[^50FF]
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h05,
+            1'b0, 16'h0000, 16'h0000,  1'b1, 16'h50FF, 1'b0, 16'h0000  };
+        script[5'h05] =  // assert(rdata == $BE11); rdata <= ram[^5095]
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h06,
+            1'b0, 16'h0000, 16'h0000,  1'b1, 16'h5095, 1'b1, 16'hBE11  };
+        script[5'h06] =  // assert(rdata == $C0DE)
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h07,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b1, 16'hC0DE  };
+        script[5'h07] =  // rdata <= ram[^50FF]; ram[^5034] <= $D05E
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h08,
+            1'b1, 16'h5034, 16'hD05E,  1'b1, 16'h50FF, 1'b0, 16'h0000  };
+        script[5'h08] =  // assert(rdata == $BE11)
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h09,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b1, 16'hBE11  };
+        script[5'h09] =  // rdata <= ram[^5034]; ram[^5034] <= $EA5E
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0A,
+            1'b1, 16'h5034, 16'hEA5E,  1'b1, 16'h5034, 1'b0, 16'h0000  };
+        script[5'h0A] =  // assert(rdata == $EA5E) --- write before read
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0B,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b1, 16'hEA5E  };
+        script[5'h0B] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0C,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h0C] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0D,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h0D] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0E,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h0E] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0F,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h0F] =  // no-op --- jump to done
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,    DONE,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h10] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h11,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h11] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h12,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h12] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h13,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h13] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h14,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h14] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h15,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h15] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h16,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h16] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h17,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h17] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h18,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h18] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h19,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h19] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1A,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h1A] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1B,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h1B] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1C,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h1C] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1D,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h1D] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1E,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[5'h1E] =  // no-op
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1F,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
+        script[DONE]  =  // done state (success)
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,    STOP,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
     end
 
     always @(posedge i_clk) begin
         if (o_running) begin
+            if (state == DONE) begin
+                // register success
+                o_passed <= 1'b1;
+            end
+            state <= next;  // default transition
+            if (acmp) begin
+                if (aaddr != axpct) begin
+                    state <= STOP;  // stop (failed)
+                end
+            end
+            if (rcmp) begin
+                if (rdata != rxpct) begin
+                    state <= STOP;  // stop (failed)
+                end
+            end
+        end
+    end
+
+/*
+    always @(posedge i_clk) begin
+        if (o_running) begin
             state <= state + 1'b1;  // default: advance to next state
             case (r_state)  // verify one clock behind action
-                1: begin
-                    // start state
-                end
-                2: begin
-                    // ram[42] <= 420
-                end
-                3: begin
-                    // ram[144] <= 1337
-                end
-                4: begin
-                    // rdata <= ram[42]
-                end
-                5: begin
-                    // assert(rdata == 420)
-                    if (rdata != (ZERO | 420)) begin
-                        o_debug <= rdata;
-                        state <= 0;
-                    end
-                    // rdata <= ram[144]
-                end
-                6: begin
-                    // assert(rdata == 1337)
-                    if (rdata != (ZERO | 1337)) begin
-                        o_debug <= rdata;
-                        state <= 0;
-/*
-                    end else begin
-                        state <= 10;  // SKIP CONCURRENT R/W
-*/
-                    end
-                end
-                7: begin
-                    // simultaneous read/write
-                    // rdata <= ram[42];
-                    // ram[34] <= 55
-                end
-                8: begin
-                    // assert(rdata == 420)
-                    if (rdata != (ZERO | 420)) begin
-                        o_debug <= rdata;
-                        state <= 0;
-                    end
-                    // read/write same address
-                    // rdata <= ram[144];
-                    // ram[144] <= 360;
-                end
-                9: begin
-/*
-                    // assert(rdata == 1337)  // read-before-write
-                    if (rdata != (ZERO | 1337)) begin
-*/
-                    // assert(rdata == 360)  // write-before-read
-                    if (rdata != (ZERO | 360)) begin
-                        o_debug <= rdata;
-                        state <= 0;
-/*
-                    end else begin
-                        state <= 24;  // SKIP TO THE END...
-*/
-                    end
-                end
-                10: begin
-                    // aaddr <= alloc(256);
-/*
-                    state <= 10;  // LOOP ALLOCATING FOREVER!
-*/
-                end
-                11: begin
-                    // assert(aaddr == ^5..0)
-                    if (aaddr != (BASE | 0)) begin
-                        o_debug <= aaddr;
-                        state <= 0;
-                    end
-                    // aaddr <= alloc(257);
-                end
-                12: begin
-                    // assert(aaddr == ^5..1)
-                    if (aaddr != (BASE | 1)) begin
-                        o_debug <= aaddr;
-                        state <= 0;
-                    end
-                    // aaddr <= alloc(258);
-                end
-                13: begin
-                    // assert(aaddr == ^5..2)
-                    if (aaddr != (BASE | 2)) begin
-                        o_debug <= aaddr;
-                        state <= 0;
-/*
-                    end else begin
-                        state <= 24;  // SKIP TO THE END...
-*/
-                    end
-                end
-                15: begin
-                    // free(^5..2);
-                end
-                16: begin
-                    // free(^5..1);
-                end
-                17: begin
-                    // aaddr <= alloc(259);
-/*
-                    state <= 24;  // SKIP TO THE END...
-*/
-                end
-                18: begin
-                    // assert(aaddr == ^5..1)
-                    if (aaddr != (BASE | 1)) begin
-                        o_debug <= aaddr;
-                        state <= 0;
-/*
-*/
-                    end else begin
-                        state <= 24;  // SKIP TO THE END...
-                    end
-                    // free(^5..0);
-                    // aaddr <= alloc(260);
-                end
-                19: begin
-                    // assert(aaddr == ^5..0)
-                    if (aaddr != (BASE | 0)) begin
-                        o_debug <= aaddr;
-                        state <= 0;
-/*
-*/
-                    end else begin
-                        state <= 24;  // SKIP TO THE END...
-                    end
-                    // aaddr <= alloc(261);
-                end
-                20: begin
-                    // assert(aaddr == ^5..2)
-                    if (aaddr != (BASE | 2)) begin
-                        o_debug <= aaddr;
-                        state <= 0;
-                    end
-                end
-                25: begin
-                    // successful completion
-                    o_passed <= 1'b1;
-                    state <= 0;
-                end
+                1: // start state
+                2: // ram[42] <= 420
+                3: // ram[144] <= 1337
+                4: // rdata <= ram[42]
+                5: // assert(rdata == 420); rdata <= ram[144]
+                6: // assert(rdata == 1337)
+                7: // rdata <= ram[42]; ram[34] <= 55 --- simultaneous read/write
+                8: // assert(rdata == 420); rdata <= ram[144]; ram[144] <= 360 --- read/write same address
+//                9: // assert(rdata == 1337) --- read-before-write
+                9: // assert(rdata == 360) --- write-before-read
+                10: // aaddr <= alloc(256)
+                11: // assert(aaddr == ^5..0); aaddr <= alloc(257)
+                12: // assert(aaddr == ^5..1); aaddr <= alloc(258)
+                13: // assert(aaddr == ^5..2)
+                15: // free(^5..2)
+                16: // free(^5..1)
+                17: // aaddr <= alloc(259)
+                18: // assert(aaddr == ^5..1); free(^5..0); aaddr <= alloc(260)
+                19: // assert(aaddr == ^5..0); aaddr <= alloc(261)
+                20: // assert(aaddr == ^5..2)
+                25: // successful completion
             endcase
         end
     end
+*/
 
 endmodule
