@@ -86,6 +86,7 @@ module alloc_test (
 
     reg [4:0] state = 5'h01;  // 5-bit state-machine
     localparam STOP = 5'h00;
+    localparam LOOP = 5'h0F;
     localparam DONE = 5'h1F;
     reg [122:0] script [0:31];  // script indexed by state
     initial begin
@@ -134,10 +135,10 @@ module alloc_test (
         {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0E,
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
         script[5'h0E] =  // no-op
-        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0F,
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h10,  // <-- skip to 10
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
-        script[5'h0F] =  // no-op
-        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h10,
+        script[LOOP]  =  // no-op (loop forever...)
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,    LOOP,
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
         script[5'h10] =  // aaddr <= alloc($FADE)
         {   1'b1, 16'hFADE, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h11,
@@ -160,35 +161,23 @@ module alloc_test (
         script[5'h16] =  // free(^5001)
         {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b1, 16'h5001,   5'h17,
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
-/*
-                10: // aaddr <= alloc(256)
-                11: // assert(aaddr == ^5..0); aaddr <= alloc(257)
-                12: // assert(aaddr == ^5..1); aaddr <= alloc(258)
-                13: // assert(aaddr == ^5..2)
-                15: // free(^5..2)
-                16: // free(^5..1)
-                17: // aaddr <= alloc(259)
-                18: // assert(aaddr == ^5..1); free(^5..0); aaddr <= alloc(260)
-                19: // assert(aaddr == ^5..0); aaddr <= alloc(261)
-                20: // assert(aaddr == ^5..2)
-*/
-        script[5'h17] =  // no-op
-        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h18,
+        script[5'h17] =  // aaddr <= alloc($DEAF)
+        {   1'b1, 16'hDEAF, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h18,
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
-        script[5'h18] =  // no-op
-        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h19,
+        script[5'h18] =  // assert(aaddr == ^5001); aaddr <= alloc($E15E)
+        {   1'b1, 16'hE15E, 1'b1, 16'h5001,  1'b0, 16'h0000,   5'h19,  // <-- skip to 1C?
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
-        script[5'h19] =  // no-op
-        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1A,
+        script[5'h19] =  // assert(aaddr == ^5002); aaddr <= alloc($F001)
+        {   1'b1, 16'hF001, 1'b1, 16'h5002,  1'b0, 16'h0000,   5'h1A,
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
-        script[5'h1A] =  // no-op
-        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1B,
+        script[5'h1A] =  // assert(aaddr == ^5003)
+        {   1'b0, 16'h0000, 1'b1, 16'h5003,  1'b0, 16'h0000,   5'h1B,
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
         script[5'h1B] =  // no-op
-        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1C,
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,    DONE,  // <-- skip to DONE
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
-        script[5'h1C] =  // no-op
-        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1D,
+        script[5'h1C] =  // assert(aaddr == ^5002)
+        {   1'b0, 16'h0000, 1'b1, 16'h5002,  1'b0, 16'h0000,   5'h1D,
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };
         script[5'h1D] =  // no-op
         {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h1E,
