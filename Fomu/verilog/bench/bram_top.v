@@ -7,6 +7,7 @@ Physical Test Bench
 `default_nettype none
 
 //`include "bram.v"
+//`include "bram_wt.v"
 //`include "bram4k.v"
 `include "alloc.v"
 
@@ -115,7 +116,8 @@ module top (
         script[4'h8] = { 1'b0, 8'h00, 16'h0000,  1'b1, 8'hFF, 16'hC0DE, 1'b1, 4'h9 };
         script[4'h9] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'hFADE, 1'b1, 4'hA };
         script[4'hA] = { 1'b1, 8'hFF, 16'hDEAD,  1'b1, 8'hFF, 16'h0000, 1'b0, 4'hB };
-        script[4'hB] = { 1'b0, 8'h00, 16'h0000,  1'b1, 8'hFF, 16'hDEAD, 1'b1, 4'hC }; // write b4 read
+        script[4'hB] = { 1'b0, 8'h00, 16'h0000,  1'b1, 8'hFF, 16'hFADE, 1'b1, 4'hC }; // read b4 write
+//        script[4'hB] = { 1'b0, 8'h00, 16'h0000,  1'b1, 8'hFF, 16'hDEAD, 1'b1, 4'hC }; // write b4 read
         script[4'hC] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'hDEAD, 1'b1, 4'hD };
         script[4'hD] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'hE };
         script[4'hE] = { 1'b0, 8'h00, 16'h0000,  1'b0, 8'h00, 16'h0000, 1'b0, 4'hF };

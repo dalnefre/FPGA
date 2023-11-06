@@ -3,6 +3,10 @@
 iCE40 Dual-Ported Block RAM
 (derived from FPGA-TN-02002-1-7-Memory-Usage-Guide-for-iCE40-Devices.pdf)
 
+This version simulates a write-thru (transparent) memory.
+Writing and reading the same address during the same cycle
+will read the newly-written data rather than the old data.
+
     +-----------------+
     | bram (4kb)      |
     |                 |
@@ -37,16 +41,24 @@ module bram #(
     // inferred block ram
     reg [DATA_SZ-1:0] mem [0:MEM_MAX-1];
 
+    // write access
     always @(posedge i_clk) begin
-
-        // write conditionally
         if (i_wr_en) begin
             mem[i_waddr] <= i_wdata;
         end
+    end
 
-        // read always
-        o_rdata <= mem[i_raddr];
-
+    // read access
+    always @(posedge i_clk) begin
+        if (i_rd_en) begin
+            if (i_wr_en && (i_raddr == i_waddr)) begin
+                o_rdata <= i_wdata;  // write-before-read pass-thru
+            end else begin
+                o_rdata <= mem[i_raddr];
+            end
+        end else begin
+            o_rdata <= 0;  // UNDEF
+        end
     end
 
 endmodule

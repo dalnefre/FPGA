@@ -122,9 +122,14 @@ module alloc_test (
         script[5'h09] =  // rdata <= ram[^5034]; ram[^5034] <= $EA5E
         {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0A,
             1'b1, 16'h5034, 16'hEA5E,  1'b1, 16'h5034, 1'b0, 16'h0000  };
+        script[5'h0A] =  // assert(rdata == $EA5E) --- read before write
+        {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0B,
+            1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b1, 16'hD05E  };
+/*
         script[5'h0A] =  // assert(rdata == $EA5E) --- write before read
         {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0B,
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b1, 16'hEA5E  };
+*/
         script[5'h0B] =  // no-op
         {   1'b0, 16'h0000, 1'b0, 16'h0000,  1'b0, 16'h0000,   5'h0C,
             1'b0, 16'h0000, 16'h0000,  1'b0, 16'h0000, 1'b0, 16'h0000  };

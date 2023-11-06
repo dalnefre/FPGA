@@ -41,8 +41,10 @@ Some memory must be freed before allocation can resume.
 
 `ifdef __ICARUS__
 `include "bram.v"
+//`include "bram_wt.v"
 `else
-`include "bram4k.v"
+`include "bram.v"
+//`include "bram4k.v"
 `endif
 
 module alloc #(
